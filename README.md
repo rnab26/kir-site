@@ -14,7 +14,7 @@ Les 14 catégories sont regroupées en 7 univers (`data/taxonomy.json` > `sectio
 | Lames & panneaux à lames | lames, panneaux à lames acoustiques | `/s/wall-slats/` |
 | Panneaux muraux | PVC/SPC, panneaux 3D | `/s/wall-panels/` |
 | Parement effet pierre | pierre | `/c/stone/` (une seule catégorie : pas de page en double) |
-| Extérieur : bardage & terrasse | bardage extérieur, terrasse WPC | `/s/exterior/` |
+| Extérieur : bardage & terrasse | bardage extérieur, terrasse WPC + pierre flexible (aussi dans Pierre) | `/s/exterior/` |
 | Miroirs LED | miroirs | `/c/led-mirrors/` |
 | Corniches, plinthes & moulures | corniches, plinthes, moulures, colonnes, bandeaux | `/s/trims/` |
 | Colles & pose | colles | `/c/adhesives/` |
@@ -22,6 +22,8 @@ Les 14 catégories sont regroupées en 7 univers (`data/taxonomy.json` > `sectio
 Ils apparaissent sur l'accueil (tuiles juste après le haut de page), dans le menu « Catalogue » (déroulant), dans le pied de page,
 en filtres du catalogue (`?s=exterior`) et dans le fil d'Ariane (accueil › univers › catégorie › produit).
 Une nouvelle catégorie doit être ajoutée à un univers, sinon le build s'arrête avec un message.
+Pour montrer aussi une partie d'une catégorie dans un 2e univers : champ `also` de l'univers (catégorie + début du nom hébreu,
+ex. `"cat": "stone", "match": "אבן גמיש"`) ; le produit garde son univers principal (fil d'Ariane).
 
 ## Ce que contient le site
 
