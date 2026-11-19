@@ -213,7 +213,7 @@ const VS = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMat
 const RoomShader = {
   uniforms: {
     tDiffuse: { value: null }, uPhoto: { value: null }, uMask: { value: null }, uClean: { value: null }, uFace: { value: null },
-    uMix: { value: 0 }, uCount: { value: 0 }, uN: { value: 1 }, uGc: { value: 0 }, uR: { value: 1 },
+    uMix: { value: 0 }, uCount: { value: 0 }, uN: { value: 1 }, uGc: { value: 0 }, uR: { value: 1 }, uBand: { value: 0 },
     uWin: { value: new THREE.Vector4(0, 0, 1, 1) }, uRef: { value: new THREE.Vector3(1, 1, 1) }, uImg: { value: new THREE.Vector2(1, 1) }, uSzC: { value: new THREE.Vector2(1, 1) },
     uHas: { value: new THREE.Vector4() }, uCols: { value: new THREE.Vector4() }, uPiece: { value: new THREE.Vector4() }, uAnim: { value: new THREE.Vector4() },
     uH: { value: [0, 1, 2, 3].map(() => new THREE.Matrix3()) }, uHL: { value: new THREE.Matrix3() }, uSz: { value: [0, 1, 2, 3].map(() => new THREE.Vector2(1, 1)) }, uPc: { value: [0, 1, 2, 3].map(() => new THREE.Vector4(0.2, 2.9, 1, 0)) }
@@ -221,7 +221,7 @@ const RoomShader = {
   vertexShader: VS,
   fragmentShader: `
     uniform sampler2D tDiffuse, uPhoto, uMask, uClean, uFace;
-    uniform float uMix, uCount, uN, uGc, uR;
+    uniform float uMix, uCount, uN, uGc, uR, uBand;
     uniform vec4 uWin, uHas, uCols, uPiece, uAnim; uniform vec3 uRef; uniform vec2 uImg, uSzC;
     uniform mat3 uH[4], uHL; uniform vec2 uSz[4]; uniform vec4 uPc[4];
     varying vec2 vUv;
@@ -235,6 +235,7 @@ const RoomShader = {
     void main(){
       vec4 base = texture2D(tDiffuse, vUv);
       vec2 puv = uWin.xy + vUv * uWin.zw;
+      if (puv.y < 0.0 || puv.y > 1.0) { gl_FragColor = vec4(mix(base.rgb, vec3(0.063, 0.055, 0.043), uMix), 1.0); return; }
       vec2 P = vec2(puv.x * uImg.x, (1.0 - puv.y) * uImg.y);
       vec3 photo = texture2D(uPhoto, puv).rgb, col = photo;
       vec4 m = texture2D(uMask, puv) * vec4(1.0, step(1.5, uN), step(2.5, uN), step(3.5, uN));
@@ -271,6 +272,7 @@ const RoomShader = {
         }
         col = mix(photo, wall, cov);
       }
+      col = mix(vec3(0.0052, 0.0044, 0.0034), col, mix(1.0, smoothstep(0.0, 0.03, puv.y) * smoothstep(1.0, 0.97, puv.y), uBand));   // soft top and bottom edges of a shorter photo
       gl_FragColor = vec4(mix(base.rgb, toSRGB(col), uMix), 1.0);
     }`
 };
@@ -452,7 +454,8 @@ async function choose(it) {
     faceMat.map = alb; faceMat.color.set(E.plain[it.id] || 0xffffff); faceMat.roughness = E.plain[it.id] ? 0.6 : 0.52; faceMat.needsUpdate = true;
     storyLook(it.id);
   }
-  if (params.get('m') !== it.id && (params.has('m') || it.id !== (E.start || E.story)) && history.replaceState) { params.set('m', it.id); history.replaceState(null, '', location.pathname + '?' + params.toString() + location.hash); }
+  // a choice is not remembered: once the visitor picks something else, a refresh starts again from the default model
+  if (params.get('m') !== it.id && (params.has('m') || params.has('ref')) && history.replaceState) { params.delete('m'); params.delete('ref'); const q = params.toString(); history.replaceState(null, '', location.pathname + (q ? '?' + q : '') + location.hash); }
   tap(0.4);
 }
 // the 3D story follows the slat shown in 3D: its reference, colour and price in the hero, and a brighter studio for a dark slat
@@ -704,7 +707,9 @@ function edView() {
   let sx0 = 0, sw = W, sh = H;
   if (W >= 900) { if (p.left > W / 2) sw = p.left - 12; else { sx0 = p.right + 12; sw = W - sx0; } }
   else sh = Math.max(120, p.top);
-  const cover = Math.max(sw / r.W, sh / r.H), sc = cover * ED.zoom, hw = sw / 2 / sc, hh = sh / 2 / sc;
+  let cover = Math.max(sw / r.W, sh / r.H);
+  if (sw / (cover * r.W) < 0.64) cover = sw / (0.64 * r.W);   // on a phone keep most of the photo width in view
+  const sc = cover * ED.zoom, hw = sw / 2 / sc, hh = sh / 2 / sc;
   ED.cover = cover;
   if (ED.fix < 0) {
     ED.c[0] = r.W > 2 * hw ? clamp(ED.c[0], hw, r.W - hw) : r.W / 2;
@@ -954,12 +959,16 @@ function frame() {
   } else RU.uAnim.value.z = 0;
   roomPass.enabled = mix > 0.001;
   renderPass.enabled = bloom.enabled = outPass.enabled = mix < 0.999;
-  const asp = innerWidth / innerHeight, pa = SR.W / SR.H, zoom = 1 + 0.1 * (1 - mix);
+  // framing: cover the screen, but on a phone keep at least 64 % of the photo's width in view (the photo is then shorter than the
+  // screen and sits a little above the middle, the rest stays dark), and follow the piece being laid only gently
+  const asp = innerWidth / innerHeight, pa = SR.W / SR.H, zoom = 1 + 0.08 * (1 - mix);
   let ww = 1, wh = 1; if (asp < pa) ww = asp / pa; else wh = pa / asp;
+  if (ww < 0.64) { wh = 0.64 / ww; ww = 0.64; }
   ww /= zoom; wh /= zoom;
-  const want = asp < 1.2 && state.count < lay.total - 0.01 ? pieceImageX(Math.min(lay.total - 1, Math.floor(state.count))) : 0.5;
-  state.pan = lerp(state.pan, want, 1 - Math.exp(-dt * 2.2));
-  RU.uWin.value.set(clamp(state.pan, ww / 2, 1 - ww / 2) - ww / 2, 0.5 - wh / 2, ww, wh);
+  const follow = ww < 0.98 && state.count < lay.total - 0.01 ? pieceImageX(Math.min(lay.total - 1, Math.floor(state.count))) : 0.5;
+  state.pan = lerp(state.pan, lerp(0.5, follow, 0.7), 1 - Math.exp(-dt * 1.6));
+  RU.uBand.value = wh > 1 ? 1 : 0;
+  RU.uWin.value.set(clamp(state.pan, ww / 2, 1 - ww / 2) - ww / 2, wh <= 1 ? 0.5 - wh / 2 : 0.5 - wh * 0.56, ww, wh);
   const placed = Math.floor(state.count + 1e-4);
   if (placed !== lastCount) {
     if (placed > lastCount && lastCount >= 0 && mix > 0.5) tap(0.35);
@@ -998,7 +1007,8 @@ addEventListener('resize', resize);
 // ---------------------------------------------------------------- boot: load, compile every shader behind the loader, then fade in
 async function boot() {
   resize();
-  const [sr, alb] = await Promise.all([preparedRoom(E.storyRoom), albedoOf(threeId)]);
+  const sid = (E.rooms || []).includes(params.get('room')) ? params.get('room') : E.storyRoom;   // ?room=<id> shows another prepared room
+  const [sr, alb] = await Promise.all([preparedRoom(sid), albedoOf(threeId)]);
   // laying order: the wall facing the camera (closest to the middle of the photo) first, then the others
   const mid = (i) => Math.abs((sr.walls[i].anchor || [1e9])[0] - sr.W / 2);
   sr.order = sr.walls.map((_, i) => i).sort((a, b) => mid(a) - mid(b));
@@ -1013,6 +1023,8 @@ async function boot() {
   measure();
   requestAnimationFrame(frame);
   if (location.hash === '#room') requestAnimationFrame(() => { measure(); scrollTo(0, roomTop + roomLen * 0.08); });
+  const at = parseFloat(params.get('at'));   // ?at=0.6: open the room part with 60 % of the pieces laid (screens, demos)
+  if (at >= 0 && at <= 1) requestAnimationFrame(() => { measure(); scrollTo(0, roomTop + roomLen * (0.07 + 0.86 * at)); });
   if (location.hash === '#walls' || location.hash === '#photo') { ED.boot = true; edOpen(false); if (location.hash === '#photo') roomsOpen(true); }
   (window.requestIdleCallback || setTimeout)(() => E.quick.forEach((m) => { faceOf(m.id).catch(() => {}); albedoOf(m.id).catch(() => {}); }));
 }

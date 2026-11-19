@@ -187,6 +187,18 @@
       });
     });
     var norm = function (s) { return (s || '').toLowerCase().replace(/[֑-ׇ]/g, '').trim(); };
+    // with a colour filter on, a card of several variants shows (and links to) the variant of that colour
+    var showVariantFor = function (c) {
+      var vc = (c.getAttribute('data-vc') || '').split('|'), vs = (c.getAttribute('data-vs') || '').split(' '), ids = (c.getAttribute('data-imgs') || '').split(' ');
+      var img = c.querySelector('.card-media img'), links = c.querySelectorAll('a[href]');
+      if (!img || ids.length < 2 || vs.length !== ids.length) return;
+      if (!c.dataset.src0) { c.dataset.src0 = img.getAttribute('src'); links.forEach(function (a) { a.dataset.href0 = a.getAttribute('href'); }); }
+      var k = -1;
+      if (active.color.length) for (var i = 0; i < vc.length && k < 0; i++) if (vc[i].split(',').some(function (x) { return active.color.indexOf(x) > -1; })) k = i;
+      var rep = ids.filter(function (id) { return c.dataset.src0.indexOf(id) > -1; })[0], swap = k >= 0 && rep && ids[k] !== rep;
+      img.setAttribute('src', swap ? c.dataset.src0.replace(rep, ids[k]) : c.dataset.src0);
+      links.forEach(function (a) { a.setAttribute('href', swap ? a.dataset.href0.split('?')[0] + '?v=' + vs[k] : a.dataset.href0); });
+    };
     var apply = function (push) {
       var term = norm(q && q.value), n = 0;
       cards.forEach(function (c) {
@@ -194,7 +206,9 @@
           && (!active.look.length || active.look.some(function (v) { return (' ' + c.getAttribute('data-looks') + ' ').indexOf(' ' + v + ' ') > -1; }))
           && (!active.color.length || active.color.some(function (v) { return (' ' + c.getAttribute('data-colors') + ' ').indexOf(' ' + v + ' ') > -1; }))
           && (!term || term.split(/\s+/).every(function (w) { return c.getAttribute('data-q').indexOf(w) > -1; }));
-        c.hidden = !ok; if (ok) n += parseInt(c.getAttribute('data-k'), 10) || 1;
+        if (!c.isConnected) return;   // removed live from the Sheet
+        c.hidden = !ok; if (ok) n++;   // one card = one product shown
+        if (ok) showVariantFor(c);
       });
       if (count) count.textContent = nf.format(n);
       var any = active.c.length || active.s.length || active.look.length || active.color.length || term;
@@ -507,6 +521,10 @@
         slot.outerHTML = html;
       }
     });
+    // counters follow what is really on the page (products removed in the Sheet disappear from the count too)
+    var grid = $('[data-grid]'), bc = $('.band-count');
+    if (grid && bc) { var nc = $$('.card', grid).length; bc.textContent = bc.textContent.replace(/^[\d\s.,  ]+/, nf.format(nc) + ' '); }
+    var fq = $('[data-filters] [data-q]'); if (fq) fq.dispatchEvent(new Event('input'));
     // product page variants
     $$('[data-vb][data-img]').forEach(function (b) {
       var r = LIVE[b.getAttribute('data-img')]; if (!r) return; var v = liveRow(r);

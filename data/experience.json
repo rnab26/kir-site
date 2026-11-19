@@ -1,6 +1,6 @@
 {
   "_help": "Studio mur : storyModel = reference du modele pose dans la piece au chargement (colonne reference du Sheet, ex. \"035 20025\" ou juste \"108\"). storyRoom = piece du defilement (dossier src/assets/exp/rooms/<id>). rooms = pieces proposees dans le bouton Pieces, dans l'ordre.",
   "storyModel": "035 20025",
-  "storyRoom": "r23",
-  "rooms": ["r23", "r24", "r04", "r02", "r01", "r07", "r31", "r27", "r13"]
+  "storyRoom": "n04",
+  "rooms": ["n04", "n06", "n05", "n20", "r23", "r24", "r04", "r02", "r01", "r07", "r31", "r27", "r13"]
 }

@@ -84,6 +84,9 @@ function Cap([string]$s) { if ($s.Length) { $s.Substring(0, 1).ToUpper() + $s.Su
 
 # ---------- products ----------
 $seen = @{}
+$PhotoColor = New-Object 'System.Collections.Generic.Dictionary[string,string]' ([StringComparer]::Ordinal)   # image ids are case-sensitive
+$pcFile = Join-Path $Root 'data/colors.json'
+if (Test-Path $pcFile) { foreach ($pair in (Read-Json 'data/colors.json').list) { if ($pair[0]) { $PhotoColor[[string]$pair[0]] = [string]$pair[1] } } }
 $Items = New-Object System.Collections.ArrayList
 $i = 0
 foreach ($p in $Raw) {
@@ -98,7 +101,20 @@ foreach ($p in $Raw) {
   $seen[$slug] = $true
   $he = [string]$p.he
   $looks = @(); foreach ($k in $Tax.lookOrder) { if ($he -match (P $Tax.looks $k)) { $looks += $k } }
-  $colors = @(); foreach ($k in $Tax.colorOrder) { if ($he -match (P $Tax.colors $k)) { $colors += $k } }
+  # colour: read from the product photo (data/colors.json, scripts/detect-colors.ps1); the name only confirms white / black
+  # (white products look grey in photos) and adds gold. No colour filter for mirrors and adhesives.
+  $named = @(); foreach ($k in $Tax.colorOrder) { if ($he -match (P $Tax.colors $k)) { $named += $k } }
+  $seen2 = ''; [void]$PhotoColor.TryGetValue([string]$p.img, [ref]$seen2)
+  $colors = @()
+  if ($p.c -notin @('mirror', 'adhesive')) {
+    if ($seen2) {
+      $c1 = $seen2
+      if ($named -contains 'white' -and $c1 -in @('grey', 'beige', 'taupe')) { $c1 = 'white' }
+      elseif ($named -contains 'black' -and $c1 -in @('grey', 'taupe', 'brown')) { $c1 = 'black' }
+      $colors += $c1
+    } else { $colors = @($named | Where-Object { $_ -ne 'gold' }) }
+    if ($named -contains 'gold' -and $colors -notcontains 'gold') { $colors += 'gold' }
+  }
   $mat = ''
   foreach ($m in @('SPC', 'PVC', 'WPC')) { if (($he + ' ' + $skuRaw) -match $m) { $mat = $m; break } }
   $w = $null; $l = $null; $s = [string]$p.s
@@ -256,7 +272,10 @@ function CardBuild($L, $it, [string]$headTag) {
   if ($multi -and $null -ne $it.p) { $price = '<span class="price"><small class="from">' + (Enc (T $L 'from')) + '</small><bdi>' + (Num $it.p) + '&nbsp;&#8362;</bdi></span>' }
   $btn = if ($multi) { '<a class="add" href="' + $url + '" aria-label="' + (Enc ((T $L 'choose') + ': ' + $name)) + '">' + $Icons.arrow + '</a>' } else { '<button class="add" type="button" data-add="' + $it.slug + '" aria-label="' + (Enc ((T $L 'add') + ': ' + $name)) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>' }
   $imgs = if ($it.vars) { (@($it.vars | ForEach-Object { $_.img }) -join ' ') } else { $it.img }
-  return '<article class="card" data-k="' + $(if ($it.n -gt 1) { $it.n } else { 1 }) + '" data-imgs="' + $imgs + '" data-s="' + (SecKeys $it) + '" data-c="' + $it.c + '" data-looks="' + ($it.looks -join ' ') + '" data-colors="' + ($it.colors -join ' ') + '" data-p="' + $pp + '" data-i="' + $it.idx + '" data-q="' + (Enc $q) + '">' +
+  # per variant colour and slug, so a colour filter can show the matching variant on the card
+  $vcs = if ($it.vars) { (@($it.vars | ForEach-Object { ($_.colors -join ',') }) -join '|') } else { ($it.colors -join ',') }
+  $vsl = if ($it.vars) { (@($it.vars | ForEach-Object { $_.slug }) -join ' ') } else { '' }
+  return '<article class="card" data-k="' + $(if ($it.n -gt 1) { $it.n } else { 1 }) + '" data-imgs="' + $imgs + '" data-s="' + (SecKeys $it) + '" data-c="' + $it.c + '" data-looks="' + ($it.looks -join ' ') + '" data-colors="' + ($it.colors -join ' ') + '" data-vc="' + $vcs + '" data-vs="' + $vsl + '" data-p="' + $pp + '" data-i="' + $it.idx + '" data-q="' + (Enc $q) + '">' +
     '<a class="card-media" href="' + $url + '" tabindex="-1" aria-hidden="true"><img src="' + (ImgUrl $it.img) + '" alt="" width="520" height="650" loading="lazy" decoding="async">' + $badge + '</a>' +
     '<div class="card-body"><' + $headTag + ' class="card-title"><a href="' + $url + '">' + (Enc $name) + '</a></' + $headTag + '>' +
     '<p class="card-meta">' + $meta + '</p>' +
@@ -497,7 +516,7 @@ function LookTiles($L, [string]$tag = 'h3') {
   $t = ''
   foreach ($k in $LookOrder) {
     $lk = LookOf $L $k
-    $cnt = @($Items | Where-Object { $_.looks -contains $k }).Count
+    $cnt = @($Fams | Where-Object { $_.looks -contains $k }).Count
     $t += '<a class="mat reveal" href="' + (Href $L ('look/' + $lk.slug + '/')) + '" style="--img:url(' + (TexUrl (P $Tax.lookCover $k)) + ')"><span class="mat-tex" aria-hidden="true"></span><span class="mat-sheen" aria-hidden="true"></span><span class="mat-body"><' + $tag + '>' + (Enc $lk.name) + '</' + $tag + '><span>' + (CountTxt $L $cnt) + '</span></span></a>'
   }
   '<div class="mats" data-tilt>' + $t + '</div>'
@@ -541,7 +560,7 @@ function FilterBar($L, [string[]]$cats, $secs = $null, $labels = $null) {
 }
 
 function CountTxt($L, [int]$n) { if ($n -eq 1) { '1 ' + (Enc (T $L 'productOne')) } else { [string]$n + ' ' + (Enc (T $L 'products')) } }
-function ProdCount($list) { $n = 0; foreach ($x in @($list)) { $k = [int](P $x 'n'); if ($k -lt 1) { $k = 1 }; $n += $k }; $n }
+function ProdCount($list) { @($list).Count }   # what the visitor sees: one card per product (its variants are inside)
 function Band([string]$kicker, [string]$title, [string]$lead, [int]$count = -1, $L = $null, [int]$series = -1) {
   $c = if ($count -ge 0) { '<span class="band-count">' + (CountTxt $L $count) + $(if ($series -gt 1 -and $series -lt $count) { ' &middot; ' + $series + ' ' + (Enc (T $L 'seriesPl')) } else { '' }) + '</span>' } else { '' }
   '<section class="band"><div class="band-flutes" aria-hidden="true"></div><div class="wrap"><p class="kicker">' + (Enc $kicker) + '</p><h1>' + (Enc $title) + '</h1>' + $(if ($lead) { '<p class="lead">' + (Enc $lead) + '</p>' } else { '' }) + $c + '</div></section>'
@@ -637,7 +656,7 @@ foreach ($lang in $Langs) {
   # Home
   $feat = @(); foreach ($id in $Tax.featured) { if ($ById[$id]) { $fm0 = $FamOf[$ById[$id].slug]; if ($feat -notcontains $fm0) { $feat += $fm0 } } }
   $stats = ''
-  foreach ($s in $L.stats) { $stats += '<li><strong>' + (Enc (Fill ([string]$s[0]) @{ count = $Items.Count; cats = $Sections.Count })) + '</strong><span>' + (Enc $s[1]) + '</span></li>' }
+  foreach ($s in $L.stats) { $stats += '<li><strong>' + (Enc (Fill ([string]$s[0]) @{ count = $Fams.Count; cats = $Sections.Count })) + '</strong><span>' + (Enc $s[1]) + '</span></li>' }
   $steps = ''; $n = 0
   foreach ($s in $L.steps.items) { $n++; $steps += '<li class="reveal"><span class="num">0' + $n + '</span><h3>' + (Enc $s[0]) + '</h3><p>' + (Enc $s[1]) + '</p></li>' }
   $hero = '<section class="hero" data-hero style="--tex:url(' + (TexUrl $Tax.lookCover.travertine) + ')"><div class="hero-wall" aria-hidden="true"><div class="hw-tex"></div><div class="hw-flutes"></div><div class="hw-light"></div><div class="hw-vignette"></div></div>' +
@@ -657,7 +676,7 @@ foreach ($lang in $Langs) {
   if ($lang -eq 'he') { AddUrl '' '1.0' }
 
   # Catalog
-  $body = (Band (P $L.nav 'catalog') $L.catalogTitle $L.catalogDesc $Items.Count $L $Fams.Count) + (FilterBar $L $CatOrder $Sections) + '<section class="listing"><div class="wrap">' + (Grid $L $Fams 'h2') + '</div></section>'
+  $body = (Band (P $L.nav 'catalog') $L.catalogTitle $L.catalogDesc $Fams.Count $L $Fams.Count) + (FilterBar $L $CatOrder $Sections) + '<section class="listing"><div class="wrap">' + (Grid $L $Fams 'h2') + '</div></section>'
   $crumb = @(@((T $L 'home'), ''), @($L.catalogTitle, 'catalog/'))
   Page $L @{ path = 'catalog/'; title = ($L.catalogTitle + ' | ' + (BrandOf $L)); desc = $L.catalogDesc; body = (CrumbHtml $L $crumb) + $body; cls = 'catalog'; ld = @((CrumbLd $L $crumb), (ItemListLd $L $Items)) }
   if ($lang -eq 'he') { AddUrl 'catalog/' '0.9' }

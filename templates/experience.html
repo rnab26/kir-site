@@ -184,6 +184,15 @@ html.ed-on .story, html.ed-on .top, html.ed-on .dock, html.ed-on #labels, html.e
   .ed-row { flex-wrap: wrap; overflow: visible; }
 }
 
+@media (max-width: 1100px) {
+  .dock .dots { display: none; }
+  .cur b { max-width: 11rem; }
+}
+@media (max-width: 920px) {
+  .dock .seg { display: none; }
+  .dock [data-ed-photo] { font-size: 0; padding: 9px 11px; }
+  .dock [data-ed-photo] svg { margin: 0 !important; }
+}
 @media (max-width: 760px) {
   .sec { align-items: flex-end; }
   .panel { margin-inline-start: 0; padding-bottom: 9vh; gap: 14px; }
