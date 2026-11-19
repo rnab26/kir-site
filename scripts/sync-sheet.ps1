@@ -21,7 +21,8 @@ $MATTE = HebStr 0x05DE, 0x05D8
 $GLOSS = HebStr 0x05DE, 0x05D1, 0x05E8, 0x05D9, 0x05E7
 $FLEX = HebStr 0x05D2, 0x05DE, 0x05D9, 0x05E9                # flexible
 $DECO = HebStr 0x05D1, 0x05D3, 0x05D5, 0x05D2, 0x05DE, 0x05EA # "in a pattern of"
-$HEB = '[א-ת]'
+$HEB = '[' + [char]0x05D0 + '-' + [char]0x05EA + ']'
+if (-not $CsvUrl -and -not $CsvPath) { $site0 = Get-Content -Raw -Encoding UTF8 (Join-Path $root 'data/site.json') | ConvertFrom-Json; $CsvUrl = [string]$site0.sheetCsvUrl }
 
 # ---- read the sheet ----
 if ($CsvPath) { $text = [IO.File]::ReadAllText($CsvPath, [Text.Encoding]::UTF8) }
@@ -58,7 +59,7 @@ function CatOf([string]$cat, [string]$desc) {
 }
 function Translate([string]$he) {
   $s = ' ' + $he + ' '
-  foreach ($pr in $tr.pairs) { $s = [regex]::Replace($s, '(?<![א-ת])' + [regex]::Escape([string]$pr[0]) + '(?![א-ת])', [string]$pr[1]) }
+  foreach ($pr in $tr.pairs) { $s = [regex]::Replace($s, '(?<!' + $HEB + ')' + [regex]::Escape([string]$pr[0]) + '(?!' + $HEB + ')', [string]$pr[1]) }
   $s = ($s -replace '\s+', ' ').Trim()
   if ($s.Length) { $s = $s.Substring(0, 1).ToUpper() + $s.Substring(1) }
   $s

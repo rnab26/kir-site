@@ -11,33 +11,33 @@
         "img":  "1rb2hIqCVYPHDMk5ZixNnLi1gI6jppBBi",
         "sku":  "027",
         "native":  "264x389",
-        "tex":  "528x778",
+        "tex":  "1056x1556",
         "needAI":  true,
-        "note":  "frame IMG_7602#8 score 0.49"
+        "note":  "frame IMG_7602#8 score 0.49 +AI"
     },
     {
         "img":  "14_gYdITh93PEUDogjr4dArEYtxpw0NAs",
         "sku":  "115",
         "native":  "482x415",
-        "tex":  "964x830",
+        "tex":  "1600x1378",
         "needAI":  true,
-        "note":  "frame IMG_7602#6 score 0.91"
+        "note":  "frame IMG_7602#6 score 0.91 +AI"
     },
     {
         "img":  "1lNMEhNCkpSHyZCbT96qSFi_AsOo6AwQ4",
         "sku":  "115 160-24",
         "native":  "160x427",
-        "tex":  "320x854",
+        "tex":  "600x1600",
         "needAI":  true,
-        "note":  "frame IMG_7602#5 score 0.78"
+        "note":  "frame IMG_7602#5 score 0.78 +AI"
     },
     {
         "img":  "1RcEEWcs6bq8UahjRiSqBYQTdb3ESfpSU",
         "sku":  "QM14",
         "native":  "336x404",
-        "tex":  "672x808",
+        "tex":  "1331x1600",
         "needAI":  true,
-        "note":  "frame IMG_7602#7 score 0.8"
+        "note":  "frame IMG_7602#7 score 0.8 +AI"
     },
     {
         "img":  "1Kb87GFJCtlQ9H9m2SednR9zNCZDfA6VM",
@@ -67,33 +67,33 @@
         "img":  "1xFL2FSChDqk4LdnBnVXtEE5-syXHgUik",
         "sku":  "035 16015",
         "native":  "219x191",
-        "tex":  "438x382",
+        "tex":  "1400x1221",
         "needAI":  true,
-        "note":  "frame IMG_7597#3 score 0.73"
+        "note":  "frame IMG_7597#3 score 0.73 +AI"
     },
     {
         "img":  "167taG-eCAzs7iVtevdNEv8-igUc9lnU4",
         "sku":  "035 20025",
         "native":  "344x216",
-        "tex":  "688x432",
+        "tex":  "1400x879",
         "needAI":  true,
-        "note":  "frame IMG_7597#2 score 0.69"
+        "note":  "frame IMG_7597#2 score 0.69 +AI"
     },
     {
         "img":  "1grwoMfEj5rDJepoln3nqNZ_QPH-DSctV",
         "sku":  "035",
         "native":  "244x273",
-        "tex":  "488x546",
+        "tex":  "1251x1400",
         "needAI":  true,
-        "note":  "frame IMG_7597#4 score 0.88"
+        "note":  "frame IMG_7597#4 score 0.88 +AI"
     },
     {
         "img":  "1eRiuhMKI4hEXg97kMEPV2Y_bEv2DVRxx",
         "sku":  "035 20325",
         "native":  "144x305",
-        "tex":  "288x610",
+        "tex":  "661x1400",
         "needAI":  true,
-        "note":  "frame IMG_7597#1 score 0.8"
+        "note":  "frame IMG_7597#1 score 0.8 +AI"
     },
     {
         "img":  "1-eS48SX_QKn4kWniiLaLSiubZhZW2Vni",
@@ -107,9 +107,9 @@
         "img":  "1QKLRFlm0hIKhg5OX9qO50kWFirFAb-wn",
         "sku":  "016 160-24",
         "native":  "400x500",
-        "tex":  "800x1000",
+        "tex":  "1280x1600",
         "needAI":  true,
-        "note":  "rejected crop (frame IMG_7597#5 score 0.72): old thumbnail"
+        "note":  "rejected crop (frame IMG_7597#5 score 0.72): old thumbnail +AI"
     },
     {
         "img":  "1T856RWceum5JWwBoxtUqRcf3QWJJW4xq",
@@ -147,17 +147,17 @@
         "img":  "1aBI6ndAOwM0CthuHH-GfZq5HRCt_MaeK",
         "sku":  "P093 160-24",
         "native":  "400x500",
-        "tex":  "800x1000",
+        "tex":  "1280x1600",
         "needAI":  true,
-        "note":  "rejected crop (frame IMG_7597#9 score 0.54): old thumbnail"
+        "note":  "rejected crop (frame IMG_7597#9 score 0.54): old thumbnail +AI"
     },
     {
         "img":  "1BLQ46Wn84af4Ve1qpE7q_9_An6IhNuLi",
         "sku":  "DS-13 160-24",
         "native":  "400x500",
-        "tex":  "800x1000",
+        "tex":  "1280x1600",
         "needAI":  true,
-        "note":  "rejected crop (frame IMG_7597#8 score 0.62): old thumbnail"
+        "note":  "rejected crop (frame IMG_7597#8 score 0.62): old thumbnail +AI"
     },
     {
         "img":  "1idSBYOu98_aMLFIoPCncqCcyfOTndVht",
@@ -587,9 +587,9 @@
         "img":  "1weWWHp_uRnMHgfQYE_upOfkW8YCs4IXS",
         "sku":  "C-LS-2504-3",
         "native":  "187x488",
-        "tex":  "374x976",
+        "tex":  "613x1600",
         "needAI":  true,
-        "note":  "frame IMG_7589#2 score 0.79"
+        "note":  "frame IMG_7589#2 score 0.79 +AI"
     },
     {
         "img":  "19rVzs_rOrIEIYZRsw646AW5T39L9-_lz",
@@ -603,17 +603,17 @@
         "img":  "1tjrKOEefIdlzxOicIj1EPPV2hag9D8sB",
         "sku":  "DLS-25024",
         "native":  "400x500",
-        "tex":  "800x1000",
+        "tex":  "1280x1600",
         "needAI":  true,
-        "note":  "rejected crop (frame IMG_7589#1 score 0.72): old thumbnail"
+        "note":  "rejected crop (frame IMG_7589#1 score 0.72): old thumbnail +AI"
     },
     {
         "img":  "1Z3iKT_ZqNWwaXxgWTbKKFIx7oZGFpM2z",
         "sku":  "BL2503-2",
         "native":  "166x522",
-        "tex":  "332x1044",
+        "tex":  "509x1600",
         "needAI":  true,
-        "note":  "frame IMG_7589#4 score 0.71"
+        "note":  "frame IMG_7589#4 score 0.71 +AI"
     },
     {
         "img":  "1CVXVMyUYMD79LdJjWbofEMHRrkfkkSgx",
@@ -851,9 +851,9 @@
         "img":  "1Fdk_yXgSWLrnCx9z-huyzB77VqRzY9zw",
         "sku":  "Y08 15025",
         "native":  "400x500",
-        "tex":  "800x1000",
+        "tex":  "1280x1600",
         "needAI":  true,
-        "note":  "rejected crop (frame IMG_7595#1 score 0.79): old thumbnail"
+        "note":  "rejected crop (frame IMG_7595#1 score 0.79): old thumbnail +AI"
     },
     {
         "img":  "1K_XjXctxOyqe0e9x9ioJdq8olH9Q9rPQ",
@@ -867,9 +867,9 @@
         "img":  "1C7YWD9RMLLwlkZWaiNcm9-CsqIxAKI38",
         "sku":  "Y08 20025",
         "native":  "376x640",
-        "tex":  "752x1280",
+        "tex":  "940x1600",
         "needAI":  true,
-        "note":  "frame IMG_7595#2 score 0.71"
+        "note":  "frame IMG_7595#2 score 0.71 +AI"
     },
     {
         "img":  "10FV9W0CQeWAx8iG-k42DlsaU3UbgU4DI",
@@ -1051,9 +1051,9 @@
         "img":  "1HXqTjn29JL5I8Q9zPTJhTCawoc1vdDeY",
         "sku":  "DS-13 204-12",
         "native":  "400x500",
-        "tex":  "800x1000",
+        "tex":  "1280x1600",
         "needAI":  true,
-        "note":  "rejected crop (frame IMG_7588#3 score 0.62): old thumbnail"
+        "note":  "rejected crop (frame IMG_7588#3 score 0.62): old thumbnail +AI"
     },
     {
         "img":  "16zoye-6tY52QKLLyVKF83yNwer-Lw6YJ",
@@ -1283,9 +1283,9 @@
         "img":  "1dZtw1GA8EEJ8cu1WEi_AeiKf73D7-f-t",
         "sku":  "119 15025",
         "native":  "400x500",
-        "tex":  "800x1000",
+        "tex":  "1280x1600",
         "needAI":  true,
-        "note":  "rejected crop (frame IMG_7596#0 score 0.45): old thumbnail"
+        "note":  "rejected crop (frame IMG_7596#0 score 0.45): old thumbnail +AI"
     },
     {
         "img":  "1HV39b2B4yWYw6mNq4J6w22WJv4HaxbPf",
@@ -1387,73 +1387,73 @@
         "img":  "1nh30yYeOe8wmtsufVBgKWn8jJKp8auqW",
         "sku":  "114 200-19",
         "native":  "400x500",
-        "tex":  "800x1000",
+        "tex":  "1280x1600",
         "needAI":  true,
-        "note":  "no frame: old thumbnail"
+        "note":  "no frame: old thumbnail +AI"
     },
     {
         "img":  "18qb_KhnmRuw9aUd9tu9Jl9hi8vynLSxH",
         "sku":  "027 16015",
         "native":  "400x500",
-        "tex":  "800x1000",
+        "tex":  "1280x1600",
         "needAI":  true,
-        "note":  "no frame: old thumbnail"
+        "note":  "no frame: old thumbnail +AI"
     },
     {
         "img":  "1njVWGQBUTAHAKbMFNgzGSbCVi2D33Kh6",
         "sku":  "027 20025",
         "native":  "400x500",
-        "tex":  "800x1000",
+        "tex":  "1280x1600",
         "needAI":  true,
-        "note":  "no frame: old thumbnail"
+        "note":  "no frame: old thumbnail +AI"
     },
     {
         "img":  "1HfrsdqKdaOcdI9YupjcCFTBdXASl7GXD",
         "sku":  "027 20325",
         "native":  "400x500",
-        "tex":  "800x1000",
+        "tex":  "1280x1600",
         "needAI":  true,
-        "note":  "no frame: old thumbnail"
+        "note":  "no frame: old thumbnail +AI"
     },
     {
         "img":  "1XsEq7iiemKAR9ymhZ6uSGhLyVp10z0dm",
         "sku":  "027 21020",
         "native":  "400x500",
-        "tex":  "800x1000",
+        "tex":  "1280x1600",
         "needAI":  true,
-        "note":  "no frame: old thumbnail"
+        "note":  "no frame: old thumbnail +AI"
     },
     {
         "img":  "1uCwR0hqBjeYgm1Y8EJ-D-sFp0SJDrtD-",
         "sku":  "JX5909",
         "native":  "400x500",
-        "tex":  "800x1000",
+        "tex":  "1280x1600",
         "needAI":  true,
-        "note":  "no frame: old thumbnail"
+        "note":  "no frame: old thumbnail +AI"
     },
     {
         "img":  "1nmYoq82Q328AXlzluhOXkUuuSG-g74Ic",
         "sku":  "153 16015",
         "native":  "400x500",
-        "tex":  "800x1000",
+        "tex":  "1280x1600",
         "needAI":  true,
-        "note":  "no frame: old thumbnail"
+        "note":  "no frame: old thumbnail +AI"
     },
     {
         "img":  "1ap4OJMSWn5NE-S8yQKpcQ_etHyNk7KC3",
         "sku":  "153 20025",
         "native":  "400x500",
-        "tex":  "800x1000",
+        "tex":  "1280x1600",
         "needAI":  true,
-        "note":  "no frame: old thumbnail"
+        "note":  "no frame: old thumbnail +AI"
     },
     {
         "img":  "16YA8fj9TkyT-qlA7pkzoZuKrLrfw7LR9",
         "sku":  "027 17020",
         "native":  "400x500",
-        "tex":  "800x1000",
+        "tex":  "1280x1600",
         "needAI":  true,
-        "note":  "no frame: old thumbnail"
+        "note":  "no frame: old thumbnail +AI"
     },
     {
         "img":  "1MrKf1nMz0zZC2g-6U8jNxpZkJuuWBZcs",
