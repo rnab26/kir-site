@@ -393,6 +393,8 @@
   }
   var obl = $('[data-orders]');
   if (obl) { var list = load(OKEY, []); obl.innerHTML = list.length ? list.map(function (x) { return orderCard(x, true); }).join('') : '<p class="lead">' + esc(T.noOrders) + '</p><p><a class="btn" href="' + pageUrl('catalog/') + '">' + esc(T.viewAll) + '</a></p>'; }
+  /* Wall studio teaser: before / after slider */
+  $$('[data-ba]').forEach(function (f) { var r = $('[data-ba-range]', f); if (!r) return; var set = function () { f.style.setProperty('--p', r.value + '%'); }; r.addEventListener('input', set); set(); });
   /* Product page: variant picker + gallery tabs */
   var prod = $('[data-product]');
   if (prod) {

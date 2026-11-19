@@ -38,7 +38,12 @@ ex. `"cat": "stone", "match": "אבן גמיש"`) ; le produit garde son univers
 | Confirmation `/order/` + Mes commandes `/orders/` | Numéro HI-AAMMJJ-XXXX, récapitulatif, impression, renvoi WhatsApp (historique gardé dans le navigateur du client) |
 | Contact | WhatsApp, téléphone, adresse, horaires, Google Maps intégré, boutons Maps / Waze |
 | Pages légales | Conditions générales, confidentialité, livraison/retours (loi israélienne 14 jours), déclaration d'accessibilité (IS 5568) |
-| Studio, calculateur, guide | Simulation de mur, calcul du nombre de lames (+ ajout direct au panier), contenu SEO |
+| Studio mur `/experience/` | Page immersive : la lame 035 en 3D en direct (three.js, profil réel, texture réelle), puis le produit choisi posé pièce par pièce sur les 3 murs d'une vraie photo (Unsplash), avec compteur pièces / m² / prix. Tous les produits qui ont une face à l'échelle (`data/face-dims.json`) sont proposés. Liens « Voir sur le mur » sur les fiches et aperçu avant/après à l'accueil |
+| Calculateur, guide | Calcul du nombre de lames (+ ajout direct au panier), contenu SEO |
+
+Studio mur, fichiers : `templates/experience.html` (page), `data/content-exp.json` (textes he/fr/en), `scripts/experience.ps1` (génération),
+`src/assets/js/experience.js` (3D + pose sur photo), `src/assets/exp/` (photo, masque des murs, lumière du mur, textures 3D, avant/après).
+Les mesures de la photo viennent de `scripts/room-prep.ps1` ; `scripts/RoomShot.cs` refait les images fixes (et servira aux images des Reels).
 
 Sur toutes les pages : sélecteur de langue עב / EN / FR dans l'en-tête (et suggestion automatique selon la langue du navigateur),
 bouton WhatsApp flottant (message pré-rempli avec le produit consulté), menu d'accessibilité, « vus récemment ».

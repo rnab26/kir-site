@@ -350,7 +350,7 @@ function LangSwitch($L, [string]$path) {
 }
 function HeaderHtml($L, [string]$path) {
   $nav = ''
-  foreach ($k in @(@('catalog', 'catalog/'), @('looks', 'looks/'), @('studio', 'studio/'), @('guide', 'guide/'), @('contact', 'contact/'))) {
+  foreach ($k in @(@('catalog', 'catalog/'), @('looks', 'looks/'), @('studio', 'experience/'), @('guide', 'guide/'), @('contact', 'contact/'))) {
     $cur = if ($path -eq $k[1]) { ' aria-current="page"' } else { '' }
     $a = '<a href="' + (Href $L $k[1]) + '"' + $cur + '>' + (Enc (P $L.nav $k[0])) + '</a>'
     if ($k[0] -eq 'catalog') {
@@ -457,33 +457,8 @@ function SectionHead([string]$title, [string]$lead, [string]$kicker = '', [strin
   '<div class="section-head reveal">' + $k + '<' + $tag + '>' + (Enc $title) + '</' + $tag + '>' + $ld + '</div>'
 }
 
-function StudioHtml($L, $first, [string]$tag = 'h2') {
-  $S = $L.studio
-  $ids = New-Object System.Collections.ArrayList
-  if ($first) { [void]$ids.Add($first.img) }
-  foreach ($id in $Tax.studioSwatches) { if (-not $ids.Contains($id)) { [void]$ids.Add($id) } }
-  $sw = ''; $k = 0
-  foreach ($id in $ids) {
-    $it = $ById[$id]; if (-not $it) { continue }
-    $sel = if ($k -eq 0) { 'true' } else { 'false' }
-    $sw += '<button type="button" class="swatch" role="radio" aria-checked="' + $sel + '" data-tex="' + (TexUrl $it.img) + '" data-flute="' + $(if ($it.fl) { '1' } else { '0' }) + '" title="' + (Enc (NameOf $L $it)) + '"><img src="' + (TexUrl $it.img) + '" alt="' + (Enc (NameOf $L $it)) + '" width="56" height="70" loading="lazy"></button>'
-    $k++
-  }
-  $f0 = $ById[$ids[0]]
-  '<section class="studio" id="studio"><div class="wrap studio-grid">' +
-  '<div class="studio-copy reveal"><p class="kicker">' + (Enc (P $L.nav 'studio')) + '</p><' + $tag + '>' + (Enc $S.title) + '</' + $tag + '><p class="lead">' + (Enc $S.lead) + '</p>' +
-  '<p class="label" id="sw-label">' + (Enc $S.pick) + '</p><div class="swatches" role="radiogroup" aria-labelledby="sw-label" data-swatches>' + $sw + '</div>' +
-  '<div class="studio-controls"><div class="seg" role="group"><button type="button" aria-pressed="true" data-mode="back">' + (Enc $S.wallBack) + '</button><button type="button" aria-pressed="false" data-mode="all">' + (Enc $S.wallAll) + '</button></div>' +
-  '<div class="seg" role="group"><button type="button" aria-pressed="true" data-light="day">' + (Enc $S.day) + '</button><button type="button" aria-pressed="false" data-light="evening">' + (Enc $S.evening) + '</button></div>' +
-  '<label class="check"><input type="checkbox" data-flutes' + $(if ($f0.fl) { ' checked' } else { '' }) + '> ' + (Enc $S.flutes) + '</label></div>' +
-  '<p class="note">' + (Enc (T $L 'illustration')) + '</p></div>' +
-  '<div class="room reveal" data-room data-mode="back" data-light="day" data-flute="' + $(if ($f0.fl) { '1' } else { '0' }) + '" style="--tex:url(' + (TexUrl $f0.img) + ')" aria-hidden="true"><div class="stage"><div class="scene">' +
-  '<div class="w back"><span class="glow"></span></div><div class="w left"><span class="window"></span></div><div class="w right"></div><div class="floor"></div><div class="ceil"><span class="strip"></span></div>' +
-  '<div class="prop sofa"><i class="sb"></i><i class="seat"></i><i class="arm a1"></i><i class="arm a2"></i><i class="cushion"></i></div><div class="prop table"><i></i></div><div class="prop lamp"><i class="shade"></i><i class="pole"></i></div><div class="prop plant"><i class="pot"></i><i class="leaf l1"></i><i class="leaf l2"></i><i class="leaf l3"></i></div>' +
-  '</div></div><div class="light-sweep"></div></div>' +
-  '</div></section>'
-}
-
+. (Join-Path $Root 'scripts/experience.ps1')
+function StudioHtml($L, $first, [string]$tag = 'h2') { ExpTeaser $L $first $tag }   # the old 2D room is replaced by the wall studio teaser
 function CalcHtml($L, $sel, [string]$tag = 'h2') {
   $C = $L.calc
   if (-not $script:CalcCache.ContainsKey($L.lang)) {
@@ -640,7 +615,7 @@ function VariantBlock($L, $it, $cat, [bool]$sel) {
   $url = (Abs $L ('p/' + $fm.slug + '/')) + $(if ($fm.n -gt 1) { '?v=' + $it.slug } else { '' })
   $waText = (T $L 'listIntro') + ' ' + $name + ' (' + $it.ref + ') ' + $url
   $ask = if ($Wa) { '<a class="btn btn-ghost-dark" href="https://wa.me/' + $Wa + '?text=' + [Uri]::EscapeDataString($waText) + '" rel="noopener">' + $Icons.wa + (Enc (T $L 'ask')) + '</a>' } else { '' }
-  $wall = if ($it.c -in $PlateCats) { '<a class="btn btn-ghost-dark" href="#studio">' + (Enc (T $L 'seeOnWall')) + '</a>' } else { '' }
+  $wall = if (ExpHasFace $it) { '<a class="btn btn-ghost-dark" href="' + (ExpHref $L $it.img) + '">' + (Enc (T $L 'seeOnWall')) + '</a>' } else { '' }
   '<div class="vblock" data-img="' + $it.img + '" data-vb="' + $it.slug + '"' + $(if ($sel) { '' } else { ' hidden' }) + '>' + $avail +
   '<div class="pd-price">' + (PriceHtml $L $it) + $m2 + '</div><dl class="specs">' + $specs + '</dl>' +
   '<div class="pd-actions"><label class="qty-pick"><span class="sr">' + (Enc (T $L 'qty')) + '</span><button type="button" data-step="-1" aria-label="-">-</button><input type="number" min="1" max="999" value="1" inputmode="numeric" data-qty-in><button type="button" data-step="1" aria-label="+">+</button></label><button type="button" class="btn btn-dark" data-add="' + $it.slug + '" data-cart-add data-label>' + (Enc (T $L 'add')) + '</button>' + $ask + $wall + '</div></div>'
@@ -814,6 +789,9 @@ foreach ($lang in $Langs) {
   $body = (CrumbHtml $L $crumb) + (Band (P $L.nav 'studio') (P $L.studio 'title') (P $L.studio 'lead') -1 $L) + (StudioHtml $L $null 'h2') + (CalcHtml $L $null)
   Page $L @{ path = 'studio/'; title = ((P $L.studio 'title') + ' - ' + (P $L.calc 'title') + ' | ' + (BrandOf $L)); desc = ((P $L.studio 'lead') + ' ' + (P $L.calc 'lead')); body = $body; cls = 'studio-page'; ld = @((CrumbLd $L $crumb)) }
   if ($lang -eq 'he') { AddUrl 'studio/' '0.7' }
+  # Wall studio (live 3D slat + products laid on a real room photo)
+  ExperiencePage $L
+  if ($lang -eq 'he') { AddUrl 'experience/' '0.8' }
 
   # Guide
   $g = ''; $toc = ''; $n = 0

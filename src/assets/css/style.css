@@ -648,3 +648,21 @@ body.has-buybar .site-footer { padding-bottom: 96px; }
   .nav .drop .drop-all { border-top: 0; font-weight: 600; }
   .nav { max-height: calc(100svh - var(--header)); overflow-y: auto; }
 }
+
+/* Wall studio teaser: before / after on the real room photo, link to the immersive page */
+.exp-teaser { background: var(--dark); color: var(--on-dark); padding-block: clamp(56px, 9vw, 120px); }
+.exp-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(28px, 5vw, 72px); align-items: center; }
+.exp-copy .kicker { color: var(--brass); }
+.exp-copy .lead { color: var(--on-dark-2); }
+.exp-copy .btn-dark { background: var(--on-dark); color: var(--ink); border-color: var(--on-dark); }
+.exp-copy .btn-dark:hover { background: #fff; }
+.ba { position: relative; margin: 0; border-radius: var(--r-lg); overflow: hidden; aspect-ratio: 1600 / 889; max-width: 100%; background: var(--dark-2); --p: 55%; touch-action: pan-y; }
+.ba img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.ba .ba-after { clip-path: inset(0 calc(100% - var(--p)) 0 0); }
+.ba-line { position: absolute; top: 0; bottom: 0; left: var(--p); width: 2px; margin-left: -1px; background: var(--on-dark); box-shadow: 0 0 0 1px rgba(0,0,0,.15); pointer-events: none; }
+.ba-line::after { content: ""; position: absolute; top: 50%; left: 50%; width: 38px; height: 38px; margin: -19px 0 0 -19px; border-radius: 50%; background: var(--on-dark); box-shadow: 0 4px 18px rgba(0,0,0,.35); }
+.ba-tag { position: absolute; top: 14px; padding: 6px 12px; border-radius: 999px; background: rgba(27,25,22,.6); color: var(--on-dark); font-size: .8rem; font-weight: 600; letter-spacing: .04em; pointer-events: none; }
+.ba-a { left: 14px; } .ba-b { right: 14px; }
+.ba input[type="range"] { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; }
+.ba input[type="range"]:focus-visible + .ba-line, .ba:focus-within .ba-line::after { outline: 2px solid var(--brass); outline-offset: 2px; }
+@media (max-width: 860px) { .exp-grid { grid-template-columns: 1fr; } }
