@@ -96,10 +96,7 @@ foreach ($ph in $byPhoto.Keys) {
     if ($target -ne $long) { $sc = $target / $long; $tex = $tex.Resize([int]($tex.W * $sc), [int]($tex.H * $sc)) }
     [Kit]::Sharpen($tex, $(if ($native -lt 700 -and -not (Test-Path $ai)) { 0.8 } else { 0.45 }))
     $tex.SaveJpg((Join-Path $img "tex/$id.jpg"), 88)
-    $m = PlateModel $p
-    $pack = [Kit]::RenderPack($tex, $m.kind, $m.w, $m.h, $m.tile, $m.tileH, $m.slats, $m.mirror, ($p.f -eq 'g'), $m.synth, $m.sample, (PlateSeed $id))
-    $pack.SaveJpg((Join-Path $img "pack/$id.jpg"), 88)
-    $pack.Resize(520, 650).SaveJpg((Join-Path $img "thumb/$id.jpg"), 84)
+    [void](SavePlateImages $tex $p $img)
     [void]$report.Add([ordered]@{ img = $id; sku = $p.sku; native = "$($raw.W)x$($raw.H)"; tex = "$($tex.W)x$($tex.H)"; needAI = ($native -lt 700); note = $note })
   }
 }

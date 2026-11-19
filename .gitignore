@@ -4,3 +4,4 @@ _site/
 Thumbs.db
 .DS_Store
 tools-ext/
+_preview/

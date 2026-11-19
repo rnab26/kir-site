@@ -683,7 +683,14 @@ public static class Kit
     // kind: plate | photo. Returns a 1000x1250 product shot.
     public static KImg RenderPack(KImg tex, string kind, double wcm, double hcm, double tileWcm, double tileHcm, int slats, bool mirrorX, bool gloss)
     { return RenderPack(tex, kind, wcm, hcm, tileWcm, tileHcm, slats, mirrorX, gloss, "tile", 0, 1); }
+    // Flat front face of a plate at true scale (long side 1300 px, ~4.6 px/cm for 280 cm), no decor or perspective.
+    // Also exported as src/assets/img/face/<id>.jpg for the 3D studio.
+    public static KImg PlateFace(KImg tex, double wcm, double hcm, double tileWcm, double tileHcm, int slats, bool mirrorX, string synth, double sampleWcm, int seed)
+    { return synth == "tile" ? PlateSurface(TrimWhite(tex), wcm, hcm, tileWcm, tileHcm, slats, mirrorX, 1300) : PlateSynth(tex, synth, wcm, hcm, sampleWcm, slats, 1300, seed); }
     public static KImg RenderPack(KImg tex, string kind, double wcm, double hcm, double tileWcm, double tileHcm, int slats, bool mirrorX, bool gloss, string synth, double sampleWcm, int seed)
+    { return RenderPack(tex, kind, wcm, hcm, tileWcm, tileHcm, slats, mirrorX, gloss, synth, sampleWcm, seed, null); }
+    // faceIn: a face already built with PlateFace (same arguments), to avoid synthesising it twice.
+    public static KImg RenderPack(KImg tex, string kind, double wcm, double hcm, double tileWcm, double tileHcm, int slats, bool mirrorX, bool gloss, string synth, double sampleWcm, int seed, KImg faceIn)
     {
         int W = 1000, H = 1250; KImg c = new KImg(W, H); Background(c);
         if (kind == "photo")
@@ -721,7 +728,7 @@ public static class Kit
         float[] em = new float[W * H]; FillQuadMask(em, W, H, edge);
         for (int p = 0, i = 0; p < em.Length; p++, i += 3) if (em[p] > 0) { c.D[i] = (byte)eb; c.D[i + 1] = (byte)eg; c.D[i + 2] = (byte)er; }
         // plate face
-        KImg face = synth == "tile" ? PlateSurface(TrimWhite(tex), wcm, hcm, tileWcm, tileHcm, slats, mirrorX, 1300) : PlateSynth(tex, synth, wcm, hcm, sampleWcm, slats, 1300, seed);
+        KImg face = faceIn ?? PlateFace(tex, wcm, hcm, tileWcm, tileHcm, slats, mirrorX, synth, sampleWcm, seed);
         double[] inv = Invert(SquareToQuad(q));
         int bx0 = (int)Math.Floor(q[0]) - 2, bx1 = (int)Math.Ceiling(q[2]) + 2, by0 = (int)Math.Floor(q[1]) - 2, by1 = (int)Math.Ceiling(q[7]) + 2;
         double pxU = 1.0 / appW, pxV = 1.0 / Hs;
@@ -759,4 +766,315 @@ public static class Kit
         }
         return c;
     }
+
+    // ---------- fluted slats: find the flutes, straighten them, keep exactly the slat ----------
+    static double[] BandProfile(KImg s, int y0, int y1)
+    {
+        int W = s.W; double[] p = new double[W]; y0 = Math.Max(0, y0); y1 = Math.Min(s.H, Math.Max(y0 + 1, y1));
+        for (int y = y0; y < y1; y++) for (int x = 0; x < W; x++) { int i = (y * W + x) * 3; p[x] += 0.114 * s.D[i] + 0.587 * s.D[i + 1] + 0.299 * s.D[i + 2]; }
+        int r = Math.Max(1, W / 160); double[] q = new double[W];
+        for (int x = 0; x < W; x++) { double t = 0; int n = 0; for (int d = -r; d <= r; d++) { int xx = x + d; if (xx >= 0 && xx < W) { t += p[xx]; n++; } } q[x] = t / n / (y1 - y0); }
+        return q;
+    }
+    static double[] HighPass(double[] p, int r)
+    {
+        double[] o = new double[p.Length];
+        for (int x = 0; x < p.Length; x++) { double t = 0; int n = 0; for (int d = -r; d <= r; d++) { int xx = x + d; if (xx >= 0 && xx < p.Length) { t += p[xx]; n++; } } o[x] = p[x] - t / n; }
+        return o;
+    }
+    static double FlutePeriod(double[] p)
+    {
+        int W = p.Length; double[] h = HighPass(p, Math.Max(3, W / 5)); int best = -1; double bc = 0;
+        double e0 = 0; for (int x = 0; x < W; x++) e0 += h[x] * h[x]; if (e0 <= 0) return -1;
+        for (int lag = Math.Max(4, W / 14); lag <= W / 2; lag++)
+        {
+            double c = 0; int n = 0; for (int x = 0; x + lag < W; x++) { c += h[x] * h[x + lag]; n++; }
+            c = c / n / (e0 / W); if (c > bc) { bc = c; best = lag; }
+        }
+        return bc > 0.35 ? best : -1;
+    }
+    static List<int> GrooveMinima(double[] p, double P)
+    {
+        var g = new List<int>(); int W = p.Length, win = Math.Max(2, (int)(P / 3));
+        double mean = 0; foreach (double v in p) mean += v; mean /= W; double sd = 0; foreach (double v in p) sd += (v - mean) * (v - mean); sd = Math.Sqrt(sd / W);
+        for (int x = 1; x < W - 1; x++)
+        {
+            bool isMin = true; for (int d = -win; d <= win && isMin; d++) { int xx = x + d; if (xx >= 0 && xx < W && p[xx] < p[x]) isMin = false; }
+            if (!isMin) continue;
+            double loc = 0; int n = 0; for (int d = (int)(-P / 2); d <= P / 2; d++) { int xx = x + d; if (xx >= 0 && xx < W) { loc += p[xx]; n++; } } loc /= n;
+            if (p[x] < loc - 0.25 * sd && (g.Count == 0 || x - g[g.Count - 1] > P * 0.6)) g.Add(x);
+        }
+        return g;
+    }
+    // Straightens a fluted sample: every groove is tracked down the photo and mapped to a vertical line
+    // (removes tilt and the perspective that makes flutes converge). Returns null if no flutes are found.
+    static KImg StraightenFlutes(KImg s, out double period, out List<double> grooves)
+    {
+        period = -1; grooves = null; int W = s.W, H = s.H;
+        double[] pm = BandProfile(s, (int)(H * 0.3), (int)(H * 0.7)); double P = FlutePeriod(pm); if (P < 0) return null;
+        List<int> g0 = GrooveMinima(pm, P); if (g0.Count < 2) return null;
+        int nb = 8, ng = g0.Count; double[] a = new double[ng], cs = new double[ng];
+        for (int i = 0; i < ng; i++)
+        {
+            double sy = 0, sx = 0, syy = 0, sxy = 0; int n = 0;
+            for (int b = 0; b < nb; b++)
+            {
+                int y0 = H * b / nb, y1 = H * (b + 1) / nb; double[] bp = BandProfile(s, y0, y1);
+                int lo = Math.Max(0, (int)(g0[i] - P / 3)), hi = Math.Min(W - 1, (int)(g0[i] + P / 3)), bx = g0[i];
+                for (int x = lo; x <= hi; x++) if (bp[x] < bp[bx]) bx = x;
+                double yc = (y0 + y1) / 2.0 - H / 2.0; sy += yc; sx += bx; syy += yc * yc; sxy += yc * bx; n++;
+            }
+            double slope = (sxy - sy * sx / n) / Math.Max(1e-6, syy - sy * sy / n); if (Math.Abs(slope) > 0.25) slope = 0;
+            a[i] = sx / n - slope * sy / n; cs[i] = slope;
+        }
+        KImg o = new KImg(W, H);
+        for (int y = 0; y < H; y++)
+        {
+            double yc = y - H / 2.0; double[] S = new double[ng]; for (int i = 0; i < ng; i++) S[i] = a[i] + cs[i] * yc;
+            for (int x = 0; x < W; x++)
+            {
+                int i = 0; while (i < ng - 2 && x > a[i + 1]) i++;
+                double k = (S[i + 1] - S[i]) / Math.Max(1e-6, a[i + 1] - a[i]); double sx = S[i] + (x - a[i]) * k;
+                double bl, gr, rd; s.Sample(Math.Max(0, Math.Min(W - 1, sx)), y, out bl, out gr, out rd);
+                int di = (y * W + x) * 3; o.D[di] = (byte)bl; o.D[di + 1] = (byte)gr; o.D[di + 2] = (byte)rd;
+            }
+        }
+        period = P; grooves = new List<double>(a); return o;
+    }
+    static double[] Resample(double[] p, double x0, double x1, int n)
+    {
+        double[] r = new double[n]; double m = 0;
+        for (int k = 0; k < n; k++) { double x = x0 + (x1 - x0) * (k + 0.5) / n; int xi = Math.Max(0, Math.Min(p.Length - 1, (int)x)); r[k] = p[xi]; m += r[k]; }
+        m /= n; double sd = 0; for (int k = 0; k < n; k++) { r[k] -= m; sd += r[k] * r[k]; } sd = Math.Sqrt(sd / n) + 1e-6; for (int k = 0; k < n; k++) r[k] /= sd;
+        return r;
+    }
+    // Keeps exactly the slat: the full flutes between grooves, plus an edge flute only if it really looks like one.
+    static KImg CropToSlat(KImg s, double P, List<double> g, out int flutes)
+    {
+        flutes = 0;
+        int W = s.W; double[] p = BandProfile(s, s.H / 5, s.H * 4 / 5); const int N = 48; var gAll = new List<double>(g);
+        // flutes between consecutive grooves; drop end segments that do not look like the typical flute
+        int i0 = 0, i1 = g.Count - 1;
+        double[] mean = new double[N]; int nf = 0;
+        for (int i = 0; i + 1 < g.Count; i++) { double w = g[i + 1] - g[i]; if (w < 0.7 * P || w > 1.3 * P) continue; double[] r = Resample(p, g[i], g[i + 1], N); for (int k = 0; k < N; k++) mean[k] += r[k]; nf++; }
+        if (nf == 0) return s;
+        Diag = "";
+        Func<double, double, double> corr = delegate (double x0, double x1) { double[] r = Resample(p, x0, x1, N); double c = 0; for (int k = 0; k < N; k++) c += r[k] * mean[k] / nf; return c / N; };
+        while (i1 - i0 > 2 && (g[i0 + 1] - g[i0] < 0.7 * P || g[i0 + 1] - g[i0] > 1.3 * P || corr(g[i0], g[i0 + 1]) < 0.5)) i0++;
+        while (i1 - i0 > 2 && (g[i1] - g[i1 - 1] < 0.7 * P || g[i1] - g[i1 - 1] > 1.3 * P || corr(g[i1 - 1], g[i1]) < 0.5)) i1--;
+        double left = g[i0], right = g[i1]; int nfl = i1 - i0;
+        int keep = i1 - i0; var gk = new List<double>(); for (int i = i0; i <= i1; i++) gk.Add(g[i]); g = gk;
+        double Pm = (right - left) / Math.Max(1, g.Count - 1);
+        double cl = left - Pm >= -0.08 * Pm ? corr(Math.Max(0, left - Pm), left) : -9, cr = right + Pm <= W + 0.08 * Pm ? corr(right, Math.Min(W, right + Pm)) : -9;
+        if (cl > 0.55) { left = Math.Max(0, left - Pm); nfl++; }
+        if (cr > 0.55) { right = Math.Min(W, right + Pm); nfl++; }
+        Diag = string.Format(System.Globalization.CultureInfo.InvariantCulture, "P={0:0.0} grooves=[{1}] kept {2}..{3} corrL={4:0.00} corrR={5:0.00} -> x {6:0}..{7:0}, {8} flutes", P, string.Join(",", gAll.ConvertAll(v => v.ToString("0"))), i0, i1, cl, cr, left, right, nfl);
+        int cx0 = (int)Math.Round(left), cx1 = (int)Math.Round(right); if (cx1 - cx0 < W / 4) return s;
+        flutes = nfl;
+        return s.Crop(cx0, 0, cx1 - cx0, s.H);
+    }
+    // Evens the brightness along the length (photo light falloff) without touching the flutes across the width.
+    static void FlattenRows(KImg s, int radius)
+    {
+        int W = s.W, H = s.H; double[] rm = new double[H]; double gm = 0;
+        for (int y = 0; y < H; y++) { double t = 0; for (int x = 0; x < W; x++) { int i = (y * W + x) * 3; t += 0.114 * s.D[i] + 0.587 * s.D[i + 1] + 0.299 * s.D[i + 2]; } rm[y] = t / W; gm += rm[y]; }
+        gm /= H; double[] sm = new double[H];
+        for (int y = 0; y < H; y++) { double t = 0; int n = 0; for (int d = -radius; d <= radius; d++) { int yy = y + d; if (yy >= 0 && yy < H) { t += rm[yy]; n++; } } sm[y] = t / n; }
+        for (int y = 0; y < H; y++) { double g = Math.Max(0.85, Math.Min(1.18, gm / Math.Max(1, sm[y]))); for (int x = 0; x < W; x++) { int i = (y * W + x) * 3; for (int c = 0; c < 3; c++) s.D[i + c] = (byte)Math.Min(255, s.D[i + c] * g); } }
+    }
+    // The slat as it really is: straight, exactly its flutes, even light. Used for the faces, the wall and the loupe.
+    public static string Diag = "";
+    static KImg PrepareSlat(KImg tex, out int flutes)
+    {
+        flutes = 0;
+        KImg s = TrimWhite(tex);
+        if (Anisotropy(s) < 0.6) s = Rotate90(s);
+        double P; List<double> g; KImg st = StraightenFlutes(s, out P, out g);
+        if (st != null) s = CropToSlat(st, P, g, out flutes); else { s = Deskew(s); Diag = "no flutes found"; }
+        FlattenLight(s, false, true); FlattenRows(s, Math.Max(4, s.H / 6));
+        return s;
+    }
+
+    // ---------- slats: two loose slats at true proportions ----------
+    // One slat face at ppc px/cm from the prepared sample (straight, exactly the slat), continued along its length.
+    // The grain is stretched lengthwise (stretch) and blocks are large so the joins stay discreet.
+    static KImg SlatFace(KImg prep, double wcm, double lcm, double ppc, int seed, double stretch)
+    {
+        int fw = Math.Max(6, (int)Math.Round(wcm * ppc)), fh = Math.Max(8, (int)Math.Round(lcm * ppc));
+        int sh = Math.Max(8, (int)Math.Round(fw * (double)prep.H / prep.W * Math.Max(1, stretch)));
+        KImg s = prep.Resize(fw, sh);
+        int B = Math.Max(8, (int)(sh * 0.75));
+        return Quilt(s, fw, fh, B, B, Math.Max(4, B / 3), true, false, seed, false);
+    }
+    static void MeanColor(KImg f, out double b, out double g, out double r)
+    {
+        b = 0; g = 0; r = 0; int n = 0; for (int i = 0; i < f.D.Length; i += 3 * 7) { b += f.D[i]; g += f.D[i + 1]; r += f.D[i + 2]; n++; }
+        b /= n; g /= n; r /= n;
+    }
+    // Draws a straight textured rectangle with soft light, optional gloss and thin edge highlights.
+    static void DrawSlatRect(KImg c, KImg face, double x0, double y0, double w, double h, bool gloss)
+    {
+        int W = c.W, H = c.H;
+        for (int y = Math.Max(0, (int)Math.Floor(y0)); y < Math.Min(H, (int)Math.Ceiling(y0 + h)); y++) for (int x = Math.Max(0, (int)Math.Floor(x0)); x < Math.Min(W, (int)Math.Ceiling(x0 + w)); x++)
+        {
+            double ax = Math.Max(0, Math.Min(1, Math.Min(x + 1 - x0, x0 + w - x))), ay = Math.Max(0, Math.Min(1, Math.Min(y + 1 - y0, y0 + h - y))), a = ax * ay; if (a <= 0) continue;
+            double u = (x + 0.5 - x0) / w, v = (y + 0.5 - y0) / h;
+            double b, g, r; face.Sample(Math.Max(0, Math.Min(1, u)) * (face.W - 1), Math.Max(0, Math.Min(1, v)) * (face.H - 1), out b, out g, out r);
+            double light = 1.04 - 0.04 * u - 0.06 * v;
+            double spec = (gloss ? 0.14 : 0.03) * Math.Exp(-Math.Pow((v - 0.30) / 0.22, 2)) * 255;
+            b = b * light + spec; g = g * light + spec; r = r * light + spec;
+            double ex = (x + 0.5 - x0);
+            if (ex < 1.2) { b += 16; g += 16; r += 16; } else if (x0 + w - (x + 0.5) < 1.2) { b *= 0.80; g *= 0.80; r *= 0.80; }
+            Blend(c, x, y, a, b, g, r);
+        }
+    }
+    static void Blend(KImg c, int x, int y, double a, double b, double g, double r)
+    {
+        if (x < 0 || y < 0 || x >= c.W || y >= c.H || a <= 0) return; if (a > 1) a = 1; int i = (y * c.W + x) * 3;
+        c.D[i] = (byte)Math.Max(0, Math.Min(255, c.D[i] * (1 - a) + b * a)); c.D[i + 1] = (byte)Math.Max(0, Math.Min(255, c.D[i + 1] * (1 - a) + g * a)); c.D[i + 2] = (byte)Math.Max(0, Math.Min(255, c.D[i + 2] * (1 - a) + r * a));
+    }
+    // Top end of a standing slat, seen slightly from above (4x4 supersampled).
+    // Fluted slats: hollow half-round tubes (one per flute) on a flat base plate, crowns towards the viewer;
+    // flat slats: a plain edge of the board thickness.
+    static void SlatTop(KImg c, double x0, double w, double yt, int flutes, double ppc, double mb, double mg, double mr)
+    {
+        bool fl = flutes >= 2 && flutes <= 10; double fwcm = w / ppc / Math.Max(1, flutes);
+        double T = fl ? (fwcm / 2 + 0.5) * ppc : 1.2 * ppc, bse = fl ? 0.5 * ppc : T, k = 0.55;
+        double rr = T - bse, ri = 0.78;
+        double eb = Math.Min(255, mb * 1.06 + 10), eg = Math.Min(255, mg * 1.06 + 10), er = Math.Min(255, mr * 1.06 + 10);
+        int ytop = (int)Math.Floor(yt - k * T) - 1, ybot = (int)Math.Ceiling(yt);
+        for (int y = ytop; y <= ybot; y++) for (int x = (int)Math.Floor(x0); x <= (int)Math.Ceiling(x0 + w); x++)
+        {
+            double sb = 0, sg = 0, sr = 0, cov = 0;
+            for (int sy = 0; sy < 4; sy++) for (int sx = 0; sx < 4; sx++)
+            {
+                double px = x + (sx + 0.5) / 4, py = y + (sy + 0.5) / 4; if (px < x0 || px > x0 + w || py > yt) continue;
+                double z = T - (yt - py) / k; if (z < 0) continue;   // z: distance from the wall
+                double cb, cg, cr;
+                if (z <= bse) { cb = eb; cg = eg; cr = er; }
+                else
+                {
+                    double uu = (px - x0) / w * flutes; int j = Math.Min(flutes - 1, (int)uu); double t = (uu - j) * 2 - 1;
+                    double zo = bse + rr * Math.Sqrt(Math.Max(0, 1 - t * t)), zi = bse + rr * ri * Math.Sqrt(Math.Max(0, 1 - (t / ri) * (t / ri)));
+                    if (z > zo) { cb = mb * 0.72; cg = mg * 0.72; cr = mr * 0.72; }            // side of the flute, seen in the groove
+                    else if (Math.Abs(t) < ri && z < zi) { cb = mb * 0.36; cg = mg * 0.36; cr = mr * 0.36; }   // hollow
+                    else { cb = eb * (0.94 + 0.06 * Math.Abs(t)); cg = eg * (0.94 + 0.06 * Math.Abs(t)); cr = er * (0.94 + 0.06 * Math.Abs(t)); }
+                }
+                sb += cb; sg += cg; sr += cr; cov++;
+            }
+            if (cov > 0) Blend(c, x, y, cov / 16.0, sb / cov, sg / cov, sr / cov);
+        }
+    }
+    static KImg FlipV(KImg im) { KImg o = new KImg(im.W, im.H); for (int y = 0; y < im.H; y++) Buffer.BlockCopy(im.D, y * im.W * 3, o.D, (im.H - 1 - y) * im.W * 3, im.W * 3); return o; }
+    // Adds `extra` rows below the photo, taken from another part of the same photo whose top matches the photo's
+    // bottom edge best, joined along a minimum-error seam (the photo itself stays untouched).
+    static KImg ExtendBelow(KImg im, int extra, int seed)
+    {
+        if (extra <= 0) return im;
+        int W = im.W, H = im.H, ov = Math.Max(4, H / 4), bh = extra + ov; if (bh > H - 2) return im;
+        Random rnd = new Random(seed); var cand = new List<KeyValuePair<double, int>>();
+        for (int sy = 0; sy <= H - bh; sy += 2)
+        {
+            double e = 0; for (int y = 0; y < ov; y += 1) for (int x = 0; x < W; x += 2) { int a = ((H - ov + y) * W + x) * 3, b = ((sy + y) * W + x) * 3; for (int c = 0; c < 3; c++) { double d = im.D[a + c] - im.D[b + c]; e += d * d; } }
+            if (sy + bh > H - ov) e *= 4;   // right next to the bottom edge: would look like a copy
+            cand.Add(new KeyValuePair<double, int>(e, sy));
+        }
+        cand.Sort((u, v) => u.Key.CompareTo(v.Key)); int psy = cand[0].Value;
+        double[] off = new double[3]; for (int y = 0; y < ov; y++) for (int x = 0; x < W; x += 2) { int a = ((H - ov + y) * W + x) * 3, b = ((psy + y) * W + x) * 3; for (int c = 0; c < 3; c++) off[c] += im.D[a + c] - im.D[b + c]; }
+        for (int c = 0; c < 3; c++) off[c] = Math.Max(-14, Math.Min(14, off[c] / (ov * ((W + 1) / 2)) * 0.8));
+        double[] E = new double[W * ov];
+        for (int x = 0; x < W; x++) for (int y = 0; y < ov; y++)
+        {
+            int a = ((H - ov + y) * W + x) * 3, b = ((psy + y) * W + x) * 3; double e = 0; for (int c = 0; c < 3; c++) { double d = im.D[a + c] - (im.D[b + c] + off[c]); e += d * d; }
+            if (x > 0) { double m = E[(x - 1) * ov + y]; if (y > 0) m = Math.Min(m, E[(x - 1) * ov + y - 1]); if (y < ov - 1) m = Math.Min(m, E[(x - 1) * ov + y + 1]); e += m; }
+            E[x * ov + y] = e;
+        }
+        int[] seam = new int[W]; int bs = 0; for (int y = 1; y < ov; y++) if (E[(W - 1) * ov + y] < E[(W - 1) * ov + bs]) bs = y; seam[W - 1] = bs;
+        for (int x = W - 2; x >= 0; x--) { int p0 = seam[x + 1], b = p0; for (int d = -1; d <= 1; d++) { int y = p0 + d; if (y >= 0 && y < ov && E[x * ov + y] < E[x * ov + b]) b = y; } seam[x] = b; }
+        KImg o = new KImg(W, H + extra); Buffer.BlockCopy(im.D, 0, o.D, 0, im.D.Length);
+        for (int y = 0; y < bh; y++) for (int x = 0; x < W; x++)
+        {
+            double a = y < ov ? Math.Max(0, Math.Min(1, (y - seam[x]) / 10.0 + 0.5)) : 1; if (a <= 0) continue;
+            int di = ((H - ov + y) * W + x) * 3, si = ((psy + y) * W + x) * 3;
+            for (int c = 0; c < 3; c++) o.D[di + c] = (byte)Math.Max(0, Math.Min(255, o.D[di + c] * (1 - a) + (im.D[si + c] + off[c]) * a));
+        }
+        return o;
+    }
+    // Loupe on the real photo: the prepared slat (straight) across the whole circle so every flute shows;
+    // continued along its length (from the photo itself) when the photo is shorter than the circle.
+    static void DrawSlatLoupe(KImg c, KImg prep, double lcx, double lcy, double lr, int seed)
+    {
+        int W = c.W, H = c.H;
+        int dw = (int)Math.Round(2 * lr * 0.96), dh = Math.Max(8, (int)Math.Round(dw * (double)prep.H / prep.W));
+        KImg s = prep.Resize(dw, dh); int need = (int)Math.Ceiling(2 * lr) + 6;
+        if (s.H < need) { int ex = need - s.H, eb = ex / 2; s = ExtendBelow(s, eb, seed); s = FlipV(ExtendBelow(FlipV(s), ex - eb, seed + 1)); }
+        double sx0 = lcx - s.W / 2.0, sy0 = lcy - s.H / 2.0;
+        float[] lm = new float[W * H];
+        for (int y = (int)(lcy - lr - 40); y < lcy + lr + 60; y++) for (int x = (int)(lcx - lr - 40); x < lcx + lr + 50; x++) { if (x < 0 || y < 0 || x >= W || y >= H) continue; if (Dist(x, y, lcx + 8, lcy + 18) < lr) lm[y * W + x] = 1; }
+        BoxBlur(lm, W, H, 16); Shade(c, lm, 0.30, 50, 40, 30);
+        for (int y = (int)(lcy - lr - 12); y < lcy + lr + 12; y++) for (int x = (int)(lcx - lr - 12); x < lcx + lr + 12; x++)
+        {
+            if (x < 0 || y < 0 || x >= W || y >= H) continue;
+            double d = Dist(x + 0.5, y + 0.5, lcx, lcy);
+            if (d <= lr)
+            {
+                double a = Math.Min(1, lr - d), fx = x + 0.5 - sx0, b, g, r;
+                if (fx >= 0 && fx <= s.W) { s.Sample(fx - 0.5, y + 0.5 - sy0 - 0.5, out b, out g, out r); double ea = Math.Min(1, Math.Min(fx, s.W - fx)); if (ea < 1) { b = 236 * (1 - ea) + b * ea; g = 241 * (1 - ea) + g * ea; r = 246 * (1 - ea) + r * ea; } }
+                else { double sh = Math.Max(0, 1 - Math.Abs(fx - (fx < 0 ? 0 : s.W)) / 8.0); b = 236 - 26 * sh; g = 241 - 26 * sh; r = 246 - 26 * sh; }
+                Blend(c, x, y, a, b, g, r);
+            }
+            if (d > lr - 2 && d < lr + 9) { double a = Math.Min(1, Math.Min(d - (lr - 2), lr + 9 - d)); Blend(c, x, y, a, 252, 252, 252); }
+        }
+    }
+    static string CmText(double cm) { return (Math.Abs(cm - Math.Round(cm)) < 0.05 ? Math.Round(cm).ToString("0") : cm.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)) + " cm"; }
+    // Two loose slats standing against the wall, all slats drawn at one common scale (290 cm = 1000 px),
+    // so a 40 cm slat is visibly twice as wide as a 20 cm one. Dimensions are marked; the loupe shows the real photo.
+    public static KImg RenderSlats(KImg tex, double wcm, double lcm, bool gloss, int seed, double stretch)
+    {
+        int W = 1000, H = 1250; KImg c = new KImg(W, H); Background(c);
+        double ppcD = 1000.0 / 290; double Hs = Math.Min(1040, lcm * ppcD), ws = Math.Max(10, wcm * ppcD);
+        double gap = Math.Max(30, ws * 0.55), total = 2 * ws + gap, xs = Math.Round(Math.Max(130, 390 - total / 2));
+        double yBottom = 1095, yTop = yBottom - Hs;
+        int flutes; KImg prep = PrepareSlat(tex, out flutes);
+        double mb, mg, mr; MeanColor(prep, out mb, out mg, out mr);
+        for (int k = 0; k < 2; k++)
+        {
+            KImg face = SlatFace(prep, wcm, lcm, ppcD, seed * 31 + k * 7919, stretch);
+            double x0 = Math.Round(xs + k * (ws + gap)), yt = Math.Round(yTop + k * 5), yb = yt + Hs;
+            float[] sm = new float[W * H];
+            FillQuadMask(sm, W, H, new double[] { x0 + 22, yt + 16, x0 + ws + 30, yt + 16, x0 + ws + 10, yb + 2, x0 + 6, yb + 2 });
+            BoxBlur(sm, W, H, 14); BoxBlur(sm, W, H, 14); Shade(c, sm, 0.30, 70, 56, 44);
+            float[] cm = new float[W * H]; FillQuadMask(cm, W, H, new double[] { x0 - 6, yb - 4, x0 + ws + 10, yb - 4, x0 + ws + 12, yb + 9, x0 - 8, yb + 10 });
+            BoxBlur(cm, W, H, 6); Shade(c, cm, 0.40, 50, 40, 32);
+            DrawSlatRect(c, face, x0, yt, ws, Hs, gloss);
+            SlatTop(c, x0, ws, yt, flutes, ppcD, mb, mg, mr);
+        }
+        DrawSlatLoupe(c, prep, 770, 860, 175, seed);
+        // dimension marks
+        using (Bitmap bmp = c.ToBitmap())
+        {
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.SmoothingMode = SmoothingMode.AntiAlias; g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+                Color ink = Color.FromArgb(205, 104, 92, 80);
+                using (Pen pen = new Pen(ink, 1.6f)) using (Font f = new Font("Segoe UI", 19f, FontStyle.Regular, GraphicsUnit.Pixel)) using (SolidBrush br = new SolidBrush(ink))
+                {
+                    float x0 = (float)xs, x1 = (float)(xs + ws), yw = (float)(yTop - 40);
+                    g.DrawLine(pen, x0, yw, x1, yw); g.DrawLine(pen, x0, yw - 6, x0, yw + 6); g.DrawLine(pen, x1, yw - 6, x1, yw + 6);
+                    string wt = CmText(wcm); SizeF sz = g.MeasureString(wt, f); float tx = (x0 + x1) / 2 - sz.Width / 2; if (tx < 12) tx = 12;
+                    g.DrawString(wt, f, br, tx, yw - sz.Height - 4);
+                    float xl = (float)(xs - 30), y0 = (float)yTop, y1 = (float)yBottom;
+                    g.DrawLine(pen, xl, y0, xl, y1); g.DrawLine(pen, xl - 6, y0, xl + 6, y0); g.DrawLine(pen, xl - 6, y1, xl + 6, y1);
+                    string lt = (lcm / 100.0).ToString("0.00", System.Globalization.CultureInfo.InvariantCulture) + " m"; SizeF s2 = g.MeasureString(lt, f);
+                    g.TranslateTransform(xl - 8, (y0 + y1) / 2 + s2.Width / 2); g.RotateTransform(-90); g.DrawString(lt, f, br, 0, -s2.Height + 2); g.ResetTransform();
+                }
+            }
+            return KImg.FromBitmap(bmp);
+        }
+    }
+    // One straight slat over its whole length (exact width) at ppc px/cm, for the 3D studio (face/<id>.jpg).
+    public static KImg SlatFaceTexture(KImg tex, double wcm, double lcm, double ppc, int seed, double stretch)
+    { int n; KImg prep = PrepareSlat(tex, out n); return SlatFace(prep, wcm, lcm, ppc, seed * 31, stretch); }
+    // Debug: the prepared slat sample (straight, cropped to its flutes).
+    public static KImg PreparedSlat(KImg tex) { int n; return PrepareSlat(tex, out n); }
 }
