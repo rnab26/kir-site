@@ -423,11 +423,15 @@ public static class Kit
     { return Quilt(src, outW, outH, Bw, Bh, ov, vertOnly, flips, seed, false); }
     // allowCont: the sample may continue into itself (fewer seams; used for straight stripes that must stay aligned)
     public static KImg Quilt(KImg src, int outW, int outH, int Bw, int Bh, int ov, bool vertOnly, bool flips, int seed, bool allowCont)
+    { return Quilt(new KImg[] { src }, outW, outH, Bw, Bh, ov, vertOnly, flips, seed, allowCont); }
+    // Several samples of the same size (e.g. the flutes of one slat): every block may come from any of them.
+    public static KImg Quilt(KImg[] alts, int outW, int outH, int Bw, int Bh, int ov, bool vertOnly, bool flips, int seed, bool allowCont)
     {
-        Random rnd = new Random(seed);
+        Random rnd = new Random(seed); KImg src = alts[0];
         int sw = src.W, sh = src.H;
-        if (vertOnly) { if (outW != sw) src = src.Resize(outW, Math.Max(2, (int)Math.Round(sh * (double)outW / sw))); sw = src.W; sh = src.H; }
-        Bw = vertOnly ? outW : Math.Max(8, Math.Min(Bw, sw - 2)); Bh = Math.Max(8, Math.Min(Bh, sh - 2)); ov = Math.Max(2, Math.Min(ov, Math.Min(Bw, Bh) / 3));
+        if (vertOnly && outW != sw) { int nh = Math.Max(2, (int)Math.Round(sh * (double)outW / sw)); KImg[] ra = new KImg[alts.Length]; for (int j = 0; j < alts.Length; j++) ra[j] = alts[j].Resize(outW, nh); alts = ra; src = alts[0]; sw = src.W; sh = src.H; }
+        int na = alts.Length; int[] ca = new int[vertOnly ? 260 : 360];
+        Bw = vertOnly ? outW : Math.Max(8, Math.Min(Bw, sw - 2)); Bh = Math.Max(8, Math.Min(Bh, sh - 2)); ov = Math.Max(2, Math.Min(ov, ((vertOnly && na > 1) ? Bh : Math.Min(Bw, Bh)) / 3));   // narrow flute columns: the overlap band depends on the block height only
         float[] o = new float[outW * outH * 3];
         int stepX = Bw - ov, stepY = Bh - ov, cols = vertOnly ? 1 : Math.Max(1, (int)Math.Ceiling((outW - ov) / (double)stepX)), rows = Math.Max(1, (int)Math.Ceiling((outH - ov) / (double)stepY));
         int[] lastSx = new int[cols], lastSy = new int[cols]; for (int k = 0; k < cols; k++) { lastSx[k] = -9999; lastSy[k] = -9999; }
@@ -451,6 +455,7 @@ public static class Kit
                 for (int k = 0; k < K; k++)
                 {
                     int sx = vertOnly ? 0 : rnd.Next(0, sw - bw + 1), sy = rnd.Next(0, sh - bh + 1);
+                    int ai = na > 1 ? rnd.Next(na) : 0; src = alts[ai];
                     int f = flips ? (vertOnly ? rnd.Next(2) * 2 : rnd.Next(2) * 3) : 0;   // 2d: 180 degree turn only (no mirror)
                     // force a new placement instead of copying the sample's own continuation
                     if (!allowCont && pass == 0 && hasT && f == 0 && Math.Abs(sx - lastSx[q]) < Bw / 3 && Math.Abs(sy - (lastSy[q] + stepY)) < Bh / 3) continue;
@@ -467,15 +472,15 @@ public static class Kit
                     if (hasT) for (int y = 0; y < ov; y += 2) for (int x = hasL ? ov : 0; x < bw; x += 2) { int oi = ((by + y) * outW + bx + x) * 3, si = Px(src, sx, sy, bw, bh, f, x, y); for (int c = 0; c < 3; c++) { double d = o[oi + c] - src.D[si + c]; e += d * d; } }
                     double pen = 0; int pc = 0;
                     for (int gy = sy * GN / sh; gy <= Math.Min(GN - 1, (sy + bh - 1) * GN / sh); gy++) for (int gx = sx * GN / sw; gx <= Math.Min(GN - 1, (sx + bw - 1) * GN / sw); gx++) { pen += G[gy * GN + gx]; pc++; }
-                    errs[nc] = e; pens[nc] = pc > 0 ? pen / pc : 0; cx[nc] = sx; cy[nc] = sy; cf[nc] = f; nc++;
+                    errs[nc] = e; pens[nc] = pc > 0 ? pen / pc : 0; cx[nc] = sx; cy[nc] = sy; cf[nc] = f; ca[nc] = ai; nc++;
                 }
-                if (nc == 0) { errs[0] = 0; pens[0] = 0; cx[0] = vertOnly ? 0 : rnd.Next(0, sw - bw + 1); cy[0] = rnd.Next(0, sh - bh + 1); cf[0] = 0; nc = 1; }
+                if (nc == 0) { errs[0] = 0; pens[0] = 0; cx[0] = vertOnly ? 0 : rnd.Next(0, sw - bw + 1); cy[0] = rnd.Next(0, sh - bh + 1); cf[0] = 0; ca[0] = 0; nc = 1; }
                 double avgE = 0; for (int k = 0; k < nc; k++) avgE += errs[k]; avgE = avgE / nc + 1;
                 double avgP = 0; for (int k = 0; k < nc; k++) avgP += pens[k]; avgP = avgP / nc + 0.5;
                 for (int k = 0; k < nc; k++) { errs[k] += 0.6 * avgE * pens[k] / avgP; if (errs[k] < minE) minE = errs[k]; }
                 double lim = minE * 1.12 + 1e-6; int pick = -1, seen = 0;
                 for (int k = 0; k < nc; k++) if (errs[k] <= lim) { seen++; if (rnd.Next(seen) == 0) pick = k; }
-                int psx = cx[pick], psy = cy[pick], pf = cf[pick];
+                int psx = cx[pick], psy = cy[pick], pf = cf[pick]; src = alts[ca[pick]];
                 // tone match: shift the patch towards the colour of what it overlaps (hides brightness jumps between blocks)
                 double[] off = new double[3]; int cnt = 0;
                 if (hasL || hasT)
@@ -890,7 +895,8 @@ public static class Kit
     // wcm > 0: the slat's real width. Fluted slats are rebuilt with round(wcm / 5) flutes (5 cm per flute, as measured on
     // the 20 cm / 4 flute model) by repeating whole flutes of the photo, so a photo showing only part of the slat
     // does not get stretched to the full width.
-    static KImg PrepareSlat(KImg tex, double wcm, out int flutes)
+    // want: the real number of flutes when known (from the reference, e.g. 20025 = 200 mm, radius 25 -> 4 flutes); 0 = unknown.
+    static KImg PrepareSlat(KImg tex, double wcm, int want, out int flutes)
     {
         flutes = 0;
         KImg s = TrimWhite(tex);
@@ -899,7 +905,10 @@ public static class Kit
         KImg s0 = s;
         if (st != null) s = CropToSlat(st, P, g, out flutes); else { s = Deskew(s); Diag = "no flutes found"; }
         if (st != null && flutes < 2) { s = Deskew(s0); flutes = 0; Diag += " -> single strip: whole photo kept"; }
-        int target = wcm > 0 ? Math.Max(2, (int)Math.Round(wcm / 5.0)) : flutes;
+        // the photo shows twice as many flutes as the reference says: each detected "flute" is half of one (sub-groove)
+        if (want >= 2 && flutes >= 4 && flutes >= 2 * want - 1) { int pairs = flutes / 2, fw0 = s.W / flutes; s = s.Crop(0, 0, fw0 * pairs * 2, s.H); flutes = pairs; Diag += " -> pairs merged: " + pairs + " flutes"; }
+        // unknown reference: keep what the photo shows, at least one flute per 5 cm
+        int target = want >= 2 ? want : (wcm > 0 ? Math.Max(flutes, Math.Max(2, (int)Math.Round(wcm / 5.0))) : flutes);
         if (flutes >= 2 && target != flutes)
         {
             int fw = s.W / flutes, nw = fw * target; KImg o = new KImg(nw, s.H);
@@ -913,13 +922,85 @@ public static class Kit
     // ---------- slats: two loose slats at true proportions ----------
     // One slat face at ppc px/cm from the prepared sample (straight, exactly the slat), continued along its length.
     // The grain is stretched lengthwise (stretch) and blocks are large so the joins stay discreet.
-    static KImg SlatFace(KImg prep, double wcm, double lcm, double ppc, int seed, double stretch)
+    // Fine detail of a sample (std of the luminance minus its local mean): plain paint/foil ~1-2, grain or veins much more.
+    public static double Detail(KImg s)
+    {
+        int W = s.W, H = s.H, r = Math.Max(3, Math.Min(W, H) / 30); double[] l = new double[W * H];
+        for (int i = 0; i < W * H; i++) l[i] = 0.114 * s.D[i * 3] + 0.587 * s.D[i * 3 + 1] + 0.299 * s.D[i * 3 + 2];
+        double[] h = new double[W * H]; for (int y = 0; y < H; y++) { double t = 0; int n = 0; for (int x = -r; x < W; x++) { if (x + r < W) { t += l[y * W + x + r]; n++; } if (x - r - 1 >= 0) { t -= l[y * W + x - r - 1]; n--; } if (x >= 0) h[y * W + x] = t / n; } }
+        double[] v = new double[W * H]; for (int x = 0; x < W; x++) { double t = 0; int n = 0; for (int y = -r; y < H; y++) { if (y + r < H) { t += h[(y + r) * W + x]; n++; } if (y - r - 1 >= 0) { t -= h[(y - r - 1) * W + x]; n--; } if (y >= 0) v[y * W + x] = t / n; } }
+        double ss = 0; int c = 0; for (int y = H / 10; y < H * 9 / 10; y++) for (int x = W / 10; x < W * 9 / 10; x++) { double d = l[y * W + x] - v[y * W + x]; ss += d * d; c++; }
+        return Math.Sqrt(ss / Math.Max(1, c));
+    }
+    // Plain slat (no grain, no flutes): its own cross-width shading over the whole length plus the photo's fine grain,
+    // mirrored lengthwise (invisible on fine noise) - no blocks, so no joins.
+    static KImg PlainFace(KImg prep, int fw, int fh)
+    {
+        KImg s = prep.Resize(fw, Math.Max(8, (int)Math.Round(fw * (double)prep.H / prep.W)));
+        int W = s.W, H = s.H; double[] col = new double[W * 3];
+        for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) for (int c = 0; c < 3; c++) col[x * 3 + c] += s.D[(y * W + x) * 3 + c];
+        for (int i = 0; i < col.Length; i++) col[i] /= H;
+        double[] rowm = new double[H * 3]; for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) for (int c = 0; c < 3; c++) rowm[y * 3 + c] += s.D[(y * W + x) * 3 + c];
+        double[] rs = new double[H * 3]; int rr = Math.Max(2, H / 12);
+        for (int y = 0; y < H; y++) for (int c = 0; c < 3; c++) { double t = 0; int n = 0; for (int d = -rr; d <= rr; d++) { int yy = y + d; if (yy >= 0 && yy < H) { t += rowm[yy * 3 + c]; n++; } } rs[y * 3 + c] = t / n / W; }
+        double[] gmean = new double[3]; for (int x = 0; x < W; x++) for (int c = 0; c < 3; c++) gmean[c] += col[x * 3 + c] / W;
+        KImg o = new KImg(fw, fh);
+        for (int y = 0; y < fh; y++)
+        {
+            int k = y / H, yy = y % H; if ((k & 1) == 1) yy = H - 1 - yy;
+            for (int x = 0; x < fw; x++) for (int c = 0; c < 3; c++)
+            {
+                double fine = s.D[(yy * W + x) * 3 + c] - col[x * 3 + c] - (rs[yy * 3 + c] - gmean[c]);
+                o.D[(y * fw + x) * 3 + c] = (byte)Math.Max(0, Math.Min(255, col[x * 3 + c] + Math.Max(-12, Math.Min(12, fine)) + 0.5));
+            }
+        }
+        return o;
+    }
+    static KImg SlatFace(KImg prep, int flutes, double wcm, double lcm, double ppc, int seed, double stretch)
     {
         int fw = Math.Max(6, (int)Math.Round(wcm * ppc)), fh = Math.Max(8, (int)Math.Round(lcm * ppc));
         int sh = Math.Max(8, (int)Math.Round(fw * (double)prep.H / prep.W * Math.Max(1, stretch)));
-        KImg s = prep.Resize(fw, sh);
         int B = Math.Max(8, (int)(sh * 0.75));
-        return Quilt(s, fw, fh, B, B, Math.Max(4, B / 3), true, false, seed, false);
+        if (flutes < 2 && Detail(prep) < 2.0) return PlainFace(prep, fw, fh);   // plain white/black/taupe slats measure 0.5-1.5
+        double mbc, mgc, mrc; MeanColor(prep, out mbc, out mgc, out mrc); double[] mc = { mbc, mgc, mrc };
+        if (flutes >= 2 && fw >= flutes * 6)
+        {
+            // every flute is synthesised on its own from all the flutes of the photo: a grain figure that the photo shows
+            // on one flute only spreads over all of them, and the joins fall at different heights on each flute
+            int pw = prep.W, sw1 = Math.Max(2, (int)Math.Round(fw / (double)flutes)); KImg[] strips = new KImg[flutes];
+            for (int j = 0; j < flutes; j++) { int a = (int)Math.Round(j * pw / (double)flutes), b = (int)Math.Round((j + 1) * pw / (double)flutes); strips[j] = prep.Crop(a, 0, b - a, prep.H).Resize(sw1, sh); }
+            KImg o = new KImg(fw, fh); int ov = Math.Max(4, B / 3), stepY = B - ov;
+            for (int j = 0; j < flutes; j++)
+            {
+                int x0 = (int)Math.Round(j * fw / (double)flutes), w = (int)Math.Round((j + 1) * fw / (double)flutes) - x0;
+                int lead = (int)(stepY * ((j * 0.618 + 0.25) % 1.0));
+                KImg col = Quilt(strips, w, fh + lead, B, B, ov, true, false, seed + j * 104729, false);
+                LevelRows(col, mc, Math.Max(4, B / 2));
+                for (int y = 0; y < fh; y++) Buffer.BlockCopy(col.D, ((y + lead) * w) * 3, o.D, (y * fw + x0) * 3, w * 3);
+            }
+            return o;
+        }
+        KImg q = Quilt(prep.Resize(fw, sh), fw, fh, B, B, Math.Max(4, B / 3), true, false, seed, false);
+        LevelRows(q, mc, Math.Max(4, B / 2));
+        return q;
+    }
+    // Pulls the slowly varying colour of the rows back to the sample's mean colour: the tone matching of successive
+    // blocks must not drift down a long slat (one flute turning orange, the next grey).
+    static void LevelRows(KImg im, double[] target, int radius)
+    {
+        int W = im.W, H = im.H; double[] rm = new double[H * 3];
+        for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) for (int c = 0; c < 3; c++) rm[y * 3 + c] += im.D[(y * W + x) * 3 + c];
+        for (int i = 0; i < rm.Length; i++) rm[i] /= W;
+        for (int y = 0; y < H; y++)
+        {
+            double[] sm = new double[3]; int n = 0;
+            for (int d = -radius; d <= radius; d++) { int yy = y + d; if (yy < 0 || yy >= H) continue; for (int c = 0; c < 3; c++) sm[c] += rm[yy * 3 + c]; n++; }
+            for (int c = 0; c < 3; c++)
+            {
+                double off = target[c] - sm[c] / n;
+                for (int x = 0; x < W; x++) { int i = (y * W + x) * 3 + c; im.D[i] = (byte)Math.Max(0, Math.Min(255, im.D[i] + off + 0.5)); }
+            }
+        }
     }
     static void MeanColor(KImg f, out double b, out double g, out double r)
     {
@@ -1045,16 +1126,18 @@ public static class Kit
     // Two loose slats standing against the wall, all slats drawn at one common scale (290 cm = 1000 px),
     // so a 40 cm slat is visibly twice as wide as a 20 cm one. Dimensions are marked; the loupe shows the real photo.
     public static KImg RenderSlats(KImg tex, double wcm, double lcm, bool gloss, int seed, double stretch)
+    { return RenderSlats(tex, wcm, lcm, gloss, seed, stretch, 0); }
+    public static KImg RenderSlats(KImg tex, double wcm, double lcm, bool gloss, int seed, double stretch, int want)
     {
         int W = 1000, H = 1250; KImg c = new KImg(W, H); Background(c);
         double ppcD = 1000.0 / 290; double Hs = Math.Min(1040, lcm * ppcD), ws = Math.Max(10, wcm * ppcD);
         double gap = Math.Max(30, ws * 0.55), total = 2 * ws + gap, xs = Math.Round(Math.Max(130, 390 - total / 2));
         double yBottom = 1095, yTop = yBottom - Hs;
-        int flutes; KImg prep = PrepareSlat(tex, wcm, out flutes);
+        int flutes; KImg prep = PrepareSlat(tex, wcm, want, out flutes);
         double mb, mg, mr; MeanColor(prep, out mb, out mg, out mr);
         for (int k = 0; k < 2; k++)
         {
-            KImg face = SlatFace(prep, wcm, lcm, ppcD, seed * 31 + k * 7919, stretch);
+            KImg face = SlatFace(prep, flutes, wcm, lcm, ppcD, seed * 31 + k * 7919, stretch);
             double x0 = Math.Round(xs + k * (ws + gap)), yt = Math.Round(yTop + k * 5), yb = yt + Hs;
             float[] sm = new float[W * H];
             FillQuadMask(sm, W, H, new double[] { x0 + 22, yt + 16, x0 + ws + 30, yt + 16, x0 + ws + 10, yb + 2, x0 + 6, yb + 2 });
@@ -1089,7 +1172,10 @@ public static class Kit
     }
     // One straight slat over its whole length (exact width) at ppc px/cm, for the 3D studio (face/<id>.jpg).
     public static KImg SlatFaceTexture(KImg tex, double wcm, double lcm, double ppc, int seed, double stretch)
-    { int n; KImg prep = PrepareSlat(tex, wcm, out n); return SlatFace(prep, wcm, lcm, ppc, seed * 31, stretch); }
+    { return SlatFaceTexture(tex, wcm, lcm, ppc, seed, stretch, 0); }
+    public static KImg SlatFaceTexture(KImg tex, double wcm, double lcm, double ppc, int seed, double stretch, int want)
+    { int n; KImg prep = PrepareSlat(tex, wcm, want, out n); return SlatFace(prep, n, wcm, lcm, ppc, seed * 31, stretch); }
     // Debug: the prepared slat sample (straight, cropped to its flutes).
-    public static KImg PreparedSlat(KImg tex, double wcm) { int n; return PrepareSlat(tex, wcm, out n); }
+    public static KImg PreparedSlat(KImg tex, double wcm) { int n; return PrepareSlat(tex, wcm, 0, out n); }
+    public static KImg PreparedSlat(KImg tex, double wcm, int want) { int n; return PrepareSlat(tex, wcm, want, out n); }
 }
