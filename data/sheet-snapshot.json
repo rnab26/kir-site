@@ -6,7 +6,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1n-GFc05E3uw73-Oa_GpJBjGKQeGYV20r":  {
                                               "sku":  "082 20025",
@@ -15,7 +17,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "18hFmCbH_rxADmPtss07K3RDgM1mN_nKJ":  {
                                               "sku":  "NO.027 204",
@@ -24,7 +28,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1CCJGdgbKQhRa39ypYWiLMxx-o1iHMYt6":  {
                                               "sku":  "P087",
@@ -33,7 +39,9 @@
                                               "size":  "15/2.80",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1kLvw-45Ub0ty5-GPStxg-xDocFVIHnpR":  {
                                               "sku":  "P087",
@@ -42,7 +50,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "מט",
                                               "price":  "185",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1XEzpUmwczuEFAtZea0kZfXf1OV1Tis8j":  {
                                               "sku":  "5005-1 195-12",
@@ -51,7 +61,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1h5fSEsLWXXAa1TQ0EFTALmCGlGEoWoQ9":  {
                                               "sku":  "5005-1",
@@ -60,7 +72,9 @@
                                               "size":  "40/2.90",
                                               "finish":  "",
                                               "price":  "85",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1U7LiwoEvQ-tzhER0nzWsGZau_N5GCZQS":  {
                                               "sku":  "P060",
@@ -69,7 +83,9 @@
                                               "size":  "15/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1nwCcBIlxYj5lWjD4RmYGXxW66WA_L0jj":  {
                                               "sku":  "P053",
@@ -78,7 +94,9 @@
                                               "size":  "15/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1Wx_gmpj8IETxHcWceVOYaWGOnth1EK7X":  {
                                               "sku":  "L-2505-2 202-314",
@@ -87,7 +105,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1DKLcJUNsQ6kN_9L8BUfeNWF4wmWOHSs-":  {
                                               "sku":  "DS-13 200-19",
@@ -96,7 +116,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "17tdVb6TVBo9NivpsswrULHZP43dMNQ4X":  {
                                               "sku":  "DS-13 195-25",
@@ -105,7 +127,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1BFAUv-c96rWzbzJEAg6UcvdkMwHDDhoq":  {
                                               "sku":  "LED-15",
@@ -114,7 +138,9 @@
                                               "size":  "80/1.60",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1u0EeOSyOKJXC94JNvGMUnGk6dnYwla5S":  {
                                               "sku":  "L-2503-4 202-14",
@@ -123,7 +149,9 @@
                                               "size":  "20",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  "אזל"
+                                              "notes":  "אזל",
+                                              "stock":  "FALSE",
+                                              "hide":  ""
                                           },
     "1hT9cXgKpR-p24qf9Ip4XszLhl7BJlp2p":  {
                                               "sku":  "?07",
@@ -132,7 +160,9 @@
                                               "size":  "40/2.90",
                                               "finish":  "",
                                               "price":  "85",
-                                              "notes":  "אזל"
+                                              "notes":  "אזל",
+                                              "stock":  "FALSE",
+                                              "hide":  ""
                                           },
     "11M7T7Hv4fn38qS85bIWMnBC6fL1Mcncg":  {
                                               "sku":  "016 16015",
@@ -141,7 +171,9 @@
                                               "size":  "16/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  "אזל"
+                                              "notes":  "אזל",
+                                              "stock":  "FALSE",
+                                              "hide":  ""
                                           },
     "1lQtb7wvQUWBcnGPjExmrXET_8rxHynS9":  {
                                               "sku":  "016 20025",
@@ -150,7 +182,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  "אזל"
+                                              "notes":  "אזל",
+                                              "stock":  "FALSE",
+                                              "hide":  ""
                                           },
     "1VPXsjYh-s2ikmMJZHg3UACK12H7PloZj":  {
                                               "sku":  "No.027 210.9",
@@ -159,7 +193,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1ScuHPSJ6ukPsB91qr-fivMuTU3XDtLGJ":  {
                                               "sku":  "No.026 204",
@@ -168,7 +204,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1pMdftx9hQvX6Me0r5LQTgwMhYpdM5dz0":  {
                                               "sku":  "082 204-12",
@@ -177,7 +215,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1UJFGoYwM3BiF3-UU_VYY_h0AUBuubf6B":  {
                                               "sku":  "LS-2503-2",
@@ -186,7 +226,9 @@
                                               "size":  "40/2.90",
                                               "finish":  "",
                                               "price":  "85",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1HXqTjn29JL5I8Q9zPTJhTCawoc1vdDeY":  {
                                               "sku":  "DS-13 204-12",
@@ -195,7 +237,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "16zoye-6tY52QKLLyVKF83yNwer-Lw6YJ":  {
                                               "sku":  "LS-2504-1 204-12",
@@ -204,7 +248,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1jLQhol2OT1inpkLCqZphSuCaz425Pi25":  {
                                               "sku":  "L-2503-2 204-12",
@@ -213,7 +259,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1nh30yYeOe8wmtsufVBgKWn8jJKp8auqW":  {
                                               "sku":  "114 200-19",
@@ -222,7 +270,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1453yUX4_Id5ugZvgRtDW4xCsi7uYfN0c":  {
                                               "sku":  "LS-2504-3",
@@ -231,7 +281,9 @@
                                               "size":  "40/2.90",
                                               "finish":  "",
                                               "price":  "85",
-                                              "notes":  "אזל"
+                                              "notes":  "אזל",
+                                              "stock":  "FALSE",
+                                              "hide":  ""
                                           },
     "1weWWHp_uRnMHgfQYE_upOfkW8YCs4IXS":  {
                                               "sku":  "C-LS-2504-3",
@@ -240,7 +292,9 @@
                                               "size":  "15/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "19rVzs_rOrIEIYZRsw646AW5T39L9-_lz":  {
                                               "sku":  "A-LS-2504-1",
@@ -249,7 +303,9 @@
                                               "size":  "15/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1tjrKOEefIdlzxOicIj1EPPV2hag9D8sB":  {
                                               "sku":  "DLS-25024",
@@ -258,7 +314,9 @@
                                               "size":  "15/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1Z3iKT_ZqNWwaXxgWTbKKFIx7oZGFpM2z":  {
                                               "sku":  "BL2503-2",
@@ -267,7 +325,9 @@
                                               "size":  "15/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1cu7Kn88ZsdHat-Z9U7D_r7bbP3MKA6VM":  {
                                               "sku":  "DS-13 160-15",
@@ -276,7 +336,9 @@
                                               "size":  "16",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  "אזל"
+                                              "notes":  "אזל",
+                                              "stock":  "FALSE",
+                                              "hide":  ""
                                           },
     "1-M5donwU061IfiShoroZEKPP7Vvr451p":  {
                                               "sku":  "DS-13 170-17",
@@ -285,7 +347,9 @@
                                               "size":  "17",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1u-YEih9vR_etzHSDPVwOBSD48sxi7IzH":  {
                                               "sku":  "DS-13",
@@ -294,7 +358,9 @@
                                               "size":  "40/2.90",
                                               "finish":  "",
                                               "price":  "85",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1gixBAjxGXYFvYt4vQVzjey2DWDLZ1rkM":  {
                                               "sku":  "DS-13 200-25",
@@ -303,7 +369,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1Fdk_yXgSWLrnCx9z-huyzB77VqRzY9zw":  {
                                               "sku":  "Y08 15025",
@@ -312,7 +380,9 @@
                                               "size":  "15/2.90",
                                               "finish":  "",
                                               "price":  "25",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1K_XjXctxOyqe0e9x9ioJdq8olH9Q9rPQ":  {
                                               "sku":  "Y08 10025",
@@ -321,7 +391,9 @@
                                               "size":  "10/2.90",
                                               "finish":  "",
                                               "price":  "25",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1C7YWD9RMLLwlkZWaiNcm9-CsqIxAKI38":  {
                                               "sku":  "Y08 20025",
@@ -330,7 +402,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "25",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1ZJ2Z2VDZ9HDfXm6WnRFktCPHGWGiRNrM":  {
                                               "sku":  "CB01 10025",
@@ -339,7 +413,9 @@
                                               "size":  "10/2.90",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "137EjiKCTL5xeiFcs-0PUupJSgN852ujo":  {
                                               "sku":  "CB01 15025",
@@ -348,7 +424,9 @@
                                               "size":  "15/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1wrI6MSTqOjRS_HLXxBeDA1X65m3S9kIy":  {
                                               "sku":  "CB01 20025",
@@ -357,7 +435,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1dZtw1GA8EEJ8cu1WEi_AeiKf73D7-f-t":  {
                                               "sku":  "119 15025",
@@ -366,7 +446,9 @@
                                               "size":  "15/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1xFL2FSChDqk4LdnBnVXtEE5-syXHgUik":  {
                                               "sku":  "035 16015",
@@ -375,7 +457,9 @@
                                               "size":  "16/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "167taG-eCAzs7iVtevdNEv8-igUc9lnU4":  {
                                               "sku":  "035 20025",
@@ -384,7 +468,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1grwoMfEj5rDJepoln3nqNZ_QPH-DSctV":  {
                                               "sku":  "035",
@@ -393,7 +479,9 @@
                                               "size":  "40/2.90",
                                               "finish":  "",
                                               "price":  "85",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1eRiuhMKI4hEXg97kMEPV2Y_bEv2DVRxx":  {
                                               "sku":  "035 20325",
@@ -402,7 +490,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1-eS48SX_QKn4kWniiLaLSiubZhZW2Vni":  {
                                               "sku":  "035 21020",
@@ -411,7 +501,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  "אזל"
+                                              "notes":  "אזל",
+                                              "stock":  "FALSE",
+                                              "hide":  ""
                                           },
     "1QKLRFlm0hIKhg5OX9qO50kWFirFAb-wn":  {
                                               "sku":  "016 160-24",
@@ -420,7 +512,9 @@
                                               "size":  "16/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1T856RWceum5JWwBoxtUqRcf3QWJJW4xq":  {
                                               "sku":  "107 160-24",
@@ -429,7 +523,9 @@
                                               "size":  "16/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1ueDuptoRdzPNNXuECja53dqiBKtXChN8":  {
                                               "sku":  "108 160-24",
@@ -438,7 +534,9 @@
                                               "size":  "16/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1eDioFn37oKErKY9HDvIobomCNANWITk5":  {
                                               "sku":  "038 160-24",
@@ -447,7 +545,9 @@
                                               "size":  "16/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1_sWs1RbgHZE6xtlWyJ6IdP2Sk9c6Lx4J":  {
                                               "sku":  "082 160-24",
@@ -456,7 +556,9 @@
                                               "size":  "16/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1aBI6ndAOwM0CthuHH-GfZq5HRCt_MaeK":  {
                                               "sku":  "P093 160-24",
@@ -465,7 +567,9 @@
                                               "size":  "16/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1BLQ46Wn84af4Ve1qpE7q_9_An6IhNuLi":  {
                                               "sku":  "DS-13 160-24",
@@ -474,7 +578,9 @@
                                               "size":  "16/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "18qb_KhnmRuw9aUd9tu9Jl9hi8vynLSxH":  {
                                               "sku":  "027 16015",
@@ -483,7 +589,9 @@
                                               "size":  "16/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1njVWGQBUTAHAKbMFNgzGSbCVi2D33Kh6":  {
                                               "sku":  "027 20025",
@@ -492,7 +600,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1rb2hIqCVYPHDMk5ZixNnLi1gI6jppBBi":  {
                                               "sku":  "027",
@@ -501,7 +611,9 @@
                                               "size":  "40/2.90",
                                               "finish":  "",
                                               "price":  "85",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1HfrsdqKdaOcdI9YupjcCFTBdXASl7GXD":  {
                                               "sku":  "027 20325",
@@ -510,7 +622,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1XsEq7iiemKAR9ymhZ6uSGhLyVp10z0dm":  {
                                               "sku":  "027 21020",
@@ -519,7 +633,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "14_gYdITh93PEUDogjr4dArEYtxpw0NAs":  {
                                               "sku":  "115",
@@ -528,7 +644,9 @@
                                               "size":  "40/2.90",
                                               "finish":  "",
                                               "price":  "85",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1lNMEhNCkpSHyZCbT96qSFi_AsOo6AwQ4":  {
                                               "sku":  "115 160-24",
@@ -537,7 +655,9 @@
                                               "size":  "16",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1RcEEWcs6bq8UahjRiSqBYQTdb3ESfpSU":  {
                                               "sku":  "QM14",
@@ -546,7 +666,9 @@
                                               "size":  "15/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1uCwR0hqBjeYgm1Y8EJ-D-sFp0SJDrtD-":  {
                                               "sku":  "JX5909",
@@ -555,7 +677,9 @@
                                               "size":  "15/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1nmYoq82Q328AXlzluhOXkUuuSG-g74Ic":  {
                                               "sku":  "153 16015",
@@ -564,7 +688,9 @@
                                               "size":  "16/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1ap4OJMSWn5NE-S8yQKpcQ_etHyNk7KC3":  {
                                               "sku":  "153 20025",
@@ -573,7 +699,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1WpCUV-xxPFQmfJSKT0f0XE_ogyO3ecpF":  {
                                               "sku":  "153",
@@ -582,7 +710,9 @@
                                               "size":  "40/2.90",
                                               "finish":  "",
                                               "price":  "85",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1u5HDk7NKXheJsf0LReAMp47GfzBEayHj":  {
                                               "sku":  "153 20325",
@@ -591,7 +721,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "11MjHpyWVr65qCsJ5KXANpVGfzOl6ZHyD":  {
                                               "sku":  "153 21020",
@@ -600,7 +732,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "15fSxx__UAilcChvziov6lCTk38i9x99D":  {
                                               "sku":  "108 16015",
@@ -609,7 +743,9 @@
                                               "size":  "16/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1epSj9dgoV8vVvdXR-KXYniyzgUE0Cl_n":  {
                                               "sku":  "108 20025",
@@ -618,7 +754,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1SF0NJ6RQa6yDKFRCsz9m3kVifYcustQN":  {
                                               "sku":  "108",
@@ -627,7 +765,9 @@
                                               "size":  "40/2.90",
                                               "finish":  "",
                                               "price":  "85",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1qYOWNu9glFUCiZXRPuOSqUiFuuFlFisj":  {
                                               "sku":  "108 20325",
@@ -636,7 +776,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1OAKy8oRm3tsORSWBaEEMBk4T7xnEKnD1":  {
                                               "sku":  "108 21020",
@@ -645,7 +787,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  "אזל"
+                                              "notes":  "אזל",
+                                              "stock":  "FALSE",
+                                              "hide":  ""
                                           },
     "1r706LIsp8lqFSw-PKj7GGmzEdrqnh62u":  {
                                               "sku":  "108 17020",
@@ -654,7 +798,9 @@
                                               "size":  "17/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1mJphZGp04PCw2Iu4K6T6RIM1mM49trHA":  {
                                               "sku":  "153 17020",
@@ -663,7 +809,9 @@
                                               "size":  "17/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1hfM_wj9x67IpbU7elmfLQAlhU3YA9rYj":  {
                                               "sku":  "107 17020",
@@ -672,7 +820,9 @@
                                               "size":  "17/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1CCbQODI0EyBvraI57sn6lHmD671SyZIb":  {
                                               "sku":  "035 17020",
@@ -681,7 +831,9 @@
                                               "size":  "17/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "16YA8fj9TkyT-qlA7pkzoZuKrLrfw7LR9":  {
                                               "sku":  "027 17020",
@@ -690,7 +842,9 @@
                                               "size":  "17/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1tzdF7hgHbpGvI_jfFyUZimVjLCEx4ZLd":  {
                                               "sku":  "038 17020",
@@ -699,7 +853,9 @@
                                               "size":  "17/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  "אזל"
+                                              "notes":  "אזל",
+                                              "stock":  "FALSE",
+                                              "hide":  ""
                                           },
     "1QbElDIEAKYFWR0O4Tq4QTbwGzyr3kmyK":  {
                                               "sku":  "016 17020",
@@ -708,7 +864,9 @@
                                               "size":  "17/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1WwG2eRTncrX3LwVi6Ef2ENUHQz0ZHdmL":  {
                                               "sku":  "082 16015",
@@ -717,7 +875,9 @@
                                               "size":  "16/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "11erYWh_JhQFMq9PduVnyT6q5CGJN-Swl":  {
                                               "sku":  "082 ?",
@@ -726,7 +886,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  "אזל"
+                                              "notes":  "אזל",
+                                              "stock":  "FALSE",
+                                              "hide":  ""
                                           },
     "1NxWeTHmeBTma_9pd5R-gK7svzyverbwk":  {
                                               "sku":  "082",
@@ -735,7 +897,9 @@
                                               "size":  "40/2.90",
                                               "finish":  "",
                                               "price":  "85",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1dnPFFvBtaN7TIwxCZDNGdqIJY6FNuIbD":  {
                                               "sku":  "082 21020",
@@ -744,7 +908,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1fAo66ceUfW73U33U8IuKrtbF8DxwtVuF":  {
                                               "sku":  "032 20325",
@@ -753,7 +919,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1wBLldL1hASdpFgxtti51PvEtdYV7eVVg":  {
                                               "sku":  "032",
@@ -762,7 +930,9 @@
                                               "size":  "40/2.90",
                                               "finish":  "",
                                               "price":  "85",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1o9dj1UYvv8s30-BUJ_02Wi6Ue-F0NZ4M":  {
                                               "sku":  "032 17020",
@@ -771,7 +941,9 @@
                                               "size":  "17/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "15WXDYPQmwKJqf48_pwjEHBm8uiJGyHUa":  {
                                               "sku":  "082 17020",
@@ -780,7 +952,9 @@
                                               "size":  "17/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1yEXWEZJmAdSEsy4EA62TAGdxcxNjG5ha":  {
                                               "sku":  "P053",
@@ -789,7 +963,9 @@
                                               "size":  "15/2.80",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1yMjho5oKI7uCasNY24qcirELJEPXrRB5":  {
                                               "sku":  "P053",
@@ -798,7 +974,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "18V6ZjPCYtQFs_xGwFp9Pj2jXDPOvACY2":  {
                                               "sku":  "? טרוורטין",
@@ -807,7 +985,9 @@
                                               "size":  "122/280",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1Dvm4ZrFo_QrN5APnzcFthBeQfYmheCxj":  {
                                               "sku":  "P093 17020",
@@ -816,7 +996,9 @@
                                               "size":  "17/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1uGlU1ZZVwoK0dg4NwSqzFSVdBayr9Wlr":  {
                                               "sku":  "P093 16015",
@@ -825,7 +1007,9 @@
                                               "size":  "16/2.90",
                                               "finish":  "",
                                               "price":  "39",
-                                              "notes":  "אזל"
+                                              "notes":  "אזל",
+                                              "stock":  "FALSE",
+                                              "hide":  ""
                                           },
     "1rDBJZC5wJ3QScKxMQR30Ubcsog80oTvp":  {
                                               "sku":  "P093 21020",
@@ -834,7 +1018,9 @@
                                               "size":  "20/2.90",
                                               "finish":  "",
                                               "price":  "44",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1bW9L5IEJYUFEx31Ef5TVVY2fecRMWtMs":  {
                                               "sku":  "KB8090-2AY9 G",
@@ -843,7 +1029,9 @@
                                               "size":  "120/2.80",
                                               "finish":  "מבריק",
                                               "price":  "160",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1u3nFYZd3Oxe7YXvdLEIbmJNVuk9P6Ng5":  {
                                               "sku":  "SY26143",
@@ -852,7 +1040,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "מט",
                                               "price":  "185",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1QmUoY6n3QRBMUNl4sOYx5KXLB5P_DOtO":  {
                                               "sku":  "0711-1",
@@ -861,7 +1051,9 @@
                                               "size":  "120/2.80",
                                               "finish":  "מט",
                                               "price":  "185",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1iX90oKm5IwAJfwJnFdqMpNRLWh9A7Wok":  {
                                               "sku":  "SY26120",
@@ -870,7 +1062,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "מט",
                                               "price":  "185",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1R8gxIll4Wv6NxtzY8iTEQKVXI2hJbWVH":  {
                                               "sku":  "SY26123",
@@ -879,7 +1073,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "מט",
                                               "price":  "185",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1DiiQGmd8zM4YD7j3bUDTnEU9MMHTY3ob":  {
                                               "sku":  "שחור מחוספס",
@@ -888,7 +1084,9 @@
                                               "size":  "120/2.80",
                                               "finish":  "מט",
                                               "price":  "185",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1laEFYEFoCOfCgmIHVbPXBOsZeHPMTo84":  {
                                               "sku":  "25-P51",
@@ -897,7 +1095,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1pu6-sNO8Wpn_v2iGIEdyiLaEjvNe7zUL":  {
                                               "sku":  "YSY26108",
@@ -906,7 +1106,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "מט",
                                               "price":  "185",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1EeuwNM6E6bkLU8uTgG1WXGlIsDgqE1Qn":  {
                                               "sku":  "לבן מחוספס",
@@ -915,7 +1117,9 @@
                                               "size":  "120/2.80",
                                               "finish":  "מט",
                                               "price":  "185",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1HV39b2B4yWYw6mNq4J6w22WJv4HaxbPf":  {
                                               "sku":  "T3-2",
@@ -924,7 +1128,9 @@
                                               "size":  "120/280",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1MDn-6szZcAXEe2bQzH8t0vneWNgLne14":  {
                                               "sku":  "5001-1 PVC",
@@ -933,7 +1139,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1tguDoL8Ox5-WtPXCe3L7tzhdQ6j-JVRI":  {
                                               "sku":  "XJ87047-1 SPC",
@@ -942,7 +1150,9 @@
                                               "size":  "122/2.90",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1VHQR4-SrOkfACXDFX49kC9XESA02KJ_F":  {
                                               "sku":  "XJQ22K-1C SPC",
@@ -951,7 +1161,9 @@
                                               "size":  "122/2.90",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "10Y7XzWPnXePy4fcmYg5qj_eNGLMpnceZ":  {
                                               "sku":  "XJ87009-32 SPC",
@@ -960,7 +1172,9 @@
                                               "size":  "97/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1l92_Pi4NsQY-13OVJKoQWpkPVmXtzvWz":  {
                                               "sku":  "XJ87016-6",
@@ -969,7 +1183,9 @@
                                               "size":  "97/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1lRh3kZzFcxVU2_o-ESGTpekAtHmIXfoH":  {
                                               "sku":  "XJ870013 SPC",
@@ -978,7 +1194,9 @@
                                               "size":  "122/280",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1mjjQlq6ocRPB8oO_kxe_Vw98YeTMxf3P":  {
                                               "sku":  "XJ87024 SPC",
@@ -987,7 +1205,9 @@
                                               "size":  "97/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1FfoH89nrLZUMspzT9zivPNYfj2K5-FbD":  {
                                               "sku":  "XJ87016",
@@ -996,7 +1216,9 @@
                                               "size":  "97/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1kgBQfydE1iNHNI4PP_rScXNeLakmEQwy":  {
                                               "sku":  "SPC PURE WHITE",
@@ -1005,7 +1227,9 @@
                                               "size":  "96/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1CwCbACvAH-KLx9mxpan7dv2LsqEcluLa":  {
                                               "sku":  "XJ87014 SPC",
@@ -1014,7 +1238,9 @@
                                               "size":  "97/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1W5ZFcndSAxLTc0EEh4pPxpkGNoQXrPO-":  {
                                               "sku":  "1620 SPC",
@@ -1023,7 +1249,9 @@
                                               "size":  "120/2.80",
                                               "finish":  "מבריק",
                                               "price":  "160",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1dq9JTIRTOHU3EdVNqzVsJcNPef1mTpcf":  {
                                               "sku":  "HC88243-2",
@@ -1032,7 +1260,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "מט",
                                               "price":  "185",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1MrKf1nMz0zZC2g-6U8jNxpZkJuuWBZcs":  {
                                               "sku":  "F005 SPC",
@@ -1041,7 +1271,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "מבריק",
                                               "price":  "160",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1565V52f_T5WILzLlWY-3gpRoINttOtVg":  {
                                               "sku":  "S1615",
@@ -1050,7 +1282,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "מבריק",
                                               "price":  "160",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1T5VNppzrj6xnl3iFmv0mP48yIJLW6T7r":  {
                                               "sku":  "025",
@@ -1059,7 +1293,9 @@
                                               "size":  "122/280",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1-oZMMpHmzR2icTmOghABpZAdP0W_T9pB":  {
                                               "sku":  "006",
@@ -1068,7 +1304,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "מבריק",
                                               "price":  "160",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "19be2sCpk_1ol55C6IiYPgCroc6ouXNIc":  {
                                               "sku":  "HM? 3-3A",
@@ -1077,7 +1315,9 @@
                                               "size":  "",
                                               "finish":  "מבריק",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1VCVlSTqL12shWYFc5M2MRedSwTwJtbxS":  {
                                               "sku":  "HM042",
@@ -1086,7 +1326,9 @@
                                               "size":  "120/2.80",
                                               "finish":  "מבריק",
                                               "price":  "160",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1I1nyiNB7c0Sin0-kn2H8JiKv-TTAPPRu":  {
                                               "sku":  "Q9015",
@@ -1095,7 +1337,9 @@
                                               "size":  "120/2.80",
                                               "finish":  "מבריק",
                                               "price":  "160",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1e98trc87NAIgA2p2DDViKnHWkF-Wckyn":  {
                                               "sku":  "0722-1",
@@ -1104,7 +1348,9 @@
                                               "size":  "122/280",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1kXH7ZtrELLbwj1QMlBQzamTa9trcQj_V":  {
                                               "sku":  "W24-81875",
@@ -1113,7 +1359,9 @@
                                               "size":  "120/2.80",
                                               "finish":  "מבריק",
                                               "price":  "160",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1CVXVMyUYMD79LdJjWbofEMHRrkfkkSgx":  {
                                               "sku":  "ZXMA-0713-5",
@@ -1122,7 +1370,9 @@
                                               "size":  "120/2.80",
                                               "finish":  "מט",
                                               "price":  "185",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "18f6KRzMJRrLhPosQP8bs1VUFCesn-xUA":  {
                                               "sku":  "ZXMA-0740-2",
@@ -1131,7 +1381,9 @@
                                               "size":  "120/2.80",
                                               "finish":  "מט",
                                               "price":  "185",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1kn_o4SVUs55nekT2iLLbgx3Wvaq0VS0p":  {
                                               "sku":  "016 620845",
@@ -1140,7 +1392,9 @@
                                               "size":  "80/0.50",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  "אזל"
+                                              "notes":  "אזל",
+                                              "stock":  "FALSE",
+                                              "hide":  ""
                                           },
     "10FV9W0CQeWAx8iG-k42DlsaU3UbgU4DI":  {
                                               "sku":  "153 620845",
@@ -1149,7 +1403,9 @@
                                               "size":  "55/80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1GqzKVyHIzfhOIIMcOBbSgENRLq_TlPQ_":  {
                                               "sku":  "038 620845",
@@ -1158,7 +1414,9 @@
                                               "size":  "80/0.50",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1dzRHbmejLxIH3us3LoyHY3H1H_BZyv1P":  {
                                               "sku":  "027 620845",
@@ -1167,7 +1425,9 @@
                                               "size":  "80/0.50",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1pdvQ8Hn3l1Syj91K8sRVAdi6wu793QYX":  {
                                               "sku":  "107 620845",
@@ -1176,7 +1436,9 @@
                                               "size":  "80/0.50",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "175tLjwtPr227op8jfajTKZ4ZFG4_Jd-1":  {
                                               "sku":  "153 750615",
@@ -1185,7 +1447,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1VEcdyXJAG3R2FiWfPTeBKJLY_ceyU66X":  {
                                               "sku":  "082 750615",
@@ -1194,7 +1458,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1iLBsFUYFWiw7ThXJRKDtVVD9u2U4gVUx":  {
                                               "sku":  "114 750615",
@@ -1203,7 +1469,9 @@
                                               "size":  "80/0.50",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "14ycyZmvee1qL_IacoDnu1MBRj6DTTY4D":  {
                                               "sku":  "038 750615",
@@ -1212,7 +1480,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  "אזל"
+                                              "notes":  "אזל",
+                                              "stock":  "FALSE",
+                                              "hide":  ""
                                           },
     "1qVai6OCdrXoBvTTvvXFGOWLGkl4XmrSI":  {
                                               "sku":  "016 750615",
@@ -1221,7 +1491,9 @@
                                               "size":  "80/0.50",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1Egcr687m1d4vPXyX0nUgq3gC3Kv2GQPv":  {
                                               "sku":  "107 750615",
@@ -1230,7 +1502,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1rj4YyPRDAGJR0VSYWpDWD59hpE7JI-zA":  {
                                               "sku":  "Q9019-1",
@@ -1239,7 +1513,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "11H5OctYfw0yczcOv8qZA3qbVfeAcwnxy":  {
                                               "sku":  "SY26124",
@@ -1248,7 +1524,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1bvBpwfZYjLWRoCSWbBpL0pTMc3kjqZQU":  {
                                               "sku":  "LS2503-2",
@@ -1257,7 +1535,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1JQg9Dv3dbTsAK1FAvWX1CtS80_pmcvwC":  {
                                               "sku":  "LS2504-1",
@@ -1266,7 +1546,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "15N-Hksl0j6t4mWPpYP3_GhLnrCbWqw-_":  {
                                               "sku":  "XJ87048-1",
@@ -1275,7 +1557,9 @@
                                               "size":  "122/2.90",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1z613HTKvAtgJ3mFfkrMPk-xZa5RzI3Cj":  {
                                               "sku":  "WJ-205",
@@ -1284,7 +1568,9 @@
                                               "size":  "122/3.00",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1jQ0SGRo-gW75MWJpT145HsAIkaQAGumF":  {
                                               "sku":  "DC-2",
@@ -1293,7 +1579,9 @@
                                               "size":  "122/3.00",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1_pCXPcAYr5ehw91V14Wi3FSvuOPXiVbO":  {
                                               "sku":  "DC-1",
@@ -1302,7 +1590,9 @@
                                               "size":  "122/3.00",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "11xtll7J1QLEDOQjgStlyDupjNMj57Ayt":  {
                                               "sku":  "LS025 ?",
@@ -1311,7 +1601,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1QXh0xNpKYUIPsrTD6DCZljHOifMQqQU2":  {
                                               "sku":  "L9001",
@@ -1320,7 +1612,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1tlTEly1HFdPfi7UDlia837cSr7gPXErf":  {
                                               "sku":  "SY26140",
@@ -1329,7 +1623,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1LPFTBeVyJpggpBCiWULT6U04A2pz8drq":  {
                                               "sku":  "XJQ24-1",
@@ -1338,7 +1634,9 @@
                                               "size":  "122/2.90",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1lrPyzr-IM3Vbm51q3ZsxXINlw7zCpOdB":  {
                                               "sku":  "WJ-19",
@@ -1347,7 +1645,9 @@
                                               "size":  "122/3.00",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1kNFIFgdLX2oidgTYN7ym0MA4DoiIdsXk":  {
                                               "sku":  "WJ-16",
@@ -1356,7 +1656,9 @@
                                               "size":  "122/3.00",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1CTn7PV-RmXx8RXrhpWMq3e45pmERixU6":  {
                                               "sku":  "HH25286-H ?",
@@ -1365,7 +1667,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1dJCFYWRH-_OZ0KiFSftbmih13tds4DzQ":  {
                                               "sku":  "ML2026",
@@ -1374,7 +1678,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "14ij4KqhDmdTS6O3ac5Xs5YSsjs_R0FmO":  {
                                               "sku":  "YSY26109",
@@ -1383,7 +1689,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "16IMLLGZ3Vza-Rwza5AwXHROym6bmaqZj":  {
                                               "sku":  "YSY26107",
@@ -1392,7 +1700,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "12IcFZxRG9JXlaWgPF9q9xbVuTDZQ78Tb":  {
                                               "sku":  "XJ87018-14",
@@ -1401,7 +1711,9 @@
                                               "size":  "122/2.90",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1mx_dtVO3Fnkg5zCmULPiPqiuX1_npqbm":  {
                                               "sku":  "5001-1 SPC",
@@ -1410,7 +1722,9 @@
                                               "size":  "122/2.90",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1ZC43K9PSHY84-HzC4EUk3QcMUU5VOY0V":  {
                                               "sku":  "DC-6",
@@ -1419,7 +1733,9 @@
                                               "size":  "122/3.00",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1Us7SGgh9yGeJhUSTNc2vuOFFzrLCexkJ":  {
                                               "sku":  "DC-5",
@@ -1428,7 +1744,9 @@
                                               "size":  "122/3.00",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1ZtE578gTwP1wJKbzSJySvoxGjkmnLvxQ":  {
                                               "sku":  "ZT-8294-4 ?",
@@ -1437,7 +1755,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1oKwCEhPkw_8ggp5IFg2jt6sFusdvmiYM":  {
                                               "sku":  "HC88243",
@@ -1446,7 +1766,9 @@
                                               "size":  "122/2.80",
                                               "finish":  "מט",
                                               "price":  "185",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1JCi1HNjWetg0h2pgTD1kKTDiEYKM5vL5":  {
                                               "sku":  "DC-7",
@@ -1455,7 +1777,9 @@
                                               "size":  "122/3.00",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1idSBYOu98_aMLFIoPCncqCcyfOTndVht":  {
                                               "sku":  "? סרגלים עץ כהה",
@@ -1464,7 +1788,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1JO8LuwX21yxv3d8lZtD_LMEINQi8n1PF":  {
                                               "sku":  "038 120/280",
@@ -1473,7 +1799,9 @@
                                               "size":  "120/2.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1M6KsoUQeNg8wEAymTpMKXJbb3539ZbfO":  {
                                               "sku":  "? סרגלים אפור",
@@ -1482,7 +1810,9 @@
                                               "size":  "120/290",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1JV2VQ4WFifXV3i3Gb7-0qcqGlsVJB_cW":  {
                                               "sku":  "? בז׳ מחורץ (אזל)",
@@ -1491,7 +1821,9 @@
                                               "size":  "120/290",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1kuK8SOkp5uHSjkpxLtQzIKWtelJMndoW":  {
                                               "sku":  "? סרגלים עץ",
@@ -1500,7 +1832,9 @@
                                               "size":  "120/290",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1C4hSwKsjefFM-CfobVyOG0veRRR1aTHU":  {
                                               "sku":  "? אפור מחורץ",
@@ -1509,7 +1843,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1kZZgCnL0XamjVcLLb6vOYOkM0SeSfSvH":  {
                                               "sku":  "? טרוורטין 2",
@@ -1518,7 +1854,9 @@
                                               "size":  "120/280",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1Ix-c0wsUE0nag_4eqIOcqme7XKflHiIt":  {
                                               "sku":  "L40561",
@@ -1527,7 +1865,9 @@
                                               "size":  "10,580",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1L03CBIcBsWLrBdA24-yPkWwxblaRz_qN":  {
                                               "sku":  "? אפור-כחול",
@@ -1536,7 +1876,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1Mn3jbgLeytJPOOwIBFGkaQ7tMwyYNYCU":  {
                                               "sku":  "80276/15",
@@ -1545,7 +1887,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1iRAKpen0AWP5FllfFJRFtzWZcZkUwaCl":  {
                                               "sku":  "? חזית",
@@ -1554,7 +1898,9 @@
                                               "size":  "50/2.00",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1WSVsfm1YGc6Fb9FwPQiDFrml_tMvQb7E":  {
                                               "sku":  "D-4",
@@ -1563,7 +1909,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1Kb87GFJCtlQ9H9m2SednR9zNCZDfA6VM":  {
                                               "sku":  "D-3",
@@ -1572,7 +1920,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "10qW4DTcn-WfZqzuEp4e8zyRhMTETWJik":  {
                                               "sku":  "D-2",
@@ -1581,7 +1931,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1B11Z6CaMFsBugWfXmfvip0KuRHpXHvnI":  {
                                               "sku":  "D-1",
@@ -1590,7 +1942,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1YO4w6XYLMBB-6B_Hp6Sx47JbibuQE0qD":  {
                                               "sku":  "?",
@@ -1599,7 +1953,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1Brb0eE8as52e2BnlcdmfX-OWhGg7apyf":  {
                                               "sku":  "? לבן מסותת",
@@ -1608,7 +1964,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1uYPJsWqxs6KvtCtOM177szIeJrNGcUlC":  {
                                               "sku":  "NHS ?",
@@ -1617,7 +1975,9 @@
                                               "size":  "50/200",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1tuoo2ep0hbo6l1XfhaKwufoUQ91mbuXM":  {
                                               "sku":  "? לבנים אדומות",
@@ -1626,7 +1986,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1vX6h2oFJGVEbBJuIS2uO54WiHByDz8xy":  {
                                               "sku":  "? לבן בלוקים",
@@ -1635,7 +1997,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1IAHJSNaI3MTDDIgDEfgfjiupd7KYIyvX":  {
                                               "sku":  "? קרם",
@@ -1644,7 +2008,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1WnrP_5rKvLSMjPat5HleUvgVWiP9OyhO":  {
                                               "sku":  "? ברונזה",
@@ -1653,7 +2019,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "10UBtF9BNlQYmWciVE9oO5bAuBLdHg7yM":  {
                                               "sku":  "? שחור",
@@ -1662,7 +2030,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "16AlERHRZJ6dnZKQ8i9Y41CQrEc6ap_Ve":  {
                                               "sku":  "? לבן",
@@ -1671,7 +2041,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  "אזל"
+                                              "notes":  "אזל",
+                                              "stock":  "FALSE",
+                                              "hide":  ""
                                           },
     "10Jru_Vvflhc-fqhmoCwL36vvitQotyHp":  {
                                               "sku":  "LED-17",
@@ -1680,7 +2052,9 @@
                                               "size":  "50/0.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1TgW2A6WyT8aAasEP_qZeCQGOccxANH5B":  {
                                               "sku":  "LED-11",
@@ -1689,7 +2063,9 @@
                                               "size":  "80/0.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1KsY0cjfA63mafLe24H5ElO84pfxHuFFw":  {
                                               "sku":  "LED-13",
@@ -1698,7 +2074,9 @@
                                               "size":  "70/0.90",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1DVISCYb7zsgBOKCRojYh2HKooivnDtj_":  {
                                               "sku":  "LED-10",
@@ -1707,7 +2085,9 @@
                                               "size":  "60/0.60",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "10XKAIMjzCjvMOB1ZNoLlaEe8STDBfTr1":  {
                                               "sku":  "LED-16",
@@ -1716,7 +2096,9 @@
                                               "size":  "60/1.20",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1RqeLdN1HRFUQLR4yJrCty2UeEnuPwK0B":  {
                                               "sku":  "LED-12",
@@ -1725,7 +2107,9 @@
                                               "size":  "60/0.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "16U7HNK2e4OAyEeXNApHZpb4aJZeaUtwW":  {
                                               "sku":  "LED-19",
@@ -1734,7 +2118,9 @@
                                               "size":  "60/1.80",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1HJLiAYfXBHZKqNz9afUGPGkKWDiH-ms-":  {
                                               "sku":  "66-25/40.25",
@@ -1743,7 +2129,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1QWx38o-pApUKkSq-SVWF4vl2npvcfQvS":  {
                                               "sku":  "66-10/35.20",
@@ -1752,7 +2140,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1YJOsFyXC_qgA1ZtDDN03RHy1qqFm8CCA":  {
                                               "sku":  "66.10/30.17",
@@ -1761,7 +2151,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "16sZ9v12vuSgMoEbIzshjJmpkRW4Bc9UN":  {
                                               "sku":  "66-10/25.20",
@@ -1770,7 +2162,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1e7x2rZrQ31r7nefeEg58oeC5fLsd07rL":  {
                                               "sku":  "66-10/20-15",
@@ -1779,7 +2173,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1NlDFMajlNvzF4hRyJMdIxmxeApR2WwyI":  {
                                               "sku":  "66-10/15-10",
@@ -1788,7 +2184,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1uaZgsDBeLsbjoH1GV1XXwPRf3a33L6cd":  {
                                               "sku":  "15/10",
@@ -1797,7 +2195,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1lGdyfTPXeFKXQQtV5jeBCWD8CqaCyHLg":  {
                                               "sku":  "פנל 12 ס״מ",
@@ -1806,7 +2206,9 @@
                                               "size":  "12",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1XA3cRhTfto5CfAa4jPd-kebPxC7jj9AB":  {
                                               "sku":  "פנל 6 ס״מ",
@@ -1815,7 +2217,9 @@
                                               "size":  "6",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "18VrCF7LDh52_ebR63b6LXf46rjaEA12p":  {
                                               "sku":  "פנל 8 ס״מ",
@@ -1824,7 +2228,9 @@
                                               "size":  "8",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1GMZ_rVw8TavT-Oa495Xu4NEGvsM99649":  {
                                               "sku":  "פנל 10 ס״מ",
@@ -1833,7 +2239,9 @@
                                               "size":  "10",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "194BI6RJtds3o9GKecehk_rup3dT1wiqm":  {
                                               "sku":  "? פנל לבן 1",
@@ -1842,7 +2250,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1Tq85PS-L6hYrB1KxiY2wK38VKW4tEkAw":  {
                                               "sku":  "? פנל לבן 2",
@@ -1851,7 +2261,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1pJzBRxWQtIADUps8r8xgwb48Epfk_7dJ":  {
                                               "sku":  "? פנל לבן 3",
@@ -1860,7 +2272,9 @@
                                               "size":  "15",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1QvwtBM1VMWN6DVQ7j9uMTcevZur1eOBw":  {
                                               "sku":  "? פנל לבן 4",
@@ -1869,7 +2283,9 @@
                                               "size":  "17",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1aIH7PIgfT0xg9jGLcDbldnVXEVkVo9dF":  {
                                               "sku":  "? פנל לבן 5",
@@ -1878,7 +2294,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1_nt0U1dYX37tEOneD7VGQwFqtSpKT7NP":  {
                                               "sku":  "? פנל לבן 6",
@@ -1887,7 +2305,9 @@
                                               "size":  "20/2.00",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1qPaJ_3ozVXWKSPhiIbzmxgEc-nqYLGWG":  {
                                               "sku":  "? פנל לבן 7",
@@ -1896,7 +2316,9 @@
                                               "size":  "12",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1UVoNAIEbF3ywyktwOk3vxOSjXcobPO7G":  {
                                               "sku":  "? פנל לבן 8",
@@ -1905,7 +2327,9 @@
                                               "size":  "25",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1JKfZumY8TBeEAEXySmK8C8uhJJru6J--":  {
                                               "sku":  "150",
@@ -1914,7 +2338,9 @@
                                               "size":  "4.5",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1Xu6YulfGkhKqo1zFpRTOlSfmam6r5M3r":  {
                                               "sku":  "149",
@@ -1923,7 +2349,9 @@
                                               "size":  "4.0",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1I874W-9v81eMhIRH93VjovN68cBDgW_C":  {
                                               "sku":  "147",
@@ -1932,7 +2360,9 @@
                                               "size":  "3.5",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1InO6Fu2f1_Bx7R56mUtthZAvJRD93yng":  {
                                               "sku":  "141",
@@ -1941,7 +2371,9 @@
                                               "size":  "4.0",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1PhfGx3uPDzkEljxGIOp-TsONxqBWLPkl":  {
                                               "sku":  "146",
@@ -1950,7 +2382,9 @@
                                               "size":  "3.0",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1I3A7cvywo7vkXIJfEEf39bKJ1gayvi07":  {
                                               "sku":  "145",
@@ -1959,7 +2393,9 @@
                                               "size":  "2.5",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1r1T8Vv6qsai34jnV1J_Htm4F4_N3U_Y-":  {
                                               "sku":  "144",
@@ -1968,7 +2404,9 @@
                                               "size":  "2.0",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1-4-end35mgoAOqc7aospY7jKmI0i77St":  {
                                               "sku":  "139",
@@ -1977,7 +2415,9 @@
                                               "size":  "2.5",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1IUQwSyq-L9fyYwlxxdh4CxLWcRsSZmyk":  {
                                               "sku":  "K006 K1005 K3002",
@@ -1986,7 +2426,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1Tq7JIyp7v1tf-lEPcevFX_2f9Tr5aEY-":  {
                                               "sku":  "K2005 K1005 K3002",
@@ -1995,7 +2437,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1AZmxAYPvZnKEBvoa5XZkqfKuTC2XOm0O":  {
                                               "sku":  "K2001 K1001 K3001",
@@ -2004,7 +2448,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1HcPn7eiIgBMsOdBywg4jFnsxzSOo1JhP":  {
                                               "sku":  "K2003 K3001 K1001",
@@ -2013,7 +2459,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1DsCHxtev1uKY4o1Xbo_QznGvpL-Bnoqr":  {
                                               "sku":  "PNA201",
@@ -2022,7 +2470,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "10cr_qCkaI3IpRWHFJV_qOxkO63A-LGSX":  {
                                               "sku":  "PNA202",
@@ -2031,7 +2481,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1Yq92iYPOUIN9D_fyEtuAT8St-acjcqAj":  {
                                               "sku":  "PNA135",
@@ -2040,7 +2492,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1bqhlze_A6ieo_6zhSfZ_7UKGB5rRZXuV":  {
                                               "sku":  "PNA204",
@@ -2049,7 +2503,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1yKDWBBB1wwXkvbM46B4p-oBVqZ_hb8Hs":  {
                                               "sku":  "PNA322",
@@ -2058,7 +2514,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1GFnA2-KKmTsQV_HG2envJvoEjGU4qFfm":  {
                                               "sku":  "PNA311",
@@ -2067,7 +2525,9 @@
                                               "size":  "",
                                               "finish":  "",
                                               "price":  "",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           },
     "1kaQ3HnvG7RZY_FxUiuNqs7MvgMoLmZ4f":  {
                                               "sku":  "HOMEY High Tack Ultra",
@@ -2076,6 +2536,8 @@
                                               "size":  "300 מ״ל",
                                               "finish":  "",
                                               "price":  "35",
-                                              "notes":  ""
+                                              "notes":  "",
+                                              "stock":  "TRUE",
+                                              "hide":  ""
                                           }
 }

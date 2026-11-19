@@ -52,7 +52,8 @@ function NormSize([string]$s) {
 function NormFinish([string]$s) { $s = $s.Trim(); if ($s -eq $MATTE) { 'm' } elseif ($s -eq $GLOSS) { 'g' } else { '' } }
 function NormPrice([string]$s) { $s = ($s -replace '[^0-9.]', ''); if (-not $s) { return $null }; $v = [double]::Parse($s, $Inv); if ($v -le 0) { return $null }; if ($v -eq [Math]::Floor($v)) { [int]$v } else { $v } }
 function StockOos($sig) { if ($sig.stock -eq 'FALSE') { return $true }; if ($sig.stock -eq 'TRUE') { return $false }; return ($sig.notes -match $OOS) }
-  $c = [string](P $tax.sheetCats $cat.Trim()); if (-not $c) { $c = 'panel' }
+function CatOf([string]$cat, [string]$desc) {
+  $c =[string](P $tax.sheetCats $cat.Trim()); if (-not $c) { $c = 'panel' }
   if ($c -eq 'panel' -and $desc -match $FLEX) { $c = 'flex' }
   elseif ($c -eq 'panel' -and $desc -match $DECO) { $c = 'deco' }
   $c
@@ -75,6 +76,7 @@ foreach ($r in $rows) {
   if ($old) {
     $o = [ordered]@{ sku = $old.sku; c = $old.c; he = $old.he; fr = $old.fr; s = $old.s; f = $old.f; p = $old.p; oos = [bool]$old.oos; img = $id; hide = [bool](P $old 'hide') }
     if (P $old 'frAuto') { $o.frAuto = $true }
+    if (P $old 'en') { $o.en = [string](P $old 'en') }
     $prev = if ($first) { $null } else { P $snap $id }
     $changed = $false
     function FieldChanged([string]$k) { if ($first) { return ($k -ne 'desc' -and $k -ne 'cat') }; return ($null -eq $prev -or [string](P $prev $k) -ne [string]$sig[$k]) }
@@ -103,6 +105,7 @@ $lines = foreach ($o in $out) {
   $l = '{"sku":' + (J $o.sku) + ',"c":' + (J $o.c) + ',"he":' + (J $o.he) + ',"fr":' + (J $o.fr) + ',"s":' + (J $o.s) + ',"f":' + (J $o.f) + ',"p":' + $pv + ',"oos":' + ([string]$o.oos).ToLower() + ',"img":' + (J $o.img)
   if ($o.Contains('frAuto') -and $o.frAuto) { $l += ',"frAuto":true' }
   if ($o.Contains('hide') -and $o.hide) { $l += ',"hide":true' }
+  if ($o.Contains('en') -and $o.en) { $l += ',"en":' + (J $o.en) }
   $l + '}'
 }
 $newText = "[`n" + ($lines -join ",`n") + "`n]`n"
