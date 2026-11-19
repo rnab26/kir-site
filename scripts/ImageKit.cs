@@ -685,6 +685,43 @@ public static class Kit
         return p;
     }
 
+    // ---------- outdoor cladding: boards run along the length (photos taken lying down are turned 90 degrees right) ----------
+    // True when the photo's straight lines (joints, grooves) run horizontally: compares the structure of the
+    // row-mean and column-mean profiles (gradients removed), so a single joint on a plain panel counts too.
+    static bool LinesHorizontal(KImg s)
+    {
+        int W = s.W, H = s.H; double[] rm = new double[H], cm = new double[W];
+        for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) { int i = (y * W + x) * 3; double l = 0.114 * s.D[i] + 0.587 * s.D[i + 1] + 0.299 * s.D[i + 2]; rm[y] += l / W; cm[x] += l / H; }
+        double[] hr = HighPass(rm, Math.Max(3, H / 10)), hc = HighPass(cm, Math.Max(3, W / 10)); double vr = 0, vc = 0;
+        for (int y = H / 20; y < H - H / 20; y++) vr += hr[y] * hr[y]; vr /= Math.Max(1, H - H / 10);
+        for (int x = W / 20; x < W - W / 20; x++) vc += hc[x] * hc[x]; vc /= Math.Max(1, W - W / 10);
+        return vr > vc;
+    }
+    // The cladding photo turned 90 degrees right when its boards lie down, then every joint tracked and made
+    // exactly vertical (tilt and perspective removed) and cropped from the first to the last joint.
+    // frac: share of the photo's width that was kept.
+    static KImg BoardsSample(KImg tex, out double frac)
+    {
+        frac = 1; KImg s = TrimWhite(tex); if (LinesHorizontal(s)) s = Rotate90(s);   // Rotate90 = clockwise
+        double P; List<double> g; KImg st = StraightenFlutes(s, out P, out g);
+        if (st == null || g.Count < 2) return Deskew(s);
+        int a = (int)Math.Round(g[0]), b = (int)Math.Round(g[g.Count - 1]);
+        if (b - a < st.W / 3) return st;
+        frac = (b - a) / (double)st.W; return st.Crop(a, 0, b - a, st.H);
+    }
+    public static KImg StraightBoards(KImg tex) { double f; return BoardsSample(tex, out f); }
+    // Face wCm wide x lenCm long with the boards along the length, continued from the photo
+    // (columns of the sample side by side, joined at a joint; the photo covers sampleCm across the boards).
+    public static KImg BoardsFace(KImg tex, double wCm, double lenCm, double sampleCm, string synth, int seed)
+    {
+        double frac; KImg s = BoardsSample(tex, out frac);
+        KImg f = PlateSynth(s, "lines", wCm, lenCm, sampleCm * frac, 1, 1300, seed);
+        // same column layout as PlateSynth: level each column's rows to the sample colour (no block joins)
+        double ppc = 1300 / Math.Max(wCm, lenCm); int sw = Math.Max(8, (int)Math.Round(sampleCm * frac * ppc));
+        double mb, mg, mr; FlattenLight(s, false, true); MeanColor(s, out mb, out mg, out mr); double[] mc = { mb, mg, mr };
+        for (int x0 = 0; x0 < f.W; x0 += sw) LevelRows(f, mc, Math.Max(3, f.H / 80), x0, Math.Min(f.W, x0 + sw));
+        return f;
+    }
     // kind: plate | photo. Returns a 1000x1250 product shot.
     public static KImg RenderPack(KImg tex, string kind, double wcm, double hcm, double tileWcm, double tileHcm, int slats, bool mirrorX, bool gloss)
     { return RenderPack(tex, kind, wcm, hcm, tileWcm, tileHcm, slats, mirrorX, gloss, "tile", 0, 1); }
@@ -986,11 +1023,12 @@ public static class Kit
     }
     // Pulls the slowly varying colour of the rows back to the sample's mean colour: the tone matching of successive
     // blocks must not drift down a long slat (one flute turning orange, the next grey).
-    static void LevelRows(KImg im, double[] target, int radius)
+    static void LevelRows(KImg im, double[] target, int radius) { LevelRows(im, target, radius, 0, im.W); }
+    static void LevelRows(KImg im, double[] target, int radius, int xa, int xb)
     {
-        int W = im.W, H = im.H; double[] rm = new double[H * 3];
-        for (int y = 0; y < H; y++) for (int x = 0; x < W; x++) for (int c = 0; c < 3; c++) rm[y * 3 + c] += im.D[(y * W + x) * 3 + c];
-        for (int i = 0; i < rm.Length; i++) rm[i] /= W;
+        int W = im.W, H = im.H; double[] rm = new double[H * 3]; if (xb <= xa) return;
+        for (int y = 0; y < H; y++) for (int x = xa; x < xb; x++) for (int c = 0; c < 3; c++) rm[y * 3 + c] += im.D[(y * W + x) * 3 + c];
+        for (int i = 0; i < rm.Length; i++) rm[i] /= (xb - xa);
         for (int y = 0; y < H; y++)
         {
             double[] sm = new double[3]; int n = 0;
@@ -998,7 +1036,7 @@ public static class Kit
             for (int c = 0; c < 3; c++)
             {
                 double off = target[c] - sm[c] / n;
-                for (int x = 0; x < W; x++) { int i = (y * W + x) * 3 + c; im.D[i] = (byte)Math.Max(0, Math.Min(255, im.D[i] + off + 0.5)); }
+                for (int x = xa; x < xb; x++) { int i = (y * W + x) * 3 + c; im.D[i] = (byte)Math.Max(0, Math.Min(255, im.D[i] + off + 0.5)); }
             }
         }
     }

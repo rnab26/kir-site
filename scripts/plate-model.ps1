@@ -21,11 +21,16 @@ function PlateModel($p) {
   if ($p.s -match '^(\d+(?:\.\d+)?)/(\d+(?:\.\d+)?)$') { $w = [double]$matches[1]; $l = [double]$matches[2] * 100; if ($l -gt 1000) { $l = $l / 100 } }
   elseif ($p.s -match '^(\d+(?:\.\d+)?)$') { $w = [double]$matches[1] }
   $c = [string]$p.c
-  if ($c -eq 'outdoor' -and $w -and $w -ge 40) { $c = 'panel' }
+  # outdoor cladding: photos show the boards lying down; they are turned 90 degrees right so the boards run along
+  # the length (Raphael, 2026-11-19). Panels (>= 40 cm wide): one panel, the photo covers its width;
+  # boards: a 100 x 290 cm section of boards, photo ~40 cm across the boards.
+  if ($c -eq 'outdoor') {
+    if ($w -and $w -ge 40) { if (-not $l) { $l = 200 }; return @{ kind = 'boards'; w = $w; h = $l; sample = $w; synth = 'lines' } }
+    if (-not $l) { $l = 290 }; return @{ kind = 'boards'; w = 100; h = $l; sample = 40; synth = 'cols' }
+  }
   switch ($c) {
     # slats are sold one by one: show two loose slats at true proportions (never a big plate)
     'slat'    { if (-not $w) { $w = 20 }; if (-not $l) { $l = 290 }; return @{ kind = 'slats'; w = $w; h = $l; furniture = $true; flutes = (SlatFlutes $p $w) } }
-    'outdoor' { if (-not $w) { $w = 15 }; if (-not $l) { $l = 290 }; return @{ kind = 'slats'; w = $w; h = $l; furniture = $false; flutes = 0 } }
     'flex'    { if (-not $w) { $w = 120 }; if (-not $l) { $l = 290 }; return @{ kind = 'plate'; w = $w; h = $l; tile = $w / 3; tileH = $l; slats = 1; mirror = $false; synth = 'cols'; sample = 40 } }
     'panel'   { if (-not $w) { $w = 122 }; if (-not $l) { $l = 280 }; return @{ kind = 'plate'; w = $w; h = $l; tile = $w; tileH = 0; slats = 1; mirror = $false; synth = $(if ($p.he -match $PlateWood) { '2dn' } else { '2d' }); sample = 80 } }
     'stone'   { if (-not $w) { $w = 60 }; if (-not $l) { $l = 120 }; $s = if ($p.he -match $PlateGeo) { 'tile' } else { '2d' }; return @{ kind = 'plate'; w = $w; h = $l; tile = $w; tileH = 0; slats = 1; mirror = $false; synth = $s; sample = 110 } }
@@ -49,6 +54,14 @@ function SavePlateImages($tex, $p, [string]$imgDir, [string]$outDir = '', [bool]
     if ($face -or $faceOnly) { [Kit]::SlatFaceTexture($tex, $m.w, $m.h, 6.0, $seed, $stretch, $m.flutes).SaveJpg($facePath, 88) }
     if ($faceOnly) { return $true }
     $pack = [Kit]::RenderSlats($tex, $m.w, $m.h, $gloss, $seed, $stretch, $m.flutes)
+    $pack.SaveJpg($packPath, 88)
+    if (-not $outDir) { $pack.Resize(520, 650).SaveJpg((Join-Path $imgDir "thumb/$id.jpg"), 84) }
+  } elseif ($m.kind -eq 'boards') {
+    # outdoor cladding: boards along the length, loupe on the photo turned the same way and straightened
+    $f = [Kit]::BoardsFace($tex, $m.w, $m.h, $m.sample, $m.synth, $seed)
+    if ($face -or $faceOnly) { $f.SaveJpg($facePath, 88) }
+    if ($faceOnly) { return $true }
+    $pack = [Kit]::RenderPack([Kit]::StraightBoards($tex), 'plate', $m.w, $m.h, $m.w, 0, 1, $false, $gloss, $m.synth, $m.sample, $seed, $f)
     $pack.SaveJpg($packPath, 88)
     if (-not $outDir) { $pack.Resize(520, 650).SaveJpg((Join-Path $imgDir "thumb/$id.jpg"), 84) }
   } elseif ($m.kind -eq 'photo') {
