@@ -555,3 +555,46 @@ a.add { text-decoration: none; color: inherit; }
   .logo-text { font-size: 1.05rem; }
 }
 @media print { .wa-float, .a11y-btn, .a11y-panel, .lang-bar, .langs { display: none !important; } }
+
+/* ===== Polish pass (Apple-inspired: translucent chrome, calm type, persistent buy action) ===== */
+p, li, .lead { text-wrap: pretty; }
+.site-header { background: rgba(243,238,230,.72); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
+.home .site-header.scrolled { background: rgba(22,20,17,.72); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
+.filters { background: rgba(243,238,230,.8); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
+.band-count { white-space: nowrap; }
+/* Share */
+.share-btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; padding: 8px 0; border: 0; background: none; font: 600 .92rem/1 var(--sans); color: var(--brass-ink); cursor: pointer; min-height: 44px; }
+.share-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.share-btn:hover { text-decoration: underline; }
+/* Sticky buy bar */
+.buybar { position: fixed; z-index: 70; inset-inline: 0; bottom: 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px max(16px, calc((100vw - var(--wrap)) / 2)); padding-bottom: calc(10px + env(safe-area-inset-bottom)); background: rgba(250,247,242,.82); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-top: 1px solid var(--line); box-shadow: 0 -10px 30px -18px rgba(27,25,22,.35); animation: bbIn .35s var(--ease); }
+.buybar[hidden] { display: none; }
+.bb-info { min-width: 0; display: grid; gap: 2px; }
+.bb-info strong { font: 600 .95rem/1.25 var(--sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bb-info span { font-weight: 700; }
+.bb-info small { font-weight: 400; color: var(--muted); margin-inline-start: 4px; }
+.buybar .btn { flex: none; min-height: 46px; padding: 0 22px; }
+@keyframes bbIn { from { transform: translateY(100%); } }
+body.has-buybar .wa-float, body.has-buybar .a11y-btn { bottom: calc(80px + env(safe-area-inset-bottom)); }
+body.has-buybar .a11y-panel { bottom: calc(136px + env(safe-area-inset-bottom)); }
+body.has-buybar .site-footer { padding-bottom: 96px; }
+@media (min-width: 961px) {
+  .buybar { top: var(--header); bottom: auto; padding-block: 10px; border-top: 0; border-bottom: 1px solid var(--line); box-shadow: 0 10px 30px -22px rgba(27,25,22,.35); animation-name: bbDown; }
+  body.has-buybar .wa-float, body.has-buybar .a11y-btn { bottom: 22px; }
+  body.has-buybar .a11y-panel { bottom: 80px; }
+  body.has-buybar .site-footer { padding-bottom: 0; }
+  @keyframes bbDown { from { transform: translateY(-100%); opacity: 0; } }
+}
+/* Hero on phones: readable kicker, stats clear of floating buttons */
+.hero .kicker, .hero .lead, .h1-tag { text-shadow: 0 1px 14px rgba(0,0,0,.55); }
+@media (max-width: 640px) {
+  .hero { padding-bottom: 96px; }
+  .hw-vignette { background: linear-gradient(180deg, rgba(22,20,17,.55) 0%, rgba(22,20,17,.15) 25%, rgba(22,20,17,.35) 55%, rgba(22,20,17,.9) 100%); }
+  .scroll-cue { display: none; }
+  .a11y-btn { width: 44px; height: 44px; }
+}
+/* 404 */
+.nf-main.band { padding: 48px 0; }
+.nf-main .lead { color: var(--on-dark-2); }
+.nf-main h2 { color: #fff; }
+.nf-logo { display: block; width: fit-content; margin-bottom: 28px; color: var(--on-dark); text-decoration: none; font: 700 1.2rem/1 var(--serif); }

@@ -186,7 +186,7 @@
           && (!active.look.length || active.look.some(function (v) { return (' ' + c.getAttribute('data-looks') + ' ').indexOf(' ' + v + ' ') > -1; }))
           && (!active.color.length || active.color.some(function (v) { return (' ' + c.getAttribute('data-colors') + ' ').indexOf(' ' + v + ' ') > -1; }))
           && (!term || term.split(/\s+/).every(function (w) { return c.getAttribute('data-q').indexOf(w) > -1; }));
-        c.hidden = !ok; if (ok) n++;
+        c.hidden = !ok; if (ok) n += parseInt(c.getAttribute('data-k'), 10) || 1;
       });
       if (count) count.textContent = nf.format(n);
       var any = active.c.length || active.look.length || active.color.length || term;
@@ -323,7 +323,7 @@
     L.push((T.fPhone || '') + ': ' + o.c.phone);
     if (o.c.email) L.push('Email: ' + o.c.email);
     L.push((T.fDelivery || '') + ': ' + (o.c.delivery === 'delivery' ? T.delivery : T.pickup));
-    L.push((T.fCity || '') + ': ' + o.c.city + (o.c.address ? ', ' + o.c.address : ''));
+    if (o.c.city || o.c.address) L.push((T.fCity || '') + ': ' + [o.c.city, o.c.address].filter(Boolean).join(', '));
     L.push((T.fContact || '') + ' ' + (o.c.contact === 'phone' ? T.byPhone : T.byWa));
     if (o.c.notes) L.push((T.fNotes || '') + ': ' + o.c.notes);
     return L.join('\n');
@@ -337,7 +337,7 @@
       if (coSum) coSum.innerHTML = S.list.length ? summaryHtml(S, false) + '<ul class="mini">' + S.list.map(function (x) { return '<li><span>' + esc(nameOf(x.p)) + ' × ' + x.q + '</span><b>' + (x.p.p != null ? money(x.p.p * x.q) : '—') + '</b></li>'; }).join('') + '</ul>' : '<p>' + esc(T.listEmpty) + '</p>';
     });
     var addr = $('[data-addr]', co);
-    $$('input[name=delivery]', co).forEach(function (r) { r.addEventListener('change', function () { var d = co.delivery.value === 'delivery'; addr.hidden = !d; co.address.required = d; }); });
+    $$('input[name=delivery]', co).forEach(function (r) { r.addEventListener('change', function () { var d = co.delivery.value === 'delivery'; addr.hidden = !d; co.address.required = d; co.city.required = d; }); });
     try { var prev = JSON.parse(localStorage.getItem('kir-customer') || 'null'); if (prev) { ['name', 'phone', 'email', 'city', 'address'].forEach(function (k) { if (prev[k] && co[k]) co[k].value = prev[k]; }); } } catch (e) {}
     co.addEventListener('submit', function (e) {
       e.preventDefault();
@@ -347,7 +347,7 @@
       if (!co.name.value.trim()) setErr('name', T.required);
       var ph = co.phone.value.replace(/[^\d+]/g, '');
       if (!ph) setErr('phone', T.required); else if (ph.replace(/\D/g, '').length < 9) setErr('phone', T.badPhone);
-      if (!co.city.value.trim()) setErr('city', T.required);
+      if (co.delivery.value === 'delivery' && !co.city.value.trim()) setErr('city', T.required);
       if (co.delivery.value === 'delivery' && !co.address.value.trim()) setErr('address', T.required);
       if (!co.consent.checked) setErr('consent', T.required);
       if (!ok) { var first = co.querySelector('.err:not(:empty)'); if (first) first.parentNode.querySelector('input,textarea').focus(); return; }
@@ -396,7 +396,24 @@
       $$('[data-vb]', prod).forEach(function (b) { b.hidden = b.getAttribute('data-vb') !== id; });
       vopts.forEach(function (o) { o.setAttribute('aria-checked', String(o.getAttribute('data-v') === id)); });
       if (push && history.replaceState) { var p = new URLSearchParams(location.search); p.set('v', id); history.replaceState(null, '', location.pathname + '?' + p.toString()); }
+      syncBuybar();
     };
+    /* Sticky buy bar: appears once the main Add button has scrolled out of view */
+    var bb = $('[data-buybar]', prod), bbPrice = bb && $('[data-bb-price]', bb);
+    var curAdd = function () { return $('[data-vb]:not([hidden]) [data-cart-add]', prod); };
+    var syncBuybar = function () {
+      if (!bb) return;
+      var vb = $('[data-vb]:not([hidden])', prod), pr = vb && $('.pd-price .price', vb), acts = vb && $('.pd-actions', vb);
+      var ph = pr ? pr.innerHTML : ''; if (bbPrice.innerHTML !== ph) bbPrice.innerHTML = ph;
+      var show = !!acts && !!curAdd() && acts.getBoundingClientRect().bottom < 0;
+      if (bb.hidden === show) { bb.hidden = !show; document.body.classList.toggle('has-buybar', show); }
+    };
+    window.KIRsyncBuybar = syncBuybar;
+    if (bb) {
+      window.addEventListener('scroll', syncBuybar, { passive: true });
+      window.addEventListener('resize', syncBuybar);
+      $('[data-bb-add]', bb).addEventListener('click', function () { var a = curAdd(); if (a) a.click(); });
+    }
     vopts.forEach(function (o, i) {
       o.addEventListener('click', function () { showVariant(o.getAttribute('data-v'), true); });
       o.addEventListener('keydown', function (e) {
@@ -489,7 +506,7 @@
       if (v.hide) { b.innerHTML = '<p class="avail off">' + (T.unavailable || '') + '</p>'; }
     });
     $$('.vopt[data-img]').forEach(function (o) { var r = LIVE[o.getAttribute('data-img')]; if (!r) return; var v = liveRow(r); var pr = o.querySelector('.price'); if (pr) pr.outerHTML = priceHtml(v.p); if (v.hide) o.hidden = true; });
-    applyLiveToData(); renderCart();
+    applyLiveToData(); renderCart(); if (window.KIRsyncBuybar) window.KIRsyncBuybar();
   }
   if (K.live && window.fetch) {
     var LKEY = 'kir-live-v1', cached = null;
@@ -574,7 +591,10 @@
   $$('[data-share]').forEach(function (b) {
     b.addEventListener('click', function () {
       var d = { title: document.title, url: location.href };
-      if (navigator.share) navigator.share(d).catch(function () {}); else window.open('https://wa.me/?text=' + encodeURIComponent(d.title + ' ' + d.url), '_blank', 'noopener');
+      var waShare = function () { window.open('https://wa.me/?text=' + encodeURIComponent(d.title + ' ' + d.url), '_blank', 'noopener'); };
+      if (navigator.share) { navigator.share(d).catch(function () {}); return; }
+      if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(d.url).then(function () { toast(T.copied || 'OK'); }, waShare); return; }
+      waShare();
     });
   });
 })();

@@ -233,7 +233,7 @@ function CardBuild($L, $it, [string]$headTag) {
   if ($multi -and $null -ne $it.p) { $price = '<span class="price"><small class="from">' + (Enc (T $L 'from')) + '</small><bdi>' + (Num $it.p) + '&nbsp;&#8362;</bdi></span>' }
   $btn = if ($multi) { '<a class="add" href="' + $url + '" aria-label="' + (Enc ((T $L 'choose') + ': ' + $name)) + '">' + $Icons.arrow + '</a>' } else { '<button class="add" type="button" data-add="' + $it.slug + '" aria-label="' + (Enc ((T $L 'add') + ': ' + $name)) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>' }
   $imgs = if ($it.vars) { (@($it.vars | ForEach-Object { $_.img }) -join ' ') } else { $it.img }
-  return '<article class="card" data-imgs="' + $imgs + '" data-c="' + $it.c + '" data-looks="' + ($it.looks -join ' ') + '" data-colors="' + ($it.colors -join ' ') + '" data-p="' + $pp + '" data-i="' + $it.idx + '" data-q="' + (Enc $q) + '">' +
+  return '<article class="card" data-k="' + $(if ($it.n -gt 1) { $it.n } else { 1 }) + '" data-imgs="' + $imgs + '" data-c="' + $it.c + '" data-looks="' + ($it.looks -join ' ') + '" data-colors="' + ($it.colors -join ' ') + '" data-p="' + $pp + '" data-i="' + $it.idx + '" data-q="' + (Enc $q) + '">' +
     '<a class="card-media" href="' + $url + '" tabindex="-1" aria-hidden="true"><img src="' + (ImgUrl $it.img) + '" alt="" width="520" height="650" loading="lazy" decoding="async">' + $badge + '</a>' +
     '<div class="card-body"><' + $headTag + ' class="card-title"><a href="' + $url + '">' + (Enc $name) + '</a></' + $headTag + '>' +
     '<p class="card-meta">' + $meta + '</p>' +
@@ -308,6 +308,7 @@ $Icons = @{
   clock = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
   phone = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 3h2.8l1.4 4.2-2 1.4a12 12 0 0 0 6.6 6.6l1.4-2 4.2 1.4v2.8a2 2 0 0 1-2.2 2A17 17 0 0 1 4.6 5.2 2 2 0 0 1 6.6 3Z"/></svg>'
   a11y = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="4.5" r="1.8"/><path d="M5 8.5l7 1.5 7-1.5M12 10v4.5M12 14.5 9 21M12 14.5l3 6.5"/></svg>'
+  share = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7.5 7.5 12 3l4.5 4.5"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>'
 }
 $LangLabel = @{ he = [string][char]0x05E2 + [char]0x05D1; en = 'EN'; fr = 'FR' }
 $LangName = @{ he = [string][char]0x05E2 + [char]0x05D1 + [char]0x05E8 + [char]0x05D9 + [char]0x05EA; en = 'English'; fr = 'Fran' + [char]0x00E7 + 'ais' }
@@ -407,7 +408,7 @@ function Page($L, [hashtable]$pg) {
   }
   [void]$sb.Append('<meta property="og:type" content="' + $(if ($pg.ogType) { $pg.ogType } else { 'website' }) + '"><meta property="og:site_name" content="' + (Enc (BrandOf $L)) + '"><meta property="og:title" content="' + (Enc $title) + '"><meta property="og:description" content="' + (Enc $desc) + '"><meta property="og:url" content="' + $canon + '"><meta property="og:image" content="' + $og + '"><meta property="og:locale" content="' + $L.locale + '">')
   foreach ($lg in $Langs) { if ($lg -ne $L.lang) { [void]$sb.Append('<meta property="og:locale:alternate" content="' + (Lc $lg).locale + '">') } }
-  [void]$sb.Append('<meta name="twitter:card" content="summary_large_image"><meta name="theme-color" content="#1b1916"><link rel="icon" href="' + $BasePath + '/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="' + (AssetUrl 'img/logo.png') + '"><link rel="manifest" href="' + $BasePath + '/manifest.webmanifest">')
+  [void]$sb.Append('<meta name="twitter:card" content="summary_large_image"><meta name="theme-color" content="#1b1916"><link rel="icon" href="' + $BasePath + '/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="' + (AssetUrl 'img/logo.png') + '"><meta name="apple-mobile-web-app-title" content="' + (Enc (BrandOf $L)) + '"><meta name="mobile-web-app-capable" content="yes"><link rel="manifest" href="' + $BasePath + '/manifest.webmanifest">')
   [void]$sb.Append('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://docs.google.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap">')
   [void]$sb.Append('<link rel="stylesheet" href="' + (AssetUrl ('css/style.css?v=' + $Ver)) + '">' + $ld + '<script>try{var a=JSON.parse(localStorage.getItem("kir-a11y")||"{}");var d=document.documentElement;if(a.fs)d.style.fontSize=a.fs+"%";if(a.contrast)d.classList.add("a11y-contrast");if(a.links)d.classList.add("a11y-links");if(a.motion)d.classList.add("a11y-motion");}catch(e){}</script></head>')
   [void]$sb.Append('<body class="' + [string]$pg.cls + '"><a class="skip" href="#main">' + (Enc (T $L 'skip')) + '</a>')
@@ -521,8 +522,9 @@ function FilterBar($L, [string[]]$cats) {
   '<div class="fstat"><span><strong data-n></strong> ' + (Enc (T $L 'results')) + '</span><button type="button" class="link" data-clear hidden>' + (Enc (T $L 'clear')) + '</button></div><p class="empty" data-empty hidden>' + (Enc (T $L 'noResults')) + '</p></div>'
 }
 
-function Band([string]$kicker, [string]$title, [string]$lead, [int]$count = -1, $L = $null) {
-  $c = if ($count -ge 0) { '<span class="band-count">' + $count + ' ' + (Enc (T $L 'products')) + '</span>' } else { '' }
+function ProdCount($list) { $n = 0; foreach ($x in @($list)) { $k = [int](P $x 'n'); if ($k -lt 1) { $k = 1 }; $n += $k }; $n }
+function Band([string]$kicker, [string]$title, [string]$lead, [int]$count = -1, $L = $null, [int]$series = -1) {
+  $c = if ($count -ge 0) { '<span class="band-count">' + $count + ' ' + (Enc (T $L 'products')) + $(if ($series -gt 0 -and $series -lt $count) { ' &middot; ' + $series + ' ' + (Enc (T $L 'seriesPl')) } else { '' }) + '</span>' } else { '' }
   '<section class="band"><div class="band-flutes" aria-hidden="true"></div><div class="wrap"><p class="kicker">' + (Enc $kicker) + '</p><h1>' + (Enc $title) + '</h1>' + $(if ($lead) { '<p class="lead">' + (Enc $lead) + '</p>' } else { '' }) + $c + '</div></section>'
 }
 
@@ -634,7 +636,7 @@ foreach ($lang in $Langs) {
   if ($lang -eq 'he') { AddUrl '' '1.0' }
 
   # Catalog
-  $body = (Band (P $L.nav 'catalog') $L.catalogTitle $L.catalogDesc $Items.Count $L) + (FilterBar $L $CatOrder) + '<section class="listing"><div class="wrap">' + (Grid $L $Fams 'h2') + '</div></section>'
+  $body = (Band (P $L.nav 'catalog') $L.catalogTitle $L.catalogDesc $Items.Count $L $Fams.Count) + (FilterBar $L $CatOrder) + '<section class="listing"><div class="wrap">' + (Grid $L $Fams 'h2') + '</div></section>'
   $crumb = @(@((T $L 'home'), ''), @($L.catalogTitle, 'catalog/'))
   Page $L @{ path = 'catalog/'; title = ($L.catalogTitle + ' | ' + (BrandOf $L)); desc = $L.catalogDesc; body = (CrumbHtml $L $crumb) + $body; cls = 'catalog'; ld = @((CrumbLd $L $crumb), (ItemListLd $L $Items)) }
   if ($lang -eq 'he') { AddUrl 'catalog/' '0.9' }
@@ -646,7 +648,7 @@ foreach ($lang in $Langs) {
     $crumb = @(@((T $L 'home'), ''), @($L.catalogTitle, 'catalog/'), @($cat.name, ('c/' + $cat.slug + '/')))
     $extra = ''
     if ($c -eq 'slat' -or $c -eq 'panel' -or $c -eq 'flex') { $extra = (CalcHtml $L ($catIndex[$c] | Where-Object { $_.w -and $_.l } | Select-Object -First 1)) }
-    $body = (CrumbHtml $L $crumb) + (Band (P $L.nav 'catalog') $cat.title $cat.intro $list.Count $L) + (FilterBar $L @($c)) + '<section class="listing"><div class="wrap">' + (Grid $L $list 'h2') + '</div></section>' + $extra + '<section class="more"><div class="wrap"><div class="pills">' + $others + '</div></div></section>'
+    $body = (CrumbHtml $L $crumb) + (Band (P $L.nav 'catalog') $cat.title $cat.intro (ProdCount $list) $L @($list).Count) + (FilterBar $L @($c)) + '<section class="listing"><div class="wrap">' + (Grid $L $list 'h2') + '</div></section>' + $extra + '<section class="more"><div class="wrap"><div class="pills">' + $others + '</div></div></section>'
     $desc = $cat.intro
     Page $L @{ path = ('c/' + $cat.slug + '/'); title = ($cat.title + ' | ' + (BrandOf $L)); desc = $desc; body = $body; cls = 'category'; og = (ImgAbs $list[0].img); ld = @((CrumbLd $L $crumb), (ItemListLd $L $list)) }
     if ($lang -eq 'he') { AddUrl ('c/' + $cat.slug + '/') '0.8' }
@@ -665,7 +667,7 @@ foreach ($lang in $Langs) {
     $others = ''; foreach ($j in $LookOrder) { if ($j -ne $k) { $others += '<a class="pill" href="' + (Href $L ('look/' + (P (LookOf $L $j) 'slug') + '/')) + '">' + (Enc (P (LookOf $L $j) 'name')) + '</a>' } }
     $crumb = @(@((T $L 'home'), ''), @($L.looksTitle, 'looks/'), @($lk.name, ('look/' + $lk.slug + '/')))
     $first = $ById[(P $Tax.lookCover $k)]
-    $body = (CrumbHtml $L $crumb) + (Band (P $L.nav 'looks') $lk.title $lk.intro $list.Count $L) + (FilterBar $L $cats) + '<section class="listing"><div class="wrap">' + (Grid $L $list 'h2') + '</div></section>' + (StudioHtml $L $first) + '<section class="more"><div class="wrap"><div class="pills">' + $others + '</div></div></section>'
+    $body = (CrumbHtml $L $crumb) + (Band (P $L.nav 'looks') $lk.title $lk.intro (ProdCount $list) $L @($list).Count) + (FilterBar $L $cats) + '<section class="listing"><div class="wrap">' + (Grid $L $list 'h2') + '</div></section>' + (StudioHtml $L $first) + '<section class="more"><div class="wrap"><div class="pills">' + $others + '</div></div></section>'
     Page $L @{ path = ('look/' + $lk.slug + '/'); title = ($lk.title + ' | ' + (BrandOf $L)); desc = $lk.intro; body = $body; cls = 'look'; og = (ImgAbs $first.img); ld = @((CrumbLd $L $crumb), (ItemListLd $L $list)) }
     if ($lang -eq 'he') { AddUrl ('look/' + $lk.slug + '/') '0.8' }
   }
@@ -688,7 +690,8 @@ foreach ($lang in $Langs) {
     $vpick = if ($multi) { '<div class="variants"><p class="label" id="vl">' + (Enc (T $L 'variants')) + ' (' + $fm.n + ')</p><div class="vlist" role="radiogroup" aria-labelledby="vl" data-variants>' + $opts + '</div></div>' } else { '' }
     $pd = '<section class="product wrap" data-product><div class="pd-media">' + $gal + '</div>' +
       '<div class="pd-info"><p class="kicker"><a href="' + (Href $L ('c/' + $cat.slug + '/')) + '">' + (Enc $cat.name) + '</a></p><h1>' + (Enc $name) + '</h1>' + $vpick + $blk +
-      '<p class="note">' + (Enc (T $L 'priceNote')) + '</p></div></section>'
+      '<p class="note">' + (Enc (T $L 'priceNote')) + '</p><button type="button" class="share-btn" data-share>' + $Icons.share + (Enc (T $L 'share')) + '</button></div>' +
+      '<div class="buybar" data-buybar hidden><div class="bb-info"><strong>' + (Enc $name) + '</strong><span data-bb-price></span></div><button type="button" class="btn btn-dark" data-bb-add>' + (Enc (T $L 'add')) + '</button></div></section>'
     $rel = New-Object System.Collections.ArrayList
     foreach ($o in $famIndex[$fm.c]) {
       if ($rel.Count -ge 8) { break }; if ($o.slug -eq $fm.slug) { continue }
@@ -778,7 +781,7 @@ foreach ($lang in $Langs) {
 $he = Lc 'he'; $fr = Lc 'fr'; $en = Lc 'en'
 $nfParts = ''
 foreach ($X in @($he, $en, $fr)) { $nfParts += '<div lang="' + $X.lang + '" dir="' + $X.dir + '" class="nf-lang"><h2>' + (Enc $X.notFound) + '</h2><p class="lead">' + (Enc $X.notFoundLead) + '</p><p><a class="btn btn-light" href="' + (Href $X 'catalog/') + '">' + (Enc (P $X.nav 'catalog')) + '</a></p></div>' }
-$nf = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>404 | ' + (Enc $Site.brandHe) + '</title><meta name="robots" content="noindex"><link rel="icon" href="' + $BasePath + '/favicon.svg"><link rel="stylesheet" href="' + (AssetUrl ('css/style.css?v=' + $Ver)) + '"></head><body class="nf"><main class="nf-main"><div class="band-flutes" aria-hidden="true"></div><div class="wrap"><p class="kicker">404</p>' + $nfParts + '</div></main></body></html>'
+$nf = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>404 | ' + (Enc $Site.brandHe) + '</title><meta name="robots" content="noindex"><link rel="icon" href="' + $BasePath + '/favicon.svg"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap"><link rel="stylesheet" href="' + (AssetUrl ('css/style.css?v=' + $Ver)) + '"></head><body class="nf"><main class="nf-main band"><div class="band-flutes" aria-hidden="true"></div><div class="wrap"><a class="nf-logo" href="' + $BasePath + '/">' + (Enc $Site.brandHe) + ' &middot; ' + (Enc $Site.brand) + '</a><p class="kicker">404</p>' + $nfParts + '</div></main></body></html>'
 Write-Out '404.html' $nf
 
 # Client data (public fields only)
