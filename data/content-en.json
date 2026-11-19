@@ -17,7 +17,8 @@
     "noContact": "Contact details coming soon.", "ref": "Internal code",
     "illustration": "Visualisation for illustration only. Actual shade may vary — ask for a sample.",
     "lang": "English", "langCode": "en", "priceNote": "Prices include Israeli VAT and may change. The final price is confirmed with your order.",
-    "breadcrumb": "Breadcrumb", "products": "products", "viewPlate": "Full panel", "viewPhoto": "Real photo", "plateNote": "Full-size panel visualisation built from the product photo.", "variants": "Models in this series", "models": "models", "from": "from ", "choose": "Choose a model", "series": "series"
+    "breadcrumb": "Breadcrumb", "products": "products", "viewPlate": "Full panel", "viewPhoto": "Real photo", "plateNote": "Full-size panel visualisation built from the product photo.",
+      "viewSlats": "Two slats", "slatsNote": "Two slats at true scale, built from the product photo.", "variants": "Models in this series", "models": "models", "from": "from ", "choose": "Choose a model", "series": "series"
   },
   "hero": {
     "kicker": "Wall cladding studio",

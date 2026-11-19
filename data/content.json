@@ -18,7 +18,8 @@
       "noContact": "פרטי הקשר יתעדכנו בקרוב. בינתיים אפשר להעתיק את הרשימה.", "ref": "מק״ט פנימי",
       "illustration": "הדמיה להמחשה בלבד. הגוון בפועל עשוי להשתנות — מומלץ לראות דוגמה.",
       "lang": "Français", "langCode": "fr", "priceNote": "המחירים כוללים מע״מ ועשויים להשתנות. המחיר הסופי נקבע בהצעת המחיר.",
-      "breadcrumb": "ניווט", "products": "מוצרים", "viewPlate": "פלטה מלאה", "viewPhoto": "תמונה אמיתית", "plateNote": "הדמיה של פלטה שלמה לפי המידות, מתוך צילום הדגם.", "variants": "דגמים בסדרה", "models": "דגמים", "from": "החל מ־", "choose": "בחירת דגם", "series": "סדרה"
+      "breadcrumb": "ניווט", "products": "מוצרים", "viewPlate": "פלטה מלאה", "viewPhoto": "תמונה אמיתית", "plateNote": "הדמיה של פלטה שלמה לפי המידות, מתוך צילום הדגם.",
+      "viewSlats": "שני סרגלים", "slatsNote": "שני סרגלים בגודל אמיתי, מתוך צילום הדגם.", "variants": "דגמים בסדרה", "models": "דגמים", "from": "החל מ־", "choose": "בחירת דגם", "series": "סדרה"
     },
     "hero": {
       "kicker": "סטודיו לחיפוי קירות",
@@ -120,7 +121,8 @@
       "noContact": "Les coordonnées seront publiées très bientôt. En attendant, vous pouvez copier la liste.", "ref": "Réf. interne",
       "illustration": "Simulation à titre indicatif. La teinte réelle peut varier : demandez un échantillon.",
       "lang": "עברית", "langCode": "he", "priceNote": "Prix TTC (TVA israélienne incluse), susceptibles d'évoluer. Le prix final figure sur le devis.",
-      "breadcrumb": "Fil d'Ariane", "products": "produits", "viewPlate": "Panneau entier", "viewPhoto": "Photo réelle", "plateNote": "Simulation du panneau entier aux dimensions réelles, à partir de la photo du modèle.", "variants": "Modèles de la série", "models": "modèles", "from": "dès ", "choose": "Choisir le modèle", "series": "série"
+      "breadcrumb": "Fil d'Ariane", "products": "produits", "viewPlate": "Panneau entier", "viewPhoto": "Photo réelle", "plateNote": "Simulation du panneau entier aux dimensions réelles, à partir de la photo du modèle.",
+      "viewSlats": "Deux lames", "slatsNote": "Deux lames à l'échelle réelle, à partir de la photo du modèle.", "variants": "Modèles de la série", "models": "modèles", "from": "dès ", "choose": "Choisir le modèle", "series": "série"
     },
     "hero": {
       "kicker": "Studio de revêtements muraux",

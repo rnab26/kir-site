@@ -608,11 +608,13 @@ function VariantGallery($L, $it, [bool]$sel) {
   $td = TexDim $it.img
   $photo = '<figure class="g-view" data-view="photo"' + $(if ($it.c -in $PlateCats) { ' hidden' } else { '' }) + '><div class="zoom" data-zoom style="--img:url(' + (TexUrl $it.img) + ')"><img src="' + (TexUrl $it.img) + '" alt="' + (Enc $name) + '" width="' + $td[0] + '" height="' + $td[1] + '" loading="' + $ld + '"></div></figure>'
   if ($it.c -notin $PlateCats) { return '<div class="gallery" data-vg="' + $it.slug + '"' + $hid + '><div class="g-stage">' + $photo + '</div></div>' }
+  $slats = ($it.c -eq 'slat') -or ($it.c -eq 'outdoor' -and -not ($it.w -ge 40))
+  $vk = if ($slats) { 'viewSlats' } else { 'viewPlate' }; $nk = if ($slats) { 'slatsNote' } else { 'plateNote' }
   '<div class="gallery" data-vg="' + $it.slug + '"' + $hid + '><div class="g-stage">' +
-  '<figure class="g-view" data-view="plate"><div class="tilt" data-tilt3d><img src="' + (PackUrl $it.img) + '" alt="' + (Enc ($name + ' - ' + (T $L 'viewPlate'))) + '" width="1000" height="1250" loading="' + $ld + '"' + $(if ($sel) { ' fetchpriority="high"' } else { '' }) + '></div></figure>' + $photo +
-  '</div><div class="g-tabs" role="tablist"><button type="button" role="tab" aria-selected="true" data-show="plate"><img src="' + (ImgUrl $it.img) + '" alt="" width="44" height="55" loading="lazy">' + (Enc (T $L 'viewPlate')) + '</button>' +
+  '<figure class="g-view" data-view="plate"><div class="tilt" data-tilt3d><img src="' + (PackUrl $it.img) + '" alt="' + (Enc ($name + ' - ' + (T $L $vk))) + '" width="1000" height="1250" loading="' + $ld + '"' + $(if ($sel) { ' fetchpriority="high"' } else { '' }) + '></div></figure>' + $photo +
+  '</div><div class="g-tabs" role="tablist"><button type="button" role="tab" aria-selected="true" data-show="plate"><img src="' + (ImgUrl $it.img) + '" alt="" width="44" height="55" loading="lazy">' + (Enc (T $L $vk)) + '</button>' +
   '<button type="button" role="tab" aria-selected="false" data-show="photo"><img src="' + (TexUrl $it.img) + '" alt="" width="44" height="55" loading="lazy">' + (Enc (T $L 'viewPhoto')) + '</button></div>' +
-  '<p class="g-note">' + (Enc (T $L 'plateNote')) + '</p></div>'
+  '<p class="g-note">' + (Enc (T $L $nk)) + '</p></div>'
 }
 function VariantBlock($L, $it, $cat, [bool]$sel) {
   $name = NameOf $L $it
