@@ -786,12 +786,15 @@ public static class Kit
     {
         int W = p.Length; double[] h = HighPass(p, Math.Max(3, W / 5)); int best = -1; double bc = 0;
         double e0 = 0; for (int x = 0; x < W; x++) e0 += h[x] * h[x]; if (e0 <= 0) return -1;
-        for (int lag = Math.Max(4, W / 14); lag <= W / 2; lag++)
+        int l0 = Math.Max(4, W / 14), l1 = W / 2; if (l1 <= l0) return -1; double[] cc = new double[l1 + 2];
+        for (int lag = l0; lag <= l1; lag++)
         {
             double c = 0; int n = 0; for (int x = 0; x + lag < W; x++) { c += h[x] * h[x + lag]; n++; }
-            c = c / n / (e0 / W); if (c > bc) { bc = c; best = lag; }
+            c = c / n / (e0 / W); cc[lag] = c; if (c > bc) { bc = c; best = lag; }
         }
-        return bc > 0.35 ? best : -1;
+        if (bc <= 0.35) return -1;
+        for (int lag = l0 + 1; lag < best; lag++) if (cc[lag] >= 0.8 * bc && cc[lag] >= cc[lag - 1] && cc[lag] >= cc[lag + 1]) return lag;
+        return best;
     }
     static List<int> GrooveMinima(double[] p, double P)
     {
@@ -884,13 +887,25 @@ public static class Kit
     }
     // The slat as it really is: straight, exactly its flutes, even light. Used for the faces, the wall and the loupe.
     public static string Diag = "";
-    static KImg PrepareSlat(KImg tex, out int flutes)
+    // wcm > 0: the slat's real width. Fluted slats are rebuilt with round(wcm / 5) flutes (5 cm per flute, as measured on
+    // the 20 cm / 4 flute model) by repeating whole flutes of the photo, so a photo showing only part of the slat
+    // does not get stretched to the full width.
+    static KImg PrepareSlat(KImg tex, double wcm, out int flutes)
     {
         flutes = 0;
         KImg s = TrimWhite(tex);
         if (Anisotropy(s) < 0.6) s = Rotate90(s);
         double P; List<double> g; KImg st = StraightenFlutes(s, out P, out g);
+        KImg s0 = s;
         if (st != null) s = CropToSlat(st, P, g, out flutes); else { s = Deskew(s); Diag = "no flutes found"; }
+        if (st != null && flutes < 2) { s = Deskew(s0); flutes = 0; Diag += " -> single strip: whole photo kept"; }
+        int target = wcm > 0 ? Math.Max(2, (int)Math.Round(wcm / 5.0)) : flutes;
+        if (flutes >= 2 && target != flutes)
+        {
+            int fw = s.W / flutes, nw = fw * target; KImg o = new KImg(nw, s.H);
+            for (int y = 0; y < s.H; y++) for (int k = 0; k < target; k++) Buffer.BlockCopy(s.D, (y * s.W + (k % flutes) * fw) * 3, o.D, (y * nw + k * fw) * 3, fw * 3);
+            Diag += " -> rebuilt with " + target + " flutes"; s = o; flutes = target;
+        }
         FlattenLight(s, false, true); FlattenRows(s, Math.Max(4, s.H / 6));
         return s;
     }
@@ -1035,7 +1050,7 @@ public static class Kit
         double ppcD = 1000.0 / 290; double Hs = Math.Min(1040, lcm * ppcD), ws = Math.Max(10, wcm * ppcD);
         double gap = Math.Max(30, ws * 0.55), total = 2 * ws + gap, xs = Math.Round(Math.Max(130, 390 - total / 2));
         double yBottom = 1095, yTop = yBottom - Hs;
-        int flutes; KImg prep = PrepareSlat(tex, out flutes);
+        int flutes; KImg prep = PrepareSlat(tex, wcm, out flutes);
         double mb, mg, mr; MeanColor(prep, out mb, out mg, out mr);
         for (int k = 0; k < 2; k++)
         {
@@ -1074,7 +1089,7 @@ public static class Kit
     }
     // One straight slat over its whole length (exact width) at ppc px/cm, for the 3D studio (face/<id>.jpg).
     public static KImg SlatFaceTexture(KImg tex, double wcm, double lcm, double ppc, int seed, double stretch)
-    { int n; KImg prep = PrepareSlat(tex, out n); return SlatFace(prep, wcm, lcm, ppc, seed * 31, stretch); }
+    { int n; KImg prep = PrepareSlat(tex, wcm, out n); return SlatFace(prep, wcm, lcm, ppc, seed * 31, stretch); }
     // Debug: the prepared slat sample (straight, cropped to its flutes).
-    public static KImg PreparedSlat(KImg tex) { int n; return PrepareSlat(tex, out n); }
+    public static KImg PreparedSlat(KImg tex, double wcm) { int n; return PrepareSlat(tex, wcm, out n); }
 }
