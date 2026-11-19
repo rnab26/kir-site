@@ -475,23 +475,37 @@ addEventListener('keydown', (e) => { if (e.key !== 'Escape') return; if (!sheet.
 // ---------------------------------------------------------------- wall by wall: each wall of the photo is a tap target with its own product
 // A room = photo + wall mask (one channel per wall, RGBA) + clean wall light + per wall a quad (floor start, floor end, top end, top start)
 // in photo pixels and its real size in metres. The quad gives a homography, so any product is tiled at true scale in perspective.
-function homInv(q) {   // unit square (s along the wall, t up) -> quad; returns the inverse (photo px -> s, t)
+function homFwd(q) {   // unit square (s along the wall, t up) -> quad (floor start, floor end, top end, top start), row-major
   const [[x0, y0], [x1, y1], [x2, y2], [x3, y3]] = q;
   const dx1 = x1 - x2, dx2 = x3 - x2, dx3 = x0 - x1 + x2 - x3, dy1 = y1 - y2, dy2 = y3 - y2, dy3 = y0 - y1 + y2 - y3;
-  let a, b, c = x0, d, e, f = y0, g = 0, h = 0;
+  let a, b, d, e, g = 0, h = 0;
   if (Math.abs(dx3) < 1e-9 && Math.abs(dy3) < 1e-9) { a = x1 - x0; b = x3 - x0; d = y1 - y0; e = y3 - y0; }
   else {
     const den = dx1 * dy2 - dx2 * dy1;
     g = (dx3 * dy2 - dx2 * dy3) / den; h = (dx1 * dy3 - dx3 * dy1) / den;
     a = x1 - x0 + g * x1; b = x3 - x0 + h * x3; d = y1 - y0 + g * y1; e = y3 - y0 + h * y3;
   }
-  return new THREE.Matrix3().set(a, b, c, d, e, f, g, h, 1).invert();
+  return [a, b, x0, d, e, y0, g, h, 1];
 }
-function maskData(img, n) {   // small copy of the wall mask: tap lookup + one label anchor per wall
-  const w = 480, h = Math.max(1, Math.round(480 * img.height / img.width)), cv = document.createElement('canvas');
-  cv.width = w; cv.height = h;
-  const g = cv.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, w, h);
-  const d = g.getImageData(0, 0, w, h).data, r = 5, anchors = [];
+const homInv = (q) => new THREE.Matrix3().set(...homFwd(q)).invert();   // photo px -> (s, t)
+function aspectOf(q, fpx, W, H) {   // width / height of the real rectangle behind a quad, for a camera of focal fpx (Zhang)
+  const M = homFwd(q), k = (x, y, z) => Math.hypot((x - W / 2 * z) / fpx, (y - H / 2 * z) / fpx, z);
+  return k(M[0], M[3], M[6]) / k(M[1], M[4], M[7]);
+}
+function maskSmall(src) {   // small top-down RGBA copy of a wall mask (image, or raw {data, width, height})
+  const w = 480, h = Math.max(1, Math.round(480 * src.height / src.width));
+  let d;
+  if (src.data) {
+    d = new Uint8ClampedArray(w * h * 4);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const sx = Math.min(src.width - 1, Math.floor((x + 0.5) / w * src.width)), sy = Math.min(src.height - 1, Math.floor((y + 0.5) / h * src.height)), o = (sy * src.width + sx) * 4, t = (y * w + x) * 4; for (let c = 0; c < 4; c++) d[t + c] = src.data[o + c]; }
+  } else {
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const g = cv.getContext('2d', { willReadFrequently: true }); g.drawImage(src, 0, 0, w, h); d = g.getImageData(0, 0, w, h).data;
+  }
+  return { w, h, d };
+}
+function anchorsOf(mk, n) {   // one label anchor per wall: the inner wall point closest to the (raised) centroid
+  const { w, h, d } = mk, r = 5, out = [];
   for (let i = 0; i < n; i++) {
     const S = new Float32Array((w + 1) * (h + 1));
     for (let y = 0; y < h; y++) { let row = 0; for (let x = 0; x < w; x++) { row += d[(y * w + x) * 4 + i] > 127 ? 1 : 0; S[(y + 1) * (w + 1) + x + 1] = S[y * (w + 1) + x + 1] + row; } }
@@ -500,28 +514,54 @@ function maskData(img, n) {   // small copy of the wall mask: tap lookup + one l
       const s = S[(y + r + 1) * (w + 1) + x + r + 1] - S[(y - r) * (w + 1) + x + r + 1] - S[(y + r + 1) * (w + 1) + x - r] + S[(y - r) * (w + 1) + x - r];
       if (s >= full) { pts.push(x, y); sx += x; sy += y; }
     }
-    if (!pts.length) { anchors.push(null); continue; }
+    if (!pts.length) { out.push(null); continue; }
     const cx = sx / (pts.length / 2), cy = sy / (pts.length / 2) * 0.85; let bi = 0, bd = Infinity;
     for (let j = 0; j < pts.length; j += 2) { const dd = (pts[j] - cx) ** 2 + (pts[j + 1] - cy) ** 2; if (dd < bd) { bd = dd; bi = j; } }
-    anchors.push([(pts[bi] + 0.5) / w, (pts[bi + 1] + 0.5) / h]);
+    out.push([(pts[bi] + 0.5) / w, (pts[bi + 1] + 0.5) / h]);
   }
-  return { w, h, d, anchors };
+  return out;
 }
 function makeRoom(o) {
-  const mk = maskData(o.mask.image, o.walls.length);
-  o.walls.forEach((wl, i) => { wl.Hinv = homInv(wl.q); wl.item = wl.item || null; wl.anchor = mk.anchors[i] ? [mk.anchors[i][0] * o.W, mk.anchors[i][1] * o.H] : null; if (wl.ord == null) wl.ord = i; });
+  const mk = o.mk || maskSmall(o.mask.image), an = anchorsOf(mk, o.walls.length);
+  o.walls.forEach((wl, i) => { wl.Hinv = homInv(wl.q); wl.item = wl.item || null; wl.anchor = an[i] ? [an[i][0] * o.W, an[i][1] * o.H] : null; if (wl.ord == null) wl.ord = i; });
   o.mk = mk;
   return o;
 }
+const wallNames = (n) => (n === 1 ? [T.wallBack] : n === 2 ? [T.wallLeft, T.wallRight] : n === 3 ? [T.wallLeft, T.wallBack, T.wallRight] : [...Array(n)].map((_, i) => fill(T.wallN, { n: i + 1 })));
 function defaultRoom() {
   const { XL, XR, ZB, ZR, TOP } = ROOM, pr = (X, Y, Z) => [ROOM.CX + ROOM.F * X / Z, ROOM.CY - ROOM.F * (Y - ROOM.CAMH) / Z];
   return makeRoom({
-    photo: RU.uPhoto.value, mask: RU.uMask.value, clean: RU.uClean.value, ref: RU.uRef.value.clone(), W: ROOM.W, H: ROOM.H,
+    id: 'studio', photo: RU.uPhoto.value, mask: RU.uMask.value, clean: RU.uClean.value, ref: RU.uRef.value.clone(), W: ROOM.W, H: ROOM.H, fpx: ROOM.F,
     walls: [   // mask channels: R back, G left, B right; ord = laying order of the story (back, right, left), so the pieces match it
       { name: T.wallBack, ord: 0, w: WALL_B, h: TOP, q: [pr(XL, 0, ZB), pr(XR, 0, ZB), pr(XR, TOP, ZB), pr(XL, TOP, ZB)] },
       { name: T.wallLeft, ord: 2, w: WALL_L, h: TOP, q: [pr(XL, 0, ZB), pr(XL, 0, ZLEFT), pr(XL, TOP, ZLEFT), pr(XL, TOP, ZB)] },
       { name: T.wallRight, ord: 1, w: WALL_R, h: TOP, q: [pr(XR, 0, ZB), pr(XR, 0, ZR), pr(XR, TOP, ZR), pr(XR, TOP, ZB)] }
     ]
+  });
+}
+// real rooms prepared offline with the same detector (assets/exp/rooms/<id>/): photo.jpg, mask.png (walls in R, G, B), light.png, room.json
+async function preparedRoom(id) {
+  const base = E.assets + 'rooms/' + id + '/';
+  const [meta, photo, mask, clean] = await Promise.all([fetch(base + 'room.json').then((r) => r.json()), load(base + 'photo.jpg'), load(base + 'mask.png', false), load(base + 'light.png')]);
+  for (const t of [photo, mask, clean]) { t.anisotropy = 1; t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; }
+  const names = wallNames(meta.walls.length);
+  return makeRoom({ id, photo, mask, clean, ref: new THREE.Vector3(...meta.ref), W: meta.W, H: meta.H, fpx: meta.fpx, walls: meta.walls.map((w, i) => ({ name: names[i], w: w.w, h: w.h, q: w.q })) });
+}
+// a visitor's photo: analysed in the browser by experience-detect.js
+function flipRows(src, w, h) { const out = new Uint8Array(w * h * 4), row = w * 4; for (let y = 0; y < h; y++) out.set(src.subarray((h - 1 - y) * row, (h - y) * row), y * row); return out; }
+function dataTex(data, w, h, srgb) {
+  const t = new THREE.DataTexture(flipRows(data, w, h), w, h, THREE.RGBAFormat);
+  t.magFilter = t.minFilter = THREE.LinearFilter; t.generateMipmaps = false; if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.needsUpdate = true; return t;
+}
+function photoRoom(img, r) {
+  const sc = Math.min(1, 2048 / Math.max(r.W, r.H)), cv = document.createElement('canvas');
+  cv.width = Math.round(r.W * sc); cv.height = Math.round(r.H * sc); cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+  const photo = new THREE.CanvasTexture(cv); photo.colorSpace = THREE.SRGBColorSpace; photo.generateMipmaps = false; photo.minFilter = THREE.LinearFilter;
+  const names = wallNames(r.walls.length);
+  return makeRoom({
+    id: 'mine', photo, mask: dataTex(r.mask, r.MW, r.MH, false), clean: dataTex(r.light, r.AW, r.AH, true), ref: new THREE.Vector3(...r.ref), W: r.W, H: r.H, fpx: r.fpx,
+    mk: maskSmall({ data: r.mask, width: r.MW, height: r.MH }), thumb: cv.toDataURL('image/jpeg', 0.6),
+    walls: r.walls.map((w, i) => ({ name: names[i], w: w.w, h: w.h, q: w.q }))
   });
 }
 
@@ -592,7 +632,7 @@ const editPass = new ShaderPass(EditShader); editPass.enabled = false;
 composer.insertPass(editPass, composer.passes.indexOf(grainPass));
 const EU = editPass.uniforms;
 
-const ED = { open: false, room: null, def: null, sel: new Set(), applied: false, dirty: false, c: [0, 0], sc: 1, win: new THREE.Vector4(), goal: new THREE.Vector4(), scan: 2, recent: [], dragging: false, boot: false };
+const ED = { open: false, room: null, def: null, fix: -1, zoom: 1, zoomGoal: 1, rooms: {}, sel: new Set(), applied: false, dirty: false, c: [0, 0], sc: 1, win: new THREE.Vector4(), goal: new THREE.Vector4(), scan: 2, recent: [], dragging: false, boot: false };
 const edEl = $('#ed'), edStage = $('#edStage'), edPinsEl = $('#edPins'), edPanel = $('#edPanel');
 const piecesOf = (wl, it) => Math.ceil(wl.w / (it.w / 100) - 1e-6) * Math.max(1, Math.ceil(wl.h / (it.h / 100) - 1e-6));
 function edPressedItem() {
@@ -628,7 +668,12 @@ function edUI() {
     return `<button type="button" class="sw" data-id="${it.id}" aria-pressed="${it.id === pid}"><i style="${q ? '--c:' + q.c : `background:url('${it.th}') center/cover`}"></i>${q ? q.n : it.n.split(',')[0]}</button>`;
   }).join('') + `<button type="button" class="chip plain" data-ed-more>${T.allModels}</button><button type="button" class="chip plain" data-ed-none aria-pressed="${ED.sel.size > 0 && [...ED.sel].every((i) => !r.walls[i].item)}">${T.edNone}</button>`;
   const hint = $('#edHint');
-  hint.textContent = ED.sel.size ? fill(T.edPick, { w: [...ED.sel].sort().map((i) => r.walls[i].name).join(', ') }) : T.edHint;
+  const one = ED.sel.size === 1 ? r.walls[[...ED.sel][0]] : null, dims = one ? ' · ' + fill(T.edDims, { w: fmt(one.w, 1), h: fmt(one.h, 2) }) : '';
+  hint.textContent = ED.fix >= 0 ? T.edFixHint + dims : ED.sel.size ? fill(T.edPick, { w: [...ED.sel].sort().map((i) => r.walls[i].name).join(', ') }) + dims : T.edHint;
+  $('#edFixBtn').hidden = !one || ED.fix >= 0;
+  $('#edFixBar').hidden = ED.fix < 0;
+  edPanel.classList.toggle('fixing', ED.fix >= 0);
+  $('#edH').textContent = fmt(r.walls[0].h, 2) + ' ' + (T.edDims.split('{h}')[1] || 'm').trim();
   hint.classList.toggle('wait', ED.sel.size > 0 && !ED.applied);
   // total, size and the WhatsApp message with one line per wall
   let total = 0, pieces = 0, area = 0, req = false, slatsOnly = true;
@@ -653,9 +698,12 @@ function edView() {
   let sx0 = 0, sw = W, sh = H;
   if (W >= 900) { if (p.left > W / 2) sw = p.left - 12; else { sx0 = p.right + 12; sw = W - sx0; } }
   else sh = Math.max(120, p.top);
-  const sc = Math.max(sw / r.W, sh / r.H), hw = sw / 2 / sc, hh = sh / 2 / sc;
-  ED.c[0] = r.W > 2 * hw ? clamp(ED.c[0], hw, r.W - hw) : r.W / 2;
-  ED.c[1] = r.H > 2 * hh ? clamp(ED.c[1], hh, r.H - hh) : r.H / 2;
+  const cover = Math.max(sw / r.W, sh / r.H), sc = cover * ED.zoom, hw = sw / 2 / sc, hh = sh / 2 / sc;
+  ED.cover = cover;
+  if (ED.fix < 0) {
+    ED.c[0] = r.W > 2 * hw ? clamp(ED.c[0], hw, r.W - hw) : r.W / 2;
+    ED.c[1] = r.H > 2 * hh ? clamp(ED.c[1], hh, r.H - hh) : r.H / 2;
+  }
   const scx = sx0 + sw / 2, scy = sh / 2;
   ED.sc = sc; ED.stage = { sx0, sw, sh };
   ED.goal.set((ED.c[0] - scx / sc) / r.W, 1 - (ED.c[1] + (H - scy) / sc) / r.H, W / (sc * r.W), H / (sc * r.H));
@@ -717,6 +765,8 @@ function edOpen(push = true) {
 function edClose(fromPop) {
   if (!ED.open) return;
   if (!fromPop && history.state && history.state.ed) { history.back(); return; }
+  if (ED.fix >= 0) fixEnd();
+  roomsOpen(false); busy(null);
   ED.open = false; edEl.hidden = true; editPass.enabled = false; document.documentElement.classList.remove('ed-on');
   if (!sheet.hidden) closeSheet();
   if (location.hash === '#walls' && history.replaceState) history.replaceState(null, '', location.pathname + location.search + '#room');
@@ -740,9 +790,10 @@ edStage.addEventListener('pointermove', (e) => {
   if (!drag.moved && Math.hypot(dx, dy) > 8) drag.moved = true;
   if (drag.moved) { ED.c = [drag.c[0] - dx / ED.sc, drag.c[1] - dy / ED.sc]; ED.dragging = true; }
 });
-edStage.addEventListener('pointerup', (e) => { if (drag && !drag.moved) { const [px, py] = toPhoto(e.clientX, e.clientY); edSelect(wallAt(px, py)); } drag = null; ED.dragging = false; });
+edStage.addEventListener('pointerup', (e) => { if (drag && !drag.moved && ED.fix < 0) { const [px, py] = toPhoto(e.clientX, e.clientY); edSelect(wallAt(px, py)); } drag = null; ED.dragging = false; });
 edStage.addEventListener('pointercancel', () => { drag = null; ED.dragging = false; });
 function edFrame(dt, time) {
+  ED.zoom = lerp(ED.zoom, ED.zoomGoal, 1 - Math.exp(-dt * 8));
   edView();
   ED.win.lerp(ED.goal, ED.dragging ? 1 : 1 - Math.exp(-dt * 7));
   EU.uWin.value.copy(ED.win);
@@ -754,12 +805,108 @@ function edFrame(dt, time) {
   const lim = innerWidth >= 900 ? innerHeight : ED.stage.sh;
   for (const b of edPinsEl.children) {
     const wl = ED.room.walls[+b.dataset.wall], [X, Y] = toScreen(wl.anchor[0], wl.anchor[1]);
-    const vis = X > 8 && X < innerWidth - 8 && Y > 64 && Y < lim - 24 && ED.scan > (X / innerWidth) * 1.1;
+    const vis = ED.fix < 0 && X > 8 && X < innerWidth - 8 && Y > 64 && Y < lim - 24 && ED.scan > (X / innerWidth) * 1.1;
     const bw = b.offsetWidth, bx = clamp(X - bw / 2, 8, innerWidth - bw - 8);
     b.style.transform = `translate(${bx.toFixed(1)}px, ${(Y - b.offsetHeight / 2).toFixed(1)}px)`;
     b.style.opacity = vis ? '1' : '0'; b.style.pointerEvents = vis ? 'auto' : 'none';
   }
+  if (ED.fix >= 0) fixFrame();
 }
+
+// rooms: the studio photo, real rooms prepared offline, and the visitor's own photo (analysed on the device)
+function roomTiles() {
+  const tile = (id, img, label, extra = '') => `<button type="button" class="room${extra}" data-room="${id}" aria-pressed="${ED.room && ED.room.id === id}">${img}<span>${label}</span></button>`;
+  let h = tile('studio', `<img src="${E.assets}before.jpg" alt="" loading="lazy">`, T.edStudio);
+  (E.rooms || []).forEach((id, i) => { h += tile(id, `<img src="${E.assets}rooms/${id}/thumb.jpg" alt="" loading="lazy">`, fill(T.edRoomN, { n: i + 1 })); });
+  if (ED.rooms.mine) h += tile('mine', `<img src="${ED.rooms.mine.thumb}" alt="">`, T.edUpload);
+  h += tile('upload', '<i>+</i>', ED.rooms.mine ? '+' : T.edUpload, ' up');
+  $('#edRoomList').innerHTML = h;
+}
+function roomsOpen(on) { $('#edRooms').hidden = !on; $('#edRoomsBtn').setAttribute('aria-expanded', String(on)); if (on) roomTiles(); }
+$('#edRoomsBtn').addEventListener('click', () => roomsOpen($('#edRooms').hidden));
+function edSetRoom(room) {
+  if (ED.fix >= 0) fixEnd();
+  ED.room = room; ED.sel = new Set(); ED.applied = false; ED.t0 = clock.elapsedTime; ED.c = [room.W / 2, room.H / 2];
+  if (!room.inited) { room.inited = true; if (room !== ED.def) room.walls.forEach((wl) => { wl.item = cur; }); }
+  for (const wl of room.walls) if (wl.item) faceOf(wl.item.id).then(() => ED.open && edUniforms()).catch(() => {});
+  edUniforms(); edUI(); roomsOpen(false);
+}
+$('#edRoomList').addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-room]'); if (!b) return;
+  const id = b.dataset.room;
+  if (id === 'upload') { $('#edFile').click(); return; }
+  if (id === 'studio') { edSetRoom(ED.def); return; }
+  if (id === 'mine') { edSetRoom(ED.rooms.mine); return; }
+  try { if (!ED.rooms[id]) ED.rooms[id] = await preparedRoom(id); edSetRoom(ED.rooms[id]); } catch (er) { toast(T.error); }
+});
+const busy = (txt, p) => { $('#edBusy').hidden = txt == null; if (txt != null) { $('#edBusyT').textContent = txt; $('#edBusyBar').style.transform = `scaleX(${p || 0})`; } };
+let detector = null;
+$('#edFile').addEventListener('change', async (e) => {
+  const file = e.target.files && e.target.files[0]; e.target.value = '';
+  if (!file) return;
+  roomsOpen(false);
+  busy(fill(T.edLoadAI, { p: 0 }), 0.02);
+  try {
+    const img = new Image(); img.src = URL.createObjectURL(file); await img.decode();
+    if (!detector) detector = await import(E.detect);
+    const device = 'wasm';   // CPU everywhere: 31 MB once, same result on every phone (WebGPU builds were heavier or less stable)
+    const prog = (k, p) => { if (k === 'download') busy(fill(T.edLoadAI, { p: Math.round(p * 100) }), 0.05 + p * 0.6); };
+    await detector.loadModels(prog, { device });
+    busy(T.edAnalyze, 0.7);
+    const steps = { seg: 0.75, depth: 0.82, walls: 0.92, mask: 0.96 };
+    const r = await detector.analyze(img, (k) => busy(T.edAnalyze, steps[k] || 0.8));
+    if (!r.walls.length) { busy(T.edNoWall, 1); setTimeout(() => busy(null), 3600); return; }
+    ED.rooms.mine = photoRoom(img, r);
+    busy(null); edSetRoom(ED.rooms.mine); tap(0.5);
+  } catch (er) { console.error(er); busy(T.edFail, 1); setTimeout(() => busy(null), 3600); }
+});
+
+// adjust corners: four handles on the selected wall's quad, the height of the walls with - / +
+const fixEl = $('#edFix'), fixPoly = $('#edFixPoly'), handles = [];
+for (let k = 0; k < 4; k++) {
+  const h = document.createElement('button'); h.type = 'button'; h.className = 'hdl'; h.setAttribute('aria-label', T.edFix + ' ' + (k + 1));
+  fixEl.appendChild(h); handles.push(h);
+  let start = null;
+  h.addEventListener('pointerdown', (e) => { e.stopPropagation(); const wl = ED.room.walls[ED.fix]; start = { x: e.clientX, y: e.clientY, p: [...wl.q[k]] }; try { h.setPointerCapture(e.pointerId); } catch (er) { /* fine */ } });
+  h.addEventListener('pointermove', (e) => {
+    if (!start) return;
+    const r = ED.room, wl = r.walls[ED.fix];
+    wl.q[k] = [start.p[0] + (e.clientX - start.x) / ED.sc, start.p[1] + (e.clientY - start.y) / ED.sc];
+    wl.Hinv = homInv(wl.q);
+    if (r.fpx) wl.w = clamp(wl.h * aspectOf(wl.q, r.fpx, r.W, r.H), 0.3, 15);
+    edUniforms();
+  });
+  const end = () => { if (start) { start = null; edUI(); } };
+  h.addEventListener('pointerup', end); h.addEventListener('pointercancel', end);
+}
+function fixFrame() {
+  const wl = ED.room.walls[ED.fix], W = innerWidth, H = innerHeight, pts = [];
+  wl.q.forEach((p, k) => {
+    const [X, Y] = toScreen(p[0], p[1]), cx = clamp(X, 16, W - 16), cy = clamp(Y, 70, H - 16);
+    handles[k].style.transform = `translate(${cx.toFixed(1)}px, ${cy.toFixed(1)}px)`; handles[k].classList.toggle('off', cx !== X || cy !== Y);
+    pts.push(X.toFixed(1) + ',' + Y.toFixed(1));
+  });
+  fixPoly.setAttribute('points', pts.join(' '));
+}
+function fixStart() {
+  const i = [...ED.sel][0]; if (i == null) return;
+  const r = ED.room, wl = r.walls[i];
+  ED.fix = i; fixEl.hidden = false;
+  // zoom out so the whole quad (or most of it) is on screen
+  const xs = wl.q.map((p) => clamp(p[0], -r.W * 0.4, r.W * 1.4)), ys = wl.q.map((p) => clamp(p[1], -r.H * 0.4, r.H * 1.4));
+  const bw = Math.max(...xs) - Math.min(...xs), bh = Math.max(...ys) - Math.min(...ys), s = ED.stage || { sw: innerWidth, sh: innerHeight };
+  const fit = Math.min((s.sw - 90) / bw, (s.sh - 140) / bh);
+  ED.zoomGoal = clamp(fit / (ED.cover || 1), 0.3, 1);
+  ED.c = [(Math.max(...xs) + Math.min(...xs)) / 2, (Math.max(...ys) + Math.min(...ys)) / 2];
+  edUI();
+}
+function fixEnd() { ED.fix = -1; fixEl.hidden = true; ED.zoomGoal = 1; if (ED.room) edUI(); }
+$('#edFixBtn').addEventListener('click', fixStart);
+$('#edDone').addEventListener('click', fixEnd);
+for (const b of document.querySelectorAll('[data-h]')) b.addEventListener('click', () => {
+  for (const wl of ED.room.walls) { const a = wl.w / wl.h; wl.h = clamp(Math.round((wl.h + 0.05 * +b.dataset.h) * 100) / 100, 2.2, 4.5); wl.w = a * wl.h; }
+  edUniforms(); edUI();
+});
 
 // ---------------------------------------------------------------- frame loop: one clock, eased toward the scroll target
 const clock = new THREE.Clock();

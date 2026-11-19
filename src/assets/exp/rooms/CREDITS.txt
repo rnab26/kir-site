@@ -1,0 +1,8 @@
+Real room photos, Unsplash License (free to use, no attribution required). Walls, masks and light maps made with
+src/assets/js/experience-detect.js (the same detector visitors run on their own photo).
+r04  https://images.unsplash.com/photo-1789353527964-58295ec6abf7
+r02  https://images.unsplash.com/photo-1789352050099-add5a055b233
+r01  https://images.unsplash.com/photo-1789353527927-21e987b43eb2
+r31  https://images.unsplash.com/photo-1663756915301-2ba688e078cf
+r27  https://images.unsplash.com/photo-1630699375019-c334927264df
+r13  https://images.unsplash.com/photo-1629042306558-7d1e15cc02fa

@@ -45,6 +45,15 @@ Studio mur, fichiers : `templates/experience.html` (page), `data/content-exp.jso
 `src/assets/js/experience.js` (3D + pose sur photo), `src/assets/exp/` (photo, masque des murs, lumière du mur, textures 3D, avant/après).
 Les mesures de la photo viennent de `scripts/room-prep.ps1` ; `scripts/RoomShot.cs` refait les images fixes (et servira aux images des Reels).
 
+**Mur par mur** (bouton dans le studio, lien direct `experience/#walls`) : la photo passe en plein écran, chaque mur est touchable,
+on en sélectionne un ou plusieurs et on leur donne un revêtement ; total et message WhatsApp détaillés par mur. Bouton « Pièces » :
+le studio, 6 vraies pièces (`src/assets/exp/rooms/<id>/` : photo, masque des murs R/G/B, lumière, `room.json` avec les 4 coins de chaque
+mur ; crédits dans `CREDITS.txt`) et **« Ma photo »** : la photo du visiteur est analysée dans son navigateur par
+`src/assets/js/experience-detect.js` (IA de segmentation SegFormer + profondeur Depth Anything via transformers.js, ~30 Mo téléchargés
+une seule fois, rien n'est envoyé) : murs, angles, ligne du sol et du plafond, lumière. « Ajuster les coins » permet de corriger
+la perspective d'un mur à la main, et la hauteur des murs (2,60 m par défaut) se règle. Pour ajouter une pièce préparée : passer la photo
+dans le même détecteur, copier les fichiers dans `rooms/<id>/` et ajouter l'id dans `$ExpRooms` (`scripts/experience.ps1`).
+
 Sur toutes les pages : sélecteur de langue עב / EN / FR dans l'en-tête (et suggestion automatique selon la langue du navigateur),
 bouton WhatsApp flottant (message pré-rempli avec le produit consulté), menu d'accessibilité, « vus récemment ».
 

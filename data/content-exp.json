@@ -48,7 +48,11 @@
     "edWallsL": "קירות", "edMatsL": "חיפוי", "edAll": "כל הקירות", "edNone": "הקיר המקורי", "edAllApplied": "הוחל על כל הקירות",
     "wallBack": "קיר מרכזי", "wallLeft": "קיר שמאל", "wallRight": "קיר ימין", "wallN": "קיר {n}",
     "edTotal": "סה״כ משוער", "edMeta": "{q} {u} · {a} מ״ר", "edSend": "שליחה בוואטסאפ", "edReq": "+ פריטים במחיר לפי בקשה",
-    "edMsg": "שלום, עיצבתי את החדר שלי באתר:", "edLine": "• {w}: {n} ({r}) – {q} {u}", "edMsgTotal": "סה״כ משוער: {t}"
+    "edMsg": "שלום, עיצבתי את החדר שלי באתר:", "edLine": "• {w}: {n} ({r}) – {q} {u}", "edMsgTotal": "סה״כ משוער: {t}",
+    "edRoomsBtn": "חדרים", "edStudio": "סטודיו", "edRoomN": "חדר {n}", "edUpload": "התמונה שלי",
+    "edPrivacy": "התמונה מנותחת במכשיר שלכם ולא נשלחת לשום מקום.", "edLoadAI": "מכינים את הניתוח… {p}%", "edAnalyze": "מאתרים את הקירות…",
+    "edNoWall": "לא נמצאו קירות. נסו תמונה מרחוק יותר, עם הקירות גלויים.", "edFail": "הניתוח לא הצליח לרוץ במכשיר הזה.",
+    "edFix": "כיוון הפינות", "edFixHint": "גררו את 4 הנקודות לפינות הקיר", "edDone": "סיום", "edHeight": "גובה הקירות", "edDims": "{w} × {h} מ׳"
   },
   "fr": {
     "path": "experience/",
@@ -99,7 +103,11 @@
     "edWallsL": "Murs", "edMatsL": "Revêtement", "edAll": "Tous les murs", "edNone": "Mur d’origine", "edAllApplied": "Appliqué à tous les murs",
     "wallBack": "Mur du fond", "wallLeft": "Mur de gauche", "wallRight": "Mur de droite", "wallN": "Mur {n}",
     "edTotal": "Total estimé", "edMeta": "{q} {u} · {a} m²", "edSend": "Envoyer sur WhatsApp", "edReq": "+ articles prix sur demande",
-    "edMsg": "Bonjour, j’ai composé ma pièce sur le site :", "edLine": "• {w} : {n} ({r}) – {q} {u}", "edMsgTotal": "Total estimé : {t}"
+    "edMsg": "Bonjour, j’ai composé ma pièce sur le site :", "edLine": "• {w} : {n} ({r}) – {q} {u}", "edMsgTotal": "Total estimé : {t}",
+    "edRoomsBtn": "Pièces", "edStudio": "Studio", "edRoomN": "Pièce {n}", "edUpload": "Ma photo",
+    "edPrivacy": "Votre photo est analysée sur votre appareil, elle n’est envoyée nulle part.", "edLoadAI": "Préparation de l’analyse… {p} %", "edAnalyze": "Recherche des murs…",
+    "edNoWall": "Aucun mur trouvé. Essayez une photo prise de plus loin, avec les murs bien visibles.", "edFail": "L’analyse n’a pas pu tourner sur cet appareil.",
+    "edFix": "Ajuster les coins", "edFixHint": "Glissez les 4 points sur les angles du mur", "edDone": "Terminé", "edHeight": "Hauteur des murs", "edDims": "{w} × {h} m"
   },
   "en": {
     "path": "experience/",
@@ -150,6 +158,10 @@
     "edWallsL": "Walls", "edMatsL": "Finish", "edAll": "All walls", "edNone": "Original wall", "edAllApplied": "Applied to all walls",
     "wallBack": "Back wall", "wallLeft": "Left wall", "wallRight": "Right wall", "wallN": "Wall {n}",
     "edTotal": "Estimated total", "edMeta": "{q} {u} · {a} m²", "edSend": "Send on WhatsApp", "edReq": "+ items priced on request",
-    "edMsg": "Hi, I designed my room on your site:", "edLine": "• {w}: {n} ({r}) – {q} {u}", "edMsgTotal": "Estimated total: {t}"
+    "edMsg": "Hi, I designed my room on your site:", "edLine": "• {w}: {n} ({r}) – {q} {u}", "edMsgTotal": "Estimated total: {t}",
+    "edRoomsBtn": "Rooms", "edStudio": "Studio", "edRoomN": "Room {n}", "edUpload": "My photo",
+    "edPrivacy": "Your photo is analysed on your device and never uploaded.", "edLoadAI": "Getting the analysis ready… {p}%", "edAnalyze": "Finding the walls…",
+    "edNoWall": "No wall found. Try a photo taken from further back, with the walls in view.", "edFail": "The analysis could not run on this device.",
+    "edFix": "Adjust corners", "edFixHint": "Drag the 4 points onto the wall corners", "edDone": "Done", "edHeight": "Wall height", "edDims": "{w} × {h} m"
   }
 }

@@ -15,6 +15,7 @@ $ExpQuick = @(
 )
 $ExpPlain = @{ '1ap4OJMSWn5NE-S8yQKpcQ_etHyNk7KC3' = '#e4e0d8' }
 $ExpCats = @('slat', 'panel', 'flex', 'stone', 'deco')
+$ExpRooms = @('r04', 'r02', 'r01', 'r31', 'r27', 'r13')   # real rooms prepared with experience-detect.js (src/assets/exp/rooms/<id>/)
 
 function ExpX($L) { P $ExpTxt $L.lang }
 function ExpHasFace($it) { ($it.c -in $ExpCats) -and (P $FaceDims $it.img) -and (HasImg 'face' $it.img) }
@@ -51,7 +52,8 @@ function ExperiencePage($L) {
   $quick = @(); $alb = [ordered]@{}
   foreach ($q in $ExpQuick) { $quick += [ordered]@{ id = $q[0]; c = $q[1]; n = [string](P $x $q[2]) }; $alb[$q[0]] = $(if ($q[3]) { $q[3] } else { $null }) }
   $cats = @(); foreach ($c in $ExpCats) { if (@($items | Where-Object { $_.c -eq $c }).Count) { $cats += [ordered]@{ c = $c; n = [string](P (CatOf $L $c) 'name') } } }
-  $cfg = [ordered]@{ lang = $L.lang; rtl = ($L.dir -eq 'rtl'); assets = (AssetUrl 'exp/'); img = (AssetUrl 'img/'); wa = $Wa; story = $ExpStory; quick = $quick; alb = $alb; plain = $ExpPlain; cats = $cats; items = $items; t = $t }
+  $rooms = @($ExpRooms | Where-Object { Test-Path (Join-Path $Root ('src/assets/exp/rooms/' + $_ + '/room.json')) })
+  $cfg = [ordered]@{ rooms = $rooms; detect = (AssetUrl ('js/experience-detect.js?v=' + $Ver)); lang = $L.lang; rtl = ($L.dir -eq 'rtl'); assets = (AssetUrl 'exp/'); img = (AssetUrl 'img/'); wa = $Wa; story = $ExpStory; quick = $quick; alb = $alb; plain = $ExpPlain; cats = $cats; items = $items; t = $t }
   $html = $ExpTpl
   $vars = @{ lang = $L.lang; dir = $L.dir; head = $head; assets = (AssetUrl 'exp/'); home = (Href $L ''); brand = (Enc (BrandOf $L)); waNum = $Wa; phone = (Enc ([string]$Site.phoneDisplay)); js = (AssetUrl ('js/experience.js?v=' + $Ver)); p035 = $(if ($story -and $null -ne $story.p) { [string]$story.p } else { '44' }); config = ((To-Json $cfg) -replace '</', '<\/') }
   foreach ($k in $vars.Keys) { $html = $html.Replace('{{' + $k + '}}', [string]$vars[$k]) }
