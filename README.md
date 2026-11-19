@@ -23,6 +23,9 @@ Showroom : צבי שכטרמן 2, נתניה · WhatsApp / téléphone : 055-294
 Sur toutes les pages : sélecteur de langue עב / EN / FR dans l'en-tête (et suggestion automatique selon la langue du navigateur),
 bouton WhatsApp flottant (message pré-rempli avec le produit consulté), menu d'accessibilité, « vus récemment ».
 
+Google Search Console : propriété `https://rnab26.github.io/kir-site/` validée par le fichier `src/google98de61acccef0461.html`
+(ne pas le supprimer) et sitemap envoyé le 2026-11-19.
+
 SEO : `sitemap.xml` (hreflang he/en/fr + images), `robots.txt` (robots IA autorisés), `llms.txt`, `merchant-feed.xml`,
 schema.org (entreprise locale avec adresse/horaires/carte, ProductGroup/Product/Offer, FAQ, fil d'Ariane).
 
