@@ -78,3 +78,17 @@ scripts/                fetch-images.ps1, make-assets.ps1, serve.ps1
 docs/SEO-strategie.md   mots-clés, plan de contenu, actions de référencement
 .github/workflows/      déploiement automatique GitHub Pages
 ```
+
+## Synchronisation automatique avec le Google Sheet
+
+1. L'onglet **« לאתר »** du Sheet recopie automatiquement les colonnes publiques du catalogue (photo, réf., catégorie, description, dimensions, finition, prix de vente, « épuisé »). Aucun prix d'achat, aucune remarque interne. Ne pas le modifier à la main.
+2. Publiez **uniquement cet onglet** : Fichier → Partager → Publier sur le Web → « לאתר » + « Valeurs séparées par des virgules (.csv) » → dans « Contenu publié et paramètres », ne cochez que « לאתר » → Démarrer la publication.
+3. Collez l'adresse obtenue dans `sheetCsvUrl` de `data/site.json` (ou en variable de dépôt GitHub `SHEET_CSV_URL`).
+
+Ensuite, toutes les 3 heures (ou via *Actions → Sync catalogue → Run workflow*), GitHub lit l'onglet : nouveaux produits ajoutés, prix/dimensions/stock mis à jour, lignes supprimées retirées, puis le site est republié. Les nouveaux produits apparaissent avec leur photo du Sheet et une traduction française automatique (marquée `frAuto` pour relecture).
+
+## Photos HD (sur le PC)
+
+- `scripts/process-images.ps1` : repère les cadres rouges des photos sources, recadre le produit redressé en pleine résolution, corrige la lumière et génère : la photo réelle (`tex/`), le rendu « plaque entière + loupe » (`pack/`) et la vignette (`thumb/`).
+- `scripts/ai-upscale.ps1` : rend nettes les photos trop petites avec l'IA Real-ESRGAN (lent sur carte graphique intégrée, reprend où il s'est arrêté). Relancer ensuite `process-images.ps1` puis `build.ps1`.
+- Les photos sources et l'outil IA sont dans `../tools-ext/` (non publiés).
