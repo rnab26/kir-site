@@ -13,7 +13,7 @@
   "address": "",
   "openingHours": "",
   "googleSiteVerification": "",
-  "sheetCsvUrl": "",
+  "sheetCsvUrl": "https://docs.google.com/spreadsheets/d/e/2PACX-1vT80JmCxZ4y10LQR8p7iJRzGqz3rkV0XDIw3lBKw97ea0LVIeRQsBP8xx0hZxk1gSdGiwJ7b6rZXqyS/pub?gid=1340603621&single=true&output=csv",
   "currency": "ILS",
   "vatIncluded": true
 }
