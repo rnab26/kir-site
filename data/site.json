@@ -1,0 +1,18 @@
+{
+  "_lisezmoi": "Réglages du site. Remplacez les valeurs vides par vos vraies coordonnées puis poussez sur GitHub : le site se reconstruit seul.",
+  "brand": "KIR",
+  "brandHe": "קיר",
+  "brandFull": "KIR · Wall Studio",
+  "baseUrl": "https://example.github.io/kir-site",
+  "whatsapp": "",
+  "phone": "",
+  "email": "",
+  "instagram": "",
+  "facebook": "",
+  "city": "",
+  "address": "",
+  "openingHours": "",
+  "googleSiteVerification": "",
+  "currency": "ILS",
+  "vatIncluded": true
+}

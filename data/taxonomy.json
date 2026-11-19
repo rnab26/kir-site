@@ -1,0 +1,38 @@
+{
+  "_lisezmoi": "Règles de classement automatique : chaque produit reçoit des « aspects » et des « couleurs » selon les mots de sa description en hébreu.",
+  "catOrder": ["slat", "panel", "flex", "deco", "stone", "outdoor", "deck", "mirror", "cornice", "skirting", "molding", "column", "ornament", "adhesive"],
+  "catPrefix": {"slat": "slat", "panel": "panel", "flex": "flex-panel", "deco": "3d-panel", "stone": "stone", "outdoor": "outdoor", "deck": "deck", "mirror": "led-mirror", "cornice": "cornice", "skirting": "skirting", "molding": "molding", "column": "column", "ornament": "ornament", "adhesive": "adhesive"},
+  "lookOrder": ["wood", "travertine", "marble", "fabric", "concrete", "stone", "black", "white"],
+  "looks": {
+    "wood": "עץ|אגוז|אלון",
+    "travertine": "טרוורטין",
+    "marble": "שיש",
+    "fabric": "דמוי בד|אקוסטי",
+    "concrete": "בטון|טיח|טראצו",
+    "stone": "אבן|צפחה|גרניט|לבנים|סלע",
+    "black": "שחור(?!ים)|שחורה",
+    "white": "לבנה|לבן(?!ים)"
+  },
+  "colorOrder": ["white", "black", "grey", "beige", "taupe", "brown", "gold"],
+  "colors": {
+    "white": "לבנה|לבן(?!ים)",
+    "black": "שחור(?!ים)|שחורה",
+    "grey": "אפור|אפרפר",
+    "beige": "בז׳|קרם|חול",
+    "taupe": "טאופ",
+    "brown": "חום|אגוז|אלון|ברונזה",
+    "gold": "זהב|זהוב"
+  },
+  "lookCover": {
+    "wood": "1U7LiwoEvQ-tzhER0nzWsGZau_N5GCZQS",
+    "travertine": "1XEzpUmwczuEFAtZea0kZfXf1OV1Tis8j",
+    "marble": "1W5ZFcndSAxLTc0EEh4pPxpkGNoQXrPO-",
+    "fabric": "1n-GFc05E3uw73-Oa_GpJBjGKQeGYV20r",
+    "concrete": "1pu6-sNO8Wpn_v2iGIEdyiLaEjvNe7zUL",
+    "stone": "1jQ0SGRo-gW75MWJpT145HsAIkaQAGumF",
+    "black": "1njVWGQBUTAHAKbMFNgzGSbCVi2D33Kh6",
+    "white": "1ap4OJMSWn5NE-S8yQKpcQ_etHyNk7KC3"
+  },
+  "studioSwatches": ["1XEzpUmwczuEFAtZea0kZfXf1OV1Tis8j", "1U7LiwoEvQ-tzhER0nzWsGZau_N5GCZQS", "1W5ZFcndSAxLTc0EEh4pPxpkGNoQXrPO-", "1njVWGQBUTAHAKbMFNgzGSbCVi2D33Kh6", "1n-GFc05E3uw73-Oa_GpJBjGKQeGYV20r", "1pu6-sNO8Wpn_v2iGIEdyiLaEjvNe7zUL", "1ap4OJMSWn5NE-S8yQKpcQ_etHyNk7KC3", "1kXH7ZtrELLbwj1QMlBQzamTa9trcQj_V"],
+  "featured": ["1XEzpUmwczuEFAtZea0kZfXf1OV1Tis8j", "1U7LiwoEvQ-tzhER0nzWsGZau_N5GCZQS", "1W5ZFcndSAxLTc0EEh4pPxpkGNoQXrPO-", "1njVWGQBUTAHAKbMFNgzGSbCVi2D33Kh6", "1kXH7ZtrELLbwj1QMlBQzamTa9trcQj_V", "1jQ0SGRo-gW75MWJpT145HsAIkaQAGumF", "1grwoMfEj5rDJepoln3nqNZ_QPH-DSctV", "1VCVlSTqL12shWYFc5M2MRedSwTwJtbxS"]
+}

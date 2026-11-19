@@ -1,0 +1,206 @@
+{
+  "he": {
+    "lang": "he", "dir": "rtl", "locale": "he_IL", "prefix": "",
+    "tagline": "חיפוי קירות שמרגישים",
+    "metaTitleHome": "חיפוי קירות ופאנלים לקיר — סרגלים, דמוי עץ, שיש וטרוורטין | {brand}",
+    "metaDescHome": "קטלוג חיפוי קירות: סרגלים מחורצים לקיר, פלטות PVC ו־SPC דמוי שיש וטרוורטין, חיפוי אבן גמיש, פאנלים תלת־ממדיים ומראות LED. מחירים כולל מע״מ והצעת מחיר מהירה בוואטסאפ.",
+    "nav": {"catalog": "קטלוג", "looks": "מראות וחומרים", "studio": "סטודיו קיר", "calc": "מחשבון", "guide": "מדריך", "contact": "צור קשר", "list": "רשימת הצעת מחיר"},
+    "ui": {
+      "skip": "דלג לתוכן", "menu": "תפריט", "close": "סגירה", "search": "חיפוש לפי שם, צבע או מק״ט", "all": "הכול",
+      "category": "סוג מוצר", "look": "מראה", "color": "צבע", "sort": "מיון", "sortDefault": "מומלץ", "sortPriceAsc": "מחיר: מהנמוך", "sortPriceDesc": "מחיר: מהגבוה",
+      "results": "מוצרים", "noResults": "לא נמצאו מוצרים. נסו לנקות את הסינון.", "clear": "ניקוי סינון",
+      "sku": "מק״ט", "size": "מידה", "finish": "גימור", "matte": "מט", "gloss": "מבריק", "priceVat": "כולל מע״מ", "perUnit": "ליחידה", "perM2": "למ״ר (משוער)",
+      "onRequest": "מחיר לפי בקשה", "preorder": "בהזמנה מראש", "inStock": "זמין", "add": "הוספה לרשימה", "added": "ברשימה ✓", "ask": "שאלו בוואטסאפ",
+      "width": "רוחב", "length": "אורך", "cm": "ס״מ", "m": "מ׳", "height": "גובה",
+      "related": "עוד באותו סגנון", "seeOnWall": "ראו על הקיר", "details": "פרטי המוצר", "home": "ראשי", "viewAll": "לכל המוצרים", "explore": "לגלות",
+      "listTitle": "רשימת הצעת מחיר", "listEmpty": "הרשימה ריקה. הוסיפו מוצרים מהקטלוג ונחזור אליכם עם הצעת מחיר.", "qty": "כמות", "remove": "הסרה",
+      "sendWa": "שליחה בוואטסאפ", "copy": "העתקת הרשימה", "copied": "הועתק ✓", "listIntro": "שלום, אשמח להצעת מחיר עבור:", "estTotal": "סה״כ משוער (מוצרים עם מחיר)",
+      "noContact": "פרטי הקשר יתעדכנו בקרוב. בינתיים אפשר להעתיק את הרשימה.", "ref": "מק״ט פנימי",
+      "illustration": "הדמיה להמחשה בלבד. הגוון בפועל עשוי להשתנות — מומלץ לראות דוגמה.",
+      "lang": "Français", "langCode": "fr", "priceNote": "המחירים כוללים מע״מ ועשויים להשתנות. המחיר הסופי נקבע בהצעת המחיר.",
+      "breadcrumb": "ניווט", "products": "מוצרים"
+    },
+    "hero": {
+      "kicker": "סטודיו לחיפוי קירות",
+      "h1": "חיפוי קירות ופאנלים לקיר",
+      "lead": "סרגלים מחורצים, פלטות דמוי שיש וטרוורטין, אבן גמישה ופאנלים תלת־ממדיים. מעבירים את העכבר על הקיר — ומרגישים את הטקסטורה.",
+      "cta": "לקטלוג המלא", "cta2": "לנסות על הקיר"
+    },
+    "stats": [["{count}", "דגמים בקטלוג"], ["{cats}", "קטגוריות"], ["2.90", "מ׳ אורך סרגל סטנדרטי"]],
+    "materialsTitle": "בוחרים חומר, לא רק צבע",
+    "materialsLead": "כל משפחה מגיעה במגוון גוונים, רוחבים וגימורים.",
+    "studio": {
+      "title": "סטודיו קיר",
+      "lead": "בחרו דגם ותראו אותו בחדר. החליפו בין קיר אחורי לקיר צד, בין אור יום לאור ערב.",
+      "pick": "בחרו טקסטורה", "wallBack": "קיר מרכזי", "wallAll": "כל החדר", "day": "אור יום", "evening": "אור ערב", "flutes": "הדגשת חריצים"
+    },
+    "calc": {
+      "title": "כמה סרגלים צריך?",
+      "lead": "מזינים את מידות הקיר ומקבלים כמות ועלות משוערת. מוסיפים כ־10% לחיתוכים.",
+      "wallW": "רוחב הקיר (ס״מ)", "wallH": "גובה הקיר (ס״מ)", "model": "דגם", "result": "תצטרכו בערך", "units": "יחידות", "cost": "עלות משוערת", "waste": "כולל 10% פחת", "tooTall": "הקיר גבוה מאורך היחידה — יידרשו חיבורים.", "noPrice": "לדגם זה המחיר לפי בקשה."
+    },
+    "steps": {
+      "title": "איך זה עובד",
+      "items": [["בוחרים", "מסננים לפי מראה, צבע ומידה ומוסיפים לרשימה."], ["שולחים", "שולחים את הרשימה בלחיצה אחת בוואטסאפ."], ["מקבלים הצעה", "חוזרים אליכם עם זמינות והצעת מחיר מסודרת."]]
+    },
+    "featured": "דגמים נבחרים",
+    "faqTitle": "שאלות נפוצות",
+    "faq": [
+      ["מה ההבדל בין סרגל לפלטה?", "סרגל הוא פס צר (בדרך כלל 10–40 ס״מ רוחב ו־2.90 מ׳ אורך) שמרכיבים זה לצד זה, לרוב עם חריצים שיוצרים מראה מחורץ. פלטה היא לוח רחב (כ־96–122 ס״מ) שמכסה שטח גדול בבת אחת, למשל במראה שיש, טרוורטין או בטון."],
+      ["מה ההבדל בין PVC ל־SPC?", "שניהם חומרים סינתטיים קלים לתחזוקה. SPC (אבן־פולימר) הוא חומר קשיח וצפוף יותר, ו־PVC קל יותר ונוח לחיתוך. בכל דף מוצר מצוין סוג החומר כשהוא ידוע."],
+      ["האם המחירים כוללים מע״מ?", "כן. כל המחירים באתר כוללים מע״מ. בדגמים ללא מחיר — המחיר נמסר בהצעת המחיר."],
+      ["איך מחשבים כמה יחידות צריך?", "מחלקים את רוחב הקיר ברוחב היחידה ומעגלים למעלה, ומוסיפים כ־10% לחיתוכים. המחשבון באתר עושה את זה בשבילכם."],
+      ["איך מקבלים הצעת מחיר?", "מוסיפים מוצרים לרשימה ושולחים אותה בוואטסאפ, או פונים אלינו דרך עמוד צור קשר."],
+      ["למה הגוון בתמונה שונה מהמציאות?", "התמונות צולמו בתנאי תאורה משתנים. לפני הזמנה מומלץ לראות דוגמה פיזית או לבקש תמונה נוספת."]
+    ],
+    "catalogTitle": "קטלוג חיפוי קירות",
+    "catalogDesc": "כל דגמי חיפוי הקירות במקום אחד: סרגלים, פלטות PVC ו־SPC, אבן גמישה, פאנלים תלת־ממדיים, קרניזים ושיפולים. סינון לפי מראה, צבע ומידה.",
+    "looksTitle": "מראות וחומרים",
+    "guideTitle": "המדריך לבחירת חיפוי קיר",
+    "guideDesc": "איך בוחרים בין סרגלים לפלטות, PVC מול SPC, מודדים את הקיר ומחשבים כמויות — מדריך קצר וברור.",
+    "guide": [
+      ["סרגלים או פלטות?", "<p>סרגלים מחורצים יוצרים קצב אנכי, מגביהים חזותית את החדר ומתאימים במיוחד לקיר טלוויזיה, ראש מיטה ומבואה. פלטות רחבות מתאימות למשטחים גדולים ולמראה רציף של שיש, טרוורטין או בטון — עם מעט חיבורים.</p>"],
+      ["איך בוחרים רוחב סרגל", "<p>סרגל צר (15–17 ס״מ) נותן מראה עדין וצפוף; סרגל של 20 ס״מ הוא הסטנדרט המאוזן; סרגל חלק של 40 ס״מ משמש לרוב כמשטח רגוע בין אזורים מחורצים. רוחב החריץ משנה את משחק הצל: חריצים רחבים ומעוגלים בולטים יותר באור צד.</p>"],
+      ["מט או מבריק?", "<p>גימור מבריק מחזיר אור ומדגיש עורקי שיש — מתאים לחדרי רחצה, סלון ומבואות. גימור מט מסתיר טביעות אצבע ומתאים לטקסטורות של אבן, טיח ובטון.</p>"],
+      ["מדידה נכונה", "<p>מודדים רוחב וגובה בכמה נקודות ולוקחים את המידה הגדולה. מסמנים שקעים, מתגים ופתחים. אם גובה הקיר עולה על אורך היחידה (לרוב 2.80–2.90 מ׳) יידרש חיבור או פרופיל סיום.</p>"],
+      ["דבק ופרופילים", "<p>להתקנה על קיר ישר ויבש משתמשים בדבק היברידי חזק. לסיום נקי משלבים שיפולים, קרניזים ופרופילי עיטור — כולם מופיעים בקטלוג.</p>"]
+    ],
+    "contactTitle": "צור קשר",
+    "contactDesc": "שאלה על דגם, זמינות או הצעת מחיר? כתבו לנו — הדרך המהירה ביותר היא וואטסאפ.",
+    "contactPending": "פרטי הקשר המלאים יפורסמו כאן בקרוב.",
+    "listDesc": "כאן נשמרים המוצרים שבחרתם. שלחו את הרשימה ונחזור אליכם עם הצעת מחיר.",
+    "notFound": "העמוד לא נמצא", "notFoundLead": "אולי הקיר הזה עדיין ריק. חזרו לקטלוג.",
+    "footer": "קטלוג חיפוי קירות ופאנלים דקורטיביים. המחירים כוללים מע״מ.",
+    "productTitle": "{name} — {sku} | {brand}",
+    "productDesc": "{name}. {size}{price} צפו בתמונה, חשבו כמויות ובקשו הצעת מחיר בוואטסאפ.",
+    "categories": {
+      "slat": {"slug": "slats", "name": "סרגלים לקיר", "title": "סרגלים לקיר — חיפוי מחורץ דמוי עץ, בד וטרוורטין", "intro": "סרגלים מחורצים וחלקים באורך 2.90 מ׳ וברוחב 10–40 ס״מ. דמוי עץ אגוז ואלון, בד, טרוורטין, שחור, לבן וטאופ — לקיר טלוויזיה, ראש מיטה, מבואה וחללים מסחריים."},
+      "panel": {"slug": "panels", "name": "פלטות PVC ו־SPC", "title": "פלטות לקיר PVC ו־SPC — דמוי שיש, טרוורטין, בטון ואבן", "intro": "פלטות רחבות (96–122 ס״מ) באורך 2.80–2.90 מ׳ במראה שיש מבריק, טרוורטין, בטון, טיח ואבן. חלופה קלה ונקייה לחיפוי אבן אמיתי."},
+      "flex": {"slug": "flexible-panels", "name": "פלטות סרגלים גמישות", "title": "פלטות סרגלים גמישות ואקוסטיות לקיר", "intro": "פלטות סרגלים על גב גמיש, בדמוי עץ ובד, עם פסים כהים — מתאימות גם לקירות מעוגלים ולשיפור האקוסטיקה בחדר."},
+      "deco": {"slug": "3d-panels", "name": "פאנלים תלת־ממדיים", "title": "פאנלים דקורטיביים תלת־ממדיים לקיר — קשקשים ומשושים", "intro": "פאנלים בדוגמאות קשקשים ומשושים בגוונים לבן, שחור, דמוי עץ ובד — ליצירת קיר מוקד עם עומק וצל."},
+      "stone": {"slug": "stone", "name": "חיפוי דמוי אבן", "title": "חיפוי דמוי אבן ואבן גמישה לקיר", "intro": "אבן גמישה, אבן מסותתת, סלע ולבנים — מראה של אבן טבעית במשקל קל ובהתקנה פשוטה יותר."},
+      "outdoor": {"slug": "outdoor", "name": "חיפוי חוץ", "title": "חיפוי חוץ לחזיתות — דמוי עץ ואבן", "intro": "חיפויים לחזיתות ולקירות חוץ בדמוי עץ ואבן חול."},
+      "deck": {"slug": "decking", "name": "דק WPC", "title": "דק WPC דמוי עץ", "intro": "לוחות דק מחומר WPC עם טקסטורת עץ מובלטת, במגוון גווני חום."},
+      "mirror": {"slug": "led-mirrors", "name": "מראות LED", "title": "מראות LED עם תאורה אחורית", "intro": "מראות עגולות, אורגניות וקפסולה עם תאורה אחורית בשלושה גוונים — משלימות מושלמות לקיר מחופה."},
+      "cornice": {"slug": "cornices", "name": "קרניזים", "title": "קרניזים לתקרה ולקיר", "intro": "קרניזים לבנים בפרופילים קעורים ומפוספסים במגוון גדלים, לסיום נקי בין קיר לתקרה."},
+      "skirting": {"slug": "skirting", "name": "שיפולים", "title": "שיפולים לבנים ושחורים", "intro": "שיפולים בגובה 6–12 ס״מ בלבן ובשחור."},
+      "molding": {"slug": "moldings", "name": "פרופילי עיטור", "title": "פרופילי עיטור ומסגרות לקיר", "intro": "פרופילים לבנים חלקים, מדורגים ומחורצים ליצירת מסגרות, חלוקות וקלאסיקה מודרנית על הקיר."},
+      "column": {"slug": "columns", "name": "עמודים דקורטיביים", "title": "עמודים דקורטיביים מחורצים", "intro": "עמודים מחורצים עם כותרות יוניות, עגולות ומעוטרות."},
+      "ornament": {"slug": "ornaments", "name": "פסים דקורטיביים", "title": "פסים דקורטיביים מחוררים", "intro": "פסים מחוררים בלבן ובשחור בדוגמאות עלים, פרחים וריבועים."},
+      "adhesive": {"slug": "adhesives", "name": "דבקים", "title": "דבק להתקנת חיפוי קירות", "intro": "דבק היברידי בהדבקה ראשונית חזקה להתקנת סרגלים ופלטות."}
+    },
+    "looks": {
+      "wood": {"slug": "wood-look", "name": "דמוי עץ", "title": "חיפוי קיר דמוי עץ — סרגלים ופלטות", "intro": "גווני אגוז, אלון, חום ואפור־עץ — חום טבעי בלי התחזוקה של עץ אמיתי."},
+      "travertine": {"slug": "travertine-look", "name": "דמוי טרוורטין", "title": "חיפוי דמוי טרוורטין לקיר", "intro": "הטרנד החם של השנים האחרונות: טרוורטין בז׳, טאופ ולבן־אפור בסרגלים מחורצים ובפלטות רחבות."},
+      "marble": {"slug": "marble-look", "name": "דמוי שיש", "title": "פלטות דמוי שיש לקיר — מבריק ומט", "intro": "שיש לבן, שחור, אפור ובז׳ עם עורקים עדינים או עורקי זהב, בגימור מבריק או מט."},
+      "fabric": {"slug": "fabric-look", "name": "דמוי בד ואקוסטי", "title": "חיפוי דמוי בד ואקוסטי לקיר", "intro": "טקסטורה רכה של בד בגווני בז׳ ואפור — לחדרי שינה, משרדים וחדרי מדיה."},
+      "concrete": {"slug": "concrete-look", "name": "דמוי בטון וטיח", "title": "חיפוי דמוי בטון וטיח", "intro": "בטון חשוף, טיח מחוספס וטראצו — מראה תעשייתי נקי."},
+      "stone": {"slug": "stone-look", "name": "דמוי אבן", "title": "פלטות וחיפוי דמוי אבן", "intro": "צפחה, גרניט, אבן חול ולבנים — מראה של אבן במשקל קל."},
+      "black": {"slug": "black", "name": "שחור", "title": "חיפוי קיר שחור — סרגלים ופלטות", "intro": "סרגלים ופלטות בשחור עמוק — דרמטי, מודרני ומשתלב עם תאורה."},
+      "white": {"slug": "white", "name": "לבן", "title": "חיפוי קיר לבן — סרגלים, פלטות ועיטורים", "intro": "לבן נקי ומואר בסרגלים, פלטות, קרניזים ופרופילים."}
+    },
+    "colors": {"white": "לבן", "black": "שחור", "grey": "אפור", "beige": "בז׳ וקרם", "taupe": "טאופ", "brown": "חום ועץ", "gold": "עורקי זהב"}
+  },
+  "fr": {
+    "lang": "fr", "dir": "ltr", "locale": "fr_FR", "prefix": "fr/",
+    "tagline": "Des murs qui se ressentent",
+    "metaTitleHome": "Revêtement mural en Israël — lames, panneaux effet bois, marbre, travertin | {brand}",
+    "metaDescHome": "Catalogue de revêtements muraux en Israël : lames rainurées (tasseaux), panneaux PVC et SPC effet marbre et travertin, pierre flexible, panneaux 3D et miroirs LED. Prix TTC et devis rapide sur WhatsApp.",
+    "nav": {"catalog": "Catalogue", "looks": "Matières", "studio": "Studio mur", "calc": "Calculateur", "guide": "Guide", "contact": "Contact", "list": "Liste de devis"},
+    "ui": {
+      "skip": "Aller au contenu", "menu": "Menu", "close": "Fermer", "search": "Rechercher par nom, couleur ou référence", "all": "Tout",
+      "category": "Type", "look": "Aspect", "color": "Couleur", "sort": "Trier", "sortDefault": "Recommandé", "sortPriceAsc": "Prix croissant", "sortPriceDesc": "Prix décroissant",
+      "results": "produits", "noResults": "Aucun produit trouvé. Essayez d'effacer les filtres.", "clear": "Effacer les filtres",
+      "sku": "Réf.", "size": "Dimensions", "finish": "Finition", "matte": "Mat", "gloss": "Brillant", "priceVat": "TTC", "perUnit": "l'unité", "perM2": "le m² (estimé)",
+      "onRequest": "Prix sur demande", "preorder": "Sur commande", "inStock": "Disponible", "add": "Ajouter à la liste", "added": "Dans la liste ✓", "ask": "Demander sur WhatsApp",
+      "width": "Largeur", "length": "Longueur", "cm": "cm", "m": "m", "height": "Hauteur",
+      "related": "Dans le même style", "seeOnWall": "Voir sur le mur", "details": "Détails du produit", "home": "Accueil", "viewAll": "Tous les produits", "explore": "Découvrir",
+      "listTitle": "Liste de devis", "listEmpty": "Votre liste est vide. Ajoutez des produits depuis le catalogue et nous revenons vers vous avec un devis.", "qty": "Qté", "remove": "Retirer",
+      "sendWa": "Envoyer sur WhatsApp", "copy": "Copier la liste", "copied": "Copié ✓", "listIntro": "Bonjour, je souhaite un devis pour :", "estTotal": "Total estimé (produits avec prix)",
+      "noContact": "Les coordonnées seront publiées très bientôt. En attendant, vous pouvez copier la liste.", "ref": "Réf. interne",
+      "illustration": "Simulation à titre indicatif. La teinte réelle peut varier : demandez un échantillon.",
+      "lang": "עברית", "langCode": "he", "priceNote": "Prix TTC (TVA israélienne incluse), susceptibles d'évoluer. Le prix final figure sur le devis.",
+      "breadcrumb": "Fil d'Ariane", "products": "produits"
+    },
+    "hero": {
+      "kicker": "Studio de revêtements muraux",
+      "h1": "Revêtements muraux et panneaux décoratifs en Israël",
+      "lead": "Lames rainurées, panneaux effet marbre et travertin, pierre flexible et panneaux 3D. Passez la souris sur le mur : la matière prend vie.",
+      "cta": "Voir le catalogue", "cta2": "Essayer sur un mur"
+    },
+    "stats": [["{count}", "modèles au catalogue"], ["{cats}", "catégories"], ["2,90", "m de longueur standard"]],
+    "materialsTitle": "Choisir une matière, pas seulement une couleur",
+    "materialsLead": "Chaque famille existe en plusieurs teintes, largeurs et finitions.",
+    "studio": {
+      "title": "Studio mur",
+      "lead": "Choisissez un modèle et voyez-le dans une pièce. Mur principal ou pièce entière, lumière du jour ou du soir.",
+      "pick": "Choisir une texture", "wallBack": "Mur principal", "wallAll": "Toute la pièce", "day": "Jour", "evening": "Soir", "flutes": "Accentuer les rainures"
+    },
+    "calc": {
+      "title": "Combien de lames faut-il ?",
+      "lead": "Entrez les dimensions du mur pour obtenir la quantité et un coût estimé. Prévoyez environ 10 % pour les coupes.",
+      "wallW": "Largeur du mur (cm)", "wallH": "Hauteur du mur (cm)", "model": "Modèle", "result": "Il vous faut environ", "units": "unités", "cost": "Coût estimé", "waste": "10 % de chute inclus", "tooTall": "Le mur dépasse la longueur d'une unité : des raccords seront nécessaires.", "noPrice": "Prix sur demande pour ce modèle."
+    },
+    "steps": {
+      "title": "Comment ça marche",
+      "items": [["Choisir", "Filtrez par aspect, couleur et dimension, puis ajoutez à la liste."], ["Envoyer", "Envoyez la liste en un clic sur WhatsApp."], ["Recevoir le devis", "Nous revenons vers vous avec la disponibilité et un devis détaillé."]]
+    },
+    "featured": "Sélection",
+    "faqTitle": "Questions fréquentes",
+    "faq": [
+      ["Quelle différence entre une lame et un panneau ?", "Une lame (ou tasseau) est une bande étroite, généralement de 10 à 40 cm de large et 2,90 m de long, posée côte à côte, souvent rainurée. Un panneau est large (environ 96 à 122 cm) et couvre une grande surface d'un coup, par exemple en effet marbre, travertin ou béton."],
+      ["PVC ou SPC : quelle différence ?", "Ce sont deux matériaux synthétiques faciles d'entretien. Le SPC (composite pierre-polymère) est plus rigide et plus dense ; le PVC est plus léger et se découpe facilement. Le matériau est indiqué sur la fiche produit lorsqu'il est connu."],
+      ["Les prix incluent-ils la TVA ?", "Oui, tous les prix affichés sont TTC (TVA israélienne incluse). Pour les modèles sans prix, le tarif figure sur le devis."],
+      ["Comment calculer la quantité ?", "Divisez la largeur du mur par la largeur d'une unité, arrondissez au supérieur et ajoutez environ 10 % pour les coupes. Le calculateur du site le fait pour vous."],
+      ["Comment obtenir un devis ?", "Ajoutez des produits à votre liste et envoyez-la sur WhatsApp, ou contactez-nous via la page Contact."],
+      ["Pourquoi la teinte diffère-t-elle de la photo ?", "Les photos ont été prises sous des éclairages variables. Avant de commander, demandez un échantillon ou une photo supplémentaire."]
+    ],
+    "catalogTitle": "Catalogue de revêtements muraux",
+    "catalogDesc": "Tous nos revêtements muraux : lames rainurées, panneaux PVC et SPC, pierre flexible, panneaux 3D, corniches et plinthes. Filtrez par aspect, couleur et dimension.",
+    "looksTitle": "Matières et aspects",
+    "guideTitle": "Guide pour choisir son revêtement mural",
+    "guideDesc": "Lames ou panneaux, PVC ou SPC, prise de mesures et calcul des quantités : le guide clair pour bien choisir.",
+    "guide": [
+      ["Lames ou panneaux ?", "<p>Les lames rainurées créent un rythme vertical, rehaussent visuellement la pièce et conviennent parfaitement au mur TV, à la tête de lit ou à l'entrée. Les grands panneaux couvrent les grandes surfaces avec un rendu continu de marbre, travertin ou béton, avec peu de joints.</p>"],
+      ["Quelle largeur de lame ?", "<p>Une lame étroite (15–17 cm) donne un rendu fin et serré ; 20 cm est le standard équilibré ; une lame lisse de 40 cm sert souvent de surface calme entre deux zones rainurées. La largeur de la rainure change le jeu d'ombres : les rainures larges et arrondies ressortent davantage en lumière rasante.</p>"],
+      ["Mat ou brillant ?", "<p>Le brillant reflète la lumière et sublime les veines du marbre : idéal pour salle de bain, salon et entrée. Le mat masque les traces de doigts et convient aux textures pierre, enduit et béton.</p>"],
+      ["Bien mesurer", "<p>Mesurez largeur et hauteur en plusieurs points et retenez la plus grande valeur. Repérez prises, interrupteurs et ouvertures. Si la hauteur dépasse la longueur d'une unité (souvent 2,80–2,90 m), prévoyez un raccord ou un profilé de finition.</p>"],
+      ["Colle et finitions", "<p>Sur un mur plan et sec, on utilise une colle hybride à forte prise initiale. Pour une finition nette, combinez plinthes, corniches et moulures, toutes disponibles au catalogue.</p>"]
+    ],
+    "contactTitle": "Contact",
+    "contactDesc": "Une question sur un modèle, la disponibilité ou un devis ? Écrivez-nous : le plus rapide est WhatsApp.",
+    "contactPending": "Nos coordonnées complètes seront publiées ici très bientôt.",
+    "listDesc": "Vos produits sélectionnés sont enregistrés ici. Envoyez la liste et nous revenons vers vous avec un devis.",
+    "notFound": "Page introuvable", "notFoundLead": "Ce mur est encore vide. Retournez au catalogue.",
+    "footer": "Catalogue de revêtements muraux et panneaux décoratifs en Israël. Prix TTC.",
+    "productTitle": "{name} — {sku} | {brand}",
+    "productDesc": "{name}. {size}{price} Photo, calcul des quantités et devis sur WhatsApp.",
+    "categories": {
+      "slat": {"slug": "slats", "name": "Lames murales", "title": "Lames murales rainurées (tasseaux) — effet bois, tissu, travertin", "intro": "Lames rainurées et lisses de 2,90 m de long et 10 à 40 cm de large : effet noyer, chêne, tissu, travertin, noir, blanc ou taupe. Pour mur TV, tête de lit, entrée ou commerce."},
+      "panel": {"slug": "panels", "name": "Panneaux PVC & SPC", "title": "Panneaux muraux PVC et SPC — effet marbre, travertin, béton, pierre", "intro": "Grands panneaux (96–122 cm) de 2,80–2,90 m effet marbre brillant, travertin, béton, enduit et pierre. L'alternative légère et propre au parement en pierre naturelle."},
+      "flex": {"slug": "flexible-panels", "name": "Panneaux de lames flexibles", "title": "Panneaux de lames flexibles et acoustiques", "intro": "Lames sur support souple, effet bois ou tissu avec joints sombres : idéal pour murs courbes et pour améliorer l'acoustique."},
+      "deco": {"slug": "3d-panels", "name": "Panneaux décoratifs 3D", "title": "Panneaux muraux décoratifs 3D — écailles et hexagones", "intro": "Motifs écailles et hexagones en blanc, noir, effet bois ou tissu, pour un mur d'accent plein de relief."},
+      "stone": {"slug": "stone", "name": "Parements effet pierre", "title": "Parement effet pierre et pierre flexible", "intro": "Pierre flexible, pierre taillée, roche et briques : l'aspect de la pierre naturelle, en plus léger et plus simple à poser."},
+      "outdoor": {"slug": "outdoor", "name": "Bardage extérieur", "title": "Bardage extérieur effet bois et pierre", "intro": "Revêtements de façade et murs extérieurs effet bois et grès."},
+      "deck": {"slug": "decking", "name": "Terrasse WPC", "title": "Lames de terrasse WPC effet bois", "intro": "Lames de terrasse en WPC, texture bois en relief, en plusieurs bruns."},
+      "mirror": {"slug": "led-mirrors", "name": "Miroirs LED", "title": "Miroirs LED rétroéclairés", "intro": "Miroirs ronds, organiques et capsule avec rétroéclairage 3 teintes : le complément idéal d'un mur habillé."},
+      "cornice": {"slug": "cornices", "name": "Corniches", "title": "Corniches murales et plafond", "intro": "Corniches blanches à profil concave strié, en plusieurs tailles, pour une jonction nette mur-plafond."},
+      "skirting": {"slug": "skirting", "name": "Plinthes", "title": "Plinthes blanches et noires", "intro": "Plinthes de 6 à 12 cm en blanc et noir."},
+      "molding": {"slug": "moldings", "name": "Moulures", "title": "Moulures et encadrements muraux", "intro": "Moulures blanches lisses, à gradins ou rainurées pour créer cadres, divisions et un classique modernisé."},
+      "column": {"slug": "columns", "name": "Colonnes décoratives", "title": "Colonnes décoratives cannelées", "intro": "Colonnes cannelées à chapiteau ionique, rond ou orné."},
+      "ornament": {"slug": "ornaments", "name": "Frises décoratives", "title": "Frises décoratives ajourées", "intro": "Frises ajourées blanches et noires, motifs feuilles, fleurs et carrés."},
+      "adhesive": {"slug": "adhesives", "name": "Colles", "title": "Colle pour revêtement mural", "intro": "Colle hybride à forte prise initiale pour la pose de lames et panneaux."}
+    },
+    "looks": {
+      "wood": {"slug": "wood-look", "name": "Effet bois", "title": "Revêtement mural effet bois — lames et panneaux", "intro": "Noyer, chêne, brun et bois grisé : la chaleur du bois sans son entretien."},
+      "travertine": {"slug": "travertine-look", "name": "Effet travertin", "title": "Revêtement mural effet travertin", "intro": "La tendance du moment : travertin beige, taupe et blanc-gris, en lames rainurées ou en grands panneaux."},
+      "marble": {"slug": "marble-look", "name": "Effet marbre", "title": "Panneaux muraux effet marbre — brillant et mat", "intro": "Marbre blanc, noir, gris et beige, veines fines ou dorées, en finition brillante ou mate."},
+      "fabric": {"slug": "fabric-look", "name": "Effet tissu & acoustique", "title": "Revêtement mural effet tissu et acoustique", "intro": "La douceur du tissu en beige et gris : chambres, bureaux et salles multimédia."},
+      "concrete": {"slug": "concrete-look", "name": "Effet béton & enduit", "title": "Revêtement mural effet béton et enduit", "intro": "Béton brut, enduit texturé et terrazzo : un style industriel épuré."},
+      "stone": {"slug": "stone-look", "name": "Effet pierre", "title": "Panneaux et parements effet pierre", "intro": "Ardoise, granit, grès et briques : l'aspect pierre, en léger."},
+      "black": {"slug": "black", "name": "Noir", "title": "Revêtement mural noir — lames et panneaux", "intro": "Lames et panneaux noir profond : dramatique, moderne, sublimé par la lumière."},
+      "white": {"slug": "white", "name": "Blanc", "title": "Revêtement mural blanc — lames, panneaux et moulures", "intro": "Un blanc net et lumineux en lames, panneaux, corniches et moulures."}
+    },
+    "colors": {"white": "Blanc", "black": "Noir", "grey": "Gris", "beige": "Beige & crème", "taupe": "Taupe", "brown": "Brun & bois", "gold": "Veines dorées"}
+  }
+}
