@@ -26,6 +26,14 @@
     });
     nav.addEventListener('click', function (e) { if (e.target.tagName === 'A') { menuBtn.setAttribute('aria-expanded', 'false'); nav.classList.remove('open'); } });
   }
+  /* Catalog dropdown (sections): hover/focus on desktop, button toggle everywhere */
+  $$('[data-drop]').forEach(function (b) {
+    var item = b.parentNode;
+    var set = function (open) { b.setAttribute('aria-expanded', String(open)); item.classList.toggle('open', open); };
+    b.addEventListener('click', function (e) { e.stopPropagation(); set(b.getAttribute('aria-expanded') !== 'true'); });
+    document.addEventListener('click', function (e) { if (!item.contains(e.target)) set(false); });
+    item.addEventListener('keydown', function (e) { if (e.key === 'Escape') { set(false); b.focus(); } });
+  });
 
   /* Toast (optional action link) */
   var toastEl = $('[data-toast]'), toastTimer;
@@ -165,9 +173,9 @@
     var grid = $('[data-grid]');
     var cards = $$('.card', grid);
     var q = $('[data-q]', bar), sort = $('[data-sort]', bar), count = $('[data-n]', bar), clear = $('[data-clear]', bar), empty = $('[data-empty]', bar);
-    var active = { c: [], look: [], color: [] };
+    var active = { c: [], s: [], look: [], color: [] };
     var params = new URLSearchParams(location.search);
-    ['c', 'look', 'color'].forEach(function (g) { var v = params.get(g); if (v) active[g] = v.split(','); });
+    ['c', 's', 'look', 'color'].forEach(function (g) { var v = params.get(g); if (v) active[g] = v.split(','); });
     if (params.get('q') && q) q.value = params.get('q');
     $$('.chip', bar).forEach(function (ch) {
       var g = ch.getAttribute('data-f'), v = ch.getAttribute('data-v');
@@ -182,19 +190,19 @@
     var apply = function (push) {
       var term = norm(q && q.value), n = 0;
       cards.forEach(function (c) {
-        var ok = (!active.c.length || active.c.indexOf(c.getAttribute('data-c')) > -1)
+        var ok = (!active.c.length || active.c.indexOf(c.getAttribute('data-c')) > -1) && (!active.s.length || active.s.indexOf(c.getAttribute('data-s')) > -1)
           && (!active.look.length || active.look.some(function (v) { return (' ' + c.getAttribute('data-looks') + ' ').indexOf(' ' + v + ' ') > -1; }))
           && (!active.color.length || active.color.some(function (v) { return (' ' + c.getAttribute('data-colors') + ' ').indexOf(' ' + v + ' ') > -1; }))
           && (!term || term.split(/\s+/).every(function (w) { return c.getAttribute('data-q').indexOf(w) > -1; }));
         c.hidden = !ok; if (ok) n += parseInt(c.getAttribute('data-k'), 10) || 1;
       });
       if (count) count.textContent = nf.format(n);
-      var any = active.c.length || active.look.length || active.color.length || term;
+      var any = active.c.length || active.s.length || active.look.length || active.color.length || term;
       if (clear) clear.hidden = !any;
       if (empty) empty.hidden = n > 0;
       if (push && history.replaceState) {
         var p = new URLSearchParams();
-        ['c', 'look', 'color'].forEach(function (g) { if (active[g].length) p.set(g, active[g].join(',')); });
+        ['c', 's', 'look', 'color'].forEach(function (g) { if (active[g].length) p.set(g, active[g].join(',')); });
         if (term) p.set('q', q.value.trim());
         var s = p.toString(); history.replaceState(null, '', location.pathname + (s ? '?' + s : ''));
       }
@@ -212,7 +220,7 @@
     if (q) q.addEventListener('input', function () { apply(true); });
     if (sort) sort.addEventListener('change', doSort);
     if (clear) clear.addEventListener('click', function () {
-      active = { c: [], look: [], color: [] }; if (q) q.value = '';
+      active = { c: [], s: [], look: [], color: [] }; if (q) q.value = '';
       $$('.chip', bar).forEach(function (c) { c.setAttribute('aria-pressed', 'false'); }); apply(true);
     });
     apply(false);

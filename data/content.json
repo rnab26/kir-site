@@ -26,7 +26,7 @@
       "lead": "סרגלים מחורצים, פלטות דמוי שיש וטרוורטין, אבן גמישה ופאנלים תלת־ממדיים. מעבירים את העכבר על הקיר — ומרגישים את הטקסטורה.",
       "cta": "לקטלוג המלא", "cta2": "לנסות על הקיר"
     },
-    "stats": [["{count}", "דגמים בקטלוג"], ["{cats}", "קטגוריות"], ["2.90", "מ׳ אורך סרגל סטנדרטי"]],
+    "stats": [["{count}", "דגמים בקטלוג"], ["{cats}", "תחומי מוצר"], ["2.90", "מ׳ אורך סרגל סטנדרטי"]],
     "materialsTitle": "בוחרים חומר, לא רק צבע",
     "materialsLead": "כל משפחה מגיעה במגוון גוונים, רוחבים וגימורים.",
     "studio": {
@@ -128,7 +128,7 @@
       "lead": "Lames rainurées, panneaux effet marbre et travertin, pierre flexible et panneaux 3D. Passez la souris sur le mur : la matière prend vie.",
       "cta": "Voir le catalogue", "cta2": "Essayer sur un mur"
     },
-    "stats": [["{count}", "modèles au catalogue"], ["{cats}", "catégories"], ["2,90", "m de longueur standard"]],
+    "stats": [["{count}", "modèles au catalogue"], ["{cats}", "univers"], ["2,90", "m de longueur standard"]],
     "materialsTitle": "Choisir une matière, pas seulement une couleur",
     "materialsLead": "Chaque famille existe en plusieurs teintes, largeurs et finitions.",
     "studio": {

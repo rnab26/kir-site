@@ -117,6 +117,14 @@ foreach ($p in $Raw) {
 }
 $ById = @{}; $BySlug = @{}; foreach ($it in $Items) { $ById[$it.img] = $it; $BySlug[$it.slug] = $it }
 $CatOrder = @($Tax.catOrder | Where-Object { $c = $_; @($Items | Where-Object { $_.c -eq $c }).Count -gt 0 })
+# Sections (universes): groups of categories shown as the main navigation
+$Sections = @(); $SecOf = @{}
+foreach ($sx in $Tax.sections) {
+  $cs = @($sx.cats | Where-Object { $CatOrder -contains $_ }); if (-not $cs.Count) { continue }
+  $so = [pscustomobject]@{ key = [string]$sx.key; cats = $cs; slug = [string](P $sx 'slug'); cover = [string](P $sx 'cover'); txt = $sx }
+  $Sections += $so; foreach ($c in $cs) { $SecOf[$c] = $so }
+}
+foreach ($c in $CatOrder) { if (-not $SecOf.ContainsKey($c)) { throw "Category '$c' belongs to no section (data/taxonomy.json > sections)" } }
 $LookOrder = @($Tax.lookOrder)
 
 # ---------- families: variants of one model (same color code / pattern) share one page ----------
@@ -188,6 +196,15 @@ function Other([string]$lang) { if ($lang -eq 'he') { 'fr' } else { 'he' } }
 function Lc([string]$lang) { P $Content $lang }
 function CatOf($L, [string]$c) { P $L.categories $c }
 function LookOf($L, [string]$k) { P $L.looks $k }
+function SecTxt($L, $sec, [string]$k) { [string](P (P $sec.txt $L.lang) $k) }
+function SecMulti($sec) { @($sec.cats).Count -gt 1 }
+function SecPath($L, $sec) { if (SecMulti $sec) { 's/' + $sec.slug + '/' } else { 'c/' + (P (CatOf $L $sec.cats[0]) 'slug') + '/' } }
+function SecFams($sec) { @($Fams | Where-Object { $sec.cats -contains $_.c }) }
+function SecPills($L, $except) {
+  $h = ''
+  foreach ($sec in $Sections) { if ($sec -ne $except) { $h += '<a class="pill" href="' + (Href $L (SecPath $L $sec)) + '">' + (Enc (SecTxt $L $sec 'name')) + '</a>' } }
+  $h
+}
 function NameOf($L, $it) { [string]$it.($L.lang) }
 
 function SizeText($L, [string]$s) {
@@ -233,7 +250,7 @@ function CardBuild($L, $it, [string]$headTag) {
   if ($multi -and $null -ne $it.p) { $price = '<span class="price"><small class="from">' + (Enc (T $L 'from')) + '</small><bdi>' + (Num $it.p) + '&nbsp;&#8362;</bdi></span>' }
   $btn = if ($multi) { '<a class="add" href="' + $url + '" aria-label="' + (Enc ((T $L 'choose') + ': ' + $name)) + '">' + $Icons.arrow + '</a>' } else { '<button class="add" type="button" data-add="' + $it.slug + '" aria-label="' + (Enc ((T $L 'add') + ': ' + $name)) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>' }
   $imgs = if ($it.vars) { (@($it.vars | ForEach-Object { $_.img }) -join ' ') } else { $it.img }
-  return '<article class="card" data-k="' + $(if ($it.n -gt 1) { $it.n } else { 1 }) + '" data-imgs="' + $imgs + '" data-c="' + $it.c + '" data-looks="' + ($it.looks -join ' ') + '" data-colors="' + ($it.colors -join ' ') + '" data-p="' + $pp + '" data-i="' + $it.idx + '" data-q="' + (Enc $q) + '">' +
+  return '<article class="card" data-k="' + $(if ($it.n -gt 1) { $it.n } else { 1 }) + '" data-imgs="' + $imgs + '" data-s="' + $SecOf[$it.c].key + '" data-c="' + $it.c + '" data-looks="' + ($it.looks -join ' ') + '" data-colors="' + ($it.colors -join ' ') + '" data-p="' + $pp + '" data-i="' + $it.idx + '" data-q="' + (Enc $q) + '">' +
     '<a class="card-media" href="' + $url + '" tabindex="-1" aria-hidden="true"><img src="' + (ImgUrl $it.img) + '" alt="" width="520" height="650" loading="lazy" decoding="async">' + $badge + '</a>' +
     '<div class="card-body"><' + $headTag + ' class="card-title"><a href="' + $url + '">' + (Enc $name) + '</a></' + $headTag + '>' +
     '<p class="card-meta">' + $meta + '</p>' +
@@ -329,7 +346,14 @@ function HeaderHtml($L, [string]$path) {
   $nav = ''
   foreach ($k in @(@('catalog', 'catalog/'), @('looks', 'looks/'), @('studio', 'studio/'), @('guide', 'guide/'), @('contact', 'contact/'))) {
     $cur = if ($path -eq $k[1]) { ' aria-current="page"' } else { '' }
-    $nav += '<a href="' + (Href $L $k[1]) + '"' + $cur + '>' + (Enc (P $L.nav $k[0])) + '</a>'
+    $a = '<a href="' + (Href $L $k[1]) + '"' + $cur + '>' + (Enc (P $L.nav $k[0])) + '</a>'
+    if ($k[0] -eq 'catalog') {
+      $drop = ''
+      foreach ($sec in $Sections) { $sp = SecPath $L $sec; $dc = if ($path -eq $sp) { ' aria-current="page"' } else { '' }; $drop += '<a href="' + (Href $L $sp) + '"' + $dc + '>' + (Enc (SecTxt $L $sec 'name')) + '</a>' }
+      $drop += '<a class="drop-all" href="' + (Href $L 'catalog/') + '">' + (Enc (T $L 'allProducts')) + '</a>'
+      $a = '<div class="nav-item has-drop">' + $a + '<button type="button" class="drop-btn" aria-expanded="false" aria-label="' + (Enc (T $L 'catalogMenu')) + '" data-drop><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="drop">' + $drop + '</div></div>'
+    }
+    $nav += $a
   }
   '<header class="site-header" data-header><div class="wrap header-inner">' + (LogoHtml $L) +
   '<nav class="nav" id="site-nav" aria-label="' + (Enc (T $L 'menu')) + '">' + $nav + '</nav>' +
@@ -347,7 +371,8 @@ function FooterHtml($L, [string]$path) {
   $h
 }
 function FooterBuild($L, [string]$path) {
-  $cats = ''; foreach ($c in $CatOrder) { $cats += '<li><a href="' + (Href $L ('c/' + (P (CatOf $L $c) 'slug') + '/')) + '">' + (Enc (P (CatOf $L $c) 'name')) + '</a></li>' }
+  $cats = ''; foreach ($sec in $Sections) { $cats += '<li><a href="' + (Href $L (SecPath $L $sec)) + '">' + (Enc (SecTxt $L $sec 'name')) + '</a></li>' }
+  $cats += '<li><a href="' + (Href $L 'catalog/') + '">' + (Enc (T $L 'allProducts')) + '</a></li>'
   $looks = ''; foreach ($k in $LookOrder) { $looks += '<li><a href="' + (Href $L ('look/' + (P (LookOf $L $k) 'slug') + '/')) + '">' + (Enc (P (LookOf $L $k) 'name')) + '</a></li>' }
   $contact = ''
   if ($Wa) { $contact += '<li><a href="' + (WaLink (T $L 'waHello')) + '" rel="noopener" target="_blank">' + $Icons.wa + 'WhatsApp</a></li>' }
@@ -492,9 +517,19 @@ function LookTiles($L, [string]$tag = 'h3') {
   foreach ($k in $LookOrder) {
     $lk = LookOf $L $k
     $cnt = @($Items | Where-Object { $_.looks -contains $k }).Count
-    $t += '<a class="mat reveal" href="' + (Href $L ('look/' + $lk.slug + '/')) + '" style="--img:url(' + (TexUrl (P $Tax.lookCover $k)) + ')"><span class="mat-tex" aria-hidden="true"></span><span class="mat-sheen" aria-hidden="true"></span><span class="mat-body"><' + $tag + '>' + (Enc $lk.name) + '</' + $tag + '><span>' + $cnt + ' ' + (Enc (T $L 'products')) + '</span></span></a>'
+    $t += '<a class="mat reveal" href="' + (Href $L ('look/' + $lk.slug + '/')) + '" style="--img:url(' + (TexUrl (P $Tax.lookCover $k)) + ')"><span class="mat-tex" aria-hidden="true"></span><span class="mat-sheen" aria-hidden="true"></span><span class="mat-body"><' + $tag + '>' + (Enc $lk.name) + '</' + $tag + '><span>' + (CountTxt $L $cnt) + '</span></span></a>'
   }
   '<div class="mats" data-tilt>' + $t + '</div>'
+}
+
+function SectionTiles($L, [string]$tag = 'h3') {
+  $t = ''
+  foreach ($sec in $Sections) {
+    $fl = SecFams $sec
+    $cov = if ($sec.cover -and $ById[$sec.cover]) { $sec.cover } else { $fl[0].img }
+    $t += '<a class="uni reveal" href="' + (Href $L (SecPath $L $sec)) + '"><span class="uni-img"><img src="' + (ImgUrl $cov) + '" alt="" width="520" height="650" loading="lazy" decoding="async"></span><span class="uni-body"><' + $tag + '>' + (Enc (SecTxt $L $sec 'name')) + '</' + $tag + '><small>' + (Enc (SecTxt $L $sec 'short')) + '</small><em>' + (CountTxt $L (ProdCount $fl)) + $Icons.arrow + '</em></span></a>'
+  }
+  '<div class="unis">' + $t + '</div>'
 }
 
 function CatTiles($L) {
@@ -508,13 +543,15 @@ function CatTiles($L) {
   '<div class="cats">' + $t + '</div>'
 }
 
-function FilterBar($L, [string[]]$cats) {
+function FilterBar($L, [string[]]$cats, $secs = $null) {
   $chip = { param($group, $val, $label) '<button type="button" class="chip" data-f="' + $group + '" data-v="' + $val + '" aria-pressed="false">' + (Enc $label) + '</button>' }
-  $c = ''; if ($cats.Count -gt 1) { foreach ($k in $cats) { $c += & $chip 'c' $k (P (CatOf $L $k) 'name') } }
+  $c = ''; $clbl = T $L 'category'
+  if ($secs) { $clbl = T $L 'sectionLbl'; foreach ($sec in $secs) { $c += & $chip 's' $sec.key (SecTxt $L $sec 'name') } }
+  elseif ($cats.Count -gt 1) { foreach ($k in $cats) { $c += & $chip 'c' $k (P (CatOf $L $k) 'name') } }
   $lk = ''; foreach ($k in $LookOrder) { if ($k -ne 'black' -and $k -ne 'white') { $lk += & $chip 'look' $k (P (LookOf $L $k) 'name') } }
   $co = ''; foreach ($k in $Tax.colorOrder) { $co += '<button type="button" class="chip chip-color" data-f="color" data-v="' + $k + '" aria-pressed="false"><i class="dot dot-' + $k + '" aria-hidden="true"></i>' + (Enc (P $L.colors $k)) + '</button>' }
   $rows = ''
-  if ($c) { $rows += '<div class="frow"><span class="flabel">' + (Enc (T $L 'category')) + '</span><div class="chips">' + $c + '</div></div>' }
+  if ($c) { $rows += '<div class="frow"><span class="flabel">' + (Enc $clbl) + '</span><div class="chips">' + $c + '</div></div>' }
   $rows += '<div class="frow"><span class="flabel">' + (Enc (T $L 'look')) + '</span><div class="chips">' + $lk + '</div></div>'
   $rows += '<div class="frow"><span class="flabel">' + (Enc (T $L 'color')) + '</span><div class="chips">' + $co + '</div></div>'
   '<div class="filters wrap" data-filters><div class="ftop"><label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" placeholder="' + (Enc (T $L 'search')) + '" aria-label="' + (Enc (T $L 'search')) + '" data-q></label>' +
@@ -522,9 +559,10 @@ function FilterBar($L, [string[]]$cats) {
   '<div class="fstat"><span><strong data-n></strong> ' + (Enc (T $L 'results')) + '</span><button type="button" class="link" data-clear hidden>' + (Enc (T $L 'clear')) + '</button></div><p class="empty" data-empty hidden>' + (Enc (T $L 'noResults')) + '</p></div>'
 }
 
+function CountTxt($L, [int]$n) { if ($n -eq 1) { '1 ' + (Enc (T $L 'productOne')) } else { [string]$n + ' ' + (Enc (T $L 'products')) } }
 function ProdCount($list) { $n = 0; foreach ($x in @($list)) { $k = [int](P $x 'n'); if ($k -lt 1) { $k = 1 }; $n += $k }; $n }
 function Band([string]$kicker, [string]$title, [string]$lead, [int]$count = -1, $L = $null, [int]$series = -1) {
-  $c = if ($count -ge 0) { '<span class="band-count">' + $count + ' ' + (Enc (T $L 'products')) + $(if ($series -gt 0 -and $series -lt $count) { ' &middot; ' + $series + ' ' + (Enc (T $L 'seriesPl')) } else { '' }) + '</span>' } else { '' }
+  $c = if ($count -ge 0) { '<span class="band-count">' + (CountTxt $L $count) + $(if ($series -gt 1 -and $series -lt $count) { ' &middot; ' + $series + ' ' + (Enc (T $L 'seriesPl')) } else { '' }) + '</span>' } else { '' }
   '<section class="band"><div class="band-flutes" aria-hidden="true"></div><div class="wrap"><p class="kicker">' + (Enc $kicker) + '</p><h1>' + (Enc $title) + '</h1>' + $(if ($lead) { '<p class="lead">' + (Enc $lead) + '</p>' } else { '' }) + $c + '</div></section>'
 }
 
@@ -616,7 +654,7 @@ foreach ($lang in $Langs) {
   # Home
   $feat = @(); foreach ($id in $Tax.featured) { if ($ById[$id]) { $fm0 = $FamOf[$ById[$id].slug]; if ($feat -notcontains $fm0) { $feat += $fm0 } } }
   $stats = ''
-  foreach ($s in $L.stats) { $stats += '<li><strong>' + (Enc (Fill ([string]$s[0]) @{ count = $Items.Count; cats = $CatOrder.Count })) + '</strong><span>' + (Enc $s[1]) + '</span></li>' }
+  foreach ($s in $L.stats) { $stats += '<li><strong>' + (Enc (Fill ([string]$s[0]) @{ count = $Items.Count; cats = $Sections.Count })) + '</strong><span>' + (Enc $s[1]) + '</span></li>' }
   $steps = ''; $n = 0
   foreach ($s in $L.steps.items) { $n++; $steps += '<li class="reveal"><span class="num">0' + $n + '</span><h3>' + (Enc $s[0]) + '</h3><p>' + (Enc $s[1]) + '</p></li>' }
   $hero = '<section class="hero" data-hero style="--tex:url(' + (TexUrl $Tax.lookCover.travertine) + ')"><div class="hero-wall" aria-hidden="true"><div class="hw-tex"></div><div class="hw-flutes"></div><div class="hw-light"></div><div class="hw-vignette"></div></div>' +
@@ -624,10 +662,10 @@ foreach ($lang in $Langs) {
     '<div class="wrap hero-content"><p class="kicker">' + (Enc $L.hero.kicker) + '</p><h1>' + (Enc $L.hero.h1) + '<span class="h1-tag">' + (Enc $L.tagline) + '</span></h1><p class="lead">' + (Enc $L.hero.lead) + '</p>' +
     '<div class="ctas"><a class="btn btn-light" href="' + (Href $L 'catalog/') + '">' + (Enc $L.hero.cta) + $Icons.arrow + '</a><a class="btn btn-ghost" href="#studio">' + (Enc $L.hero.cta2) + '</a></div><ul class="stats">' + $stats + '</ul></div><div class="scroll-cue" aria-hidden="true"></div></section>'
   $body = $hero +
+    '<section class="universes" id="universes"><div class="wrap">' + (SectionHead (T $L 'sectionsTitle') (T $L 'sectionsLead') (P $L.nav 'catalog')) + (SectionTiles $L) + '</div></section>' +
     '<section class="materials"><div class="wrap">' + (SectionHead $L.materialsTitle $L.materialsLead (P $L.nav 'looks')) + (LookTiles $L) + '</div></section>' +
     (StudioHtml $L $null) +
     '<section class="featured"><div class="wrap">' + (SectionHead $L.featured '' (P $L.nav 'catalog')) + (Grid $L $feat) + '<p class="center"><a class="btn" href="' + (Href $L 'catalog/') + '">' + (Enc (T $L 'viewAll')) + ' (' + $Items.Count + ')' + $Icons.arrow + '</a></p></div></section>' +
-    '<section class="categories"><div class="wrap">' + (SectionHead $L.catalogTitle '' (P $L.nav 'catalog')) + (CatTiles $L) + '</div></section>' +
     '<section class="steps"><div class="wrap">' + (SectionHead $L.steps.title '') + '<ol class="steps-list">' + $steps + '</ol></div></section>' +
     (VisitHtml $L $false) +
     (FaqHtml $L)
@@ -636,19 +674,42 @@ foreach ($lang in $Langs) {
   if ($lang -eq 'he') { AddUrl '' '1.0' }
 
   # Catalog
-  $body = (Band (P $L.nav 'catalog') $L.catalogTitle $L.catalogDesc $Items.Count $L $Fams.Count) + (FilterBar $L $CatOrder) + '<section class="listing"><div class="wrap">' + (Grid $L $Fams 'h2') + '</div></section>'
+  $body = (Band (P $L.nav 'catalog') $L.catalogTitle $L.catalogDesc $Items.Count $L $Fams.Count) + (FilterBar $L $CatOrder $Sections) + '<section class="listing"><div class="wrap">' + (Grid $L $Fams 'h2') + '</div></section>'
   $crumb = @(@((T $L 'home'), ''), @($L.catalogTitle, 'catalog/'))
   Page $L @{ path = 'catalog/'; title = ($L.catalogTitle + ' | ' + (BrandOf $L)); desc = $L.catalogDesc; body = (CrumbHtml $L $crumb) + $body; cls = 'catalog'; ld = @((CrumbLd $L $crumb), (ItemListLd $L $Items)) }
   if ($lang -eq 'he') { AddUrl 'catalog/' '0.9' }
 
+  # Sections (universes) with several categories: one page each
+  foreach ($sec in $Sections) {
+    if (-not (SecMulti $sec)) { continue }
+    $list = SecFams $sec; $path = SecPath $L $sec; $sname = SecTxt $L $sec 'name'
+    $crumb = @(@((T $L 'home'), ''), @($sname, $path))
+    $sub = ''; foreach ($c in $sec.cats) { $cc = CatOf $L $c; $sub += '<a class="pill" href="' + (Href $L ('c/' + $cc.slug + '/')) + '">' + (Enc $cc.name) + ' <small>' + (ProdCount $famIndex[$c]) + '</small></a>' }
+    $cc0 = @($sec.cats | Where-Object { $_ -in @('slat', 'panel', 'flex') }) | Select-Object -First 1
+    $extra = if ($cc0) { CalcHtml $L ($catIndex[$cc0] | Where-Object { $_.w -and $_.l } | Select-Object -First 1) } else { '' }
+    $body = (CrumbHtml $L $crumb) + (Band (P $L.nav 'catalog') (SecTxt $L $sec 'title') (SecTxt $L $sec 'intro') (ProdCount $list) $L @($list).Count) +
+      (FilterBar $L $sec.cats) +
+      '<section class="listing"><div class="wrap">' + (Grid $L $list 'h2') + '</div></section>' + $extra +
+      '<section class="more"><div class="wrap"><h2 class="more-title">' + (Enc (T $L 'inSection')) + '</h2><div class="pills">' + $sub + '</div><h2 class="more-title">' + (Enc (T $L 'otherSections')) + '</h2><div class="pills">' + (SecPills $L $sec) + '</div></div></section>'
+    Page $L @{ path = $path; title = ((SecTxt $L $sec 'title') + ' | ' + (BrandOf $L)); desc = (SecTxt $L $sec 'intro'); body = $body; cls = 'category section-page'; og = (ImgAbs $list[0].img); ld = @((CrumbLd $L $crumb), (ItemListLd $L $list)) }
+    if ($lang -eq 'he') { AddUrl $path '0.85' }
+  }
+
   # Categories
   foreach ($c in $CatOrder) {
-    $cat = CatOf $L $c; $list = $famIndex[$c]
-    $others = ''; foreach ($k in $CatOrder) { if ($k -ne $c) { $others += '<a class="pill" href="' + (Href $L ('c/' + (P (CatOf $L $k) 'slug') + '/')) + '">' + (Enc (P (CatOf $L $k) 'name')) + '</a>' } }
-    $crumb = @(@((T $L 'home'), ''), @($L.catalogTitle, 'catalog/'), @($cat.name, ('c/' + $cat.slug + '/')))
+    $cat = CatOf $L $c; $list = $famIndex[$c]; $sec = $SecOf[$c]; $multiSec = SecMulti $sec
+    $crumb = @(, @((T $L 'home'), ''))
+    if ($multiSec) { $crumb += , @((SecTxt $L $sec 'name'), (SecPath $L $sec)) }
+    $crumb += , @($cat.name, ('c/' + $cat.slug + '/'))
+    $sib = ''
+    if ($multiSec) { foreach ($k in $sec.cats) { if ($k -ne $c) { $sib += '<a class="pill" href="' + (Href $L ('c/' + (P (CatOf $L $k) 'slug') + '/')) + '">' + (Enc (P (CatOf $L $k) 'name')) + '</a>' } } }
+    $more = ''
+    if ($sib) { $more += '<h2 class="more-title">' + (Enc (T $L 'inSection')) + ' &middot; <a href="' + (Href $L (SecPath $L $sec)) + '">' + (Enc (SecTxt $L $sec 'name')) + '</a></h2><div class="pills">' + $sib + '</div>' }
+    $more += '<h2 class="more-title">' + (Enc (T $L 'otherSections')) + '</h2><div class="pills">' + (SecPills $L $sec) + '</div>'
     $extra = ''
     if ($c -eq 'slat' -or $c -eq 'panel' -or $c -eq 'flex') { $extra = (CalcHtml $L ($catIndex[$c] | Where-Object { $_.w -and $_.l } | Select-Object -First 1)) }
-    $body = (CrumbHtml $L $crumb) + (Band (P $L.nav 'catalog') $cat.title $cat.intro (ProdCount $list) $L @($list).Count) + (FilterBar $L @($c)) + '<section class="listing"><div class="wrap">' + (Grid $L $list 'h2') + '</div></section>' + $extra + '<section class="more"><div class="wrap"><div class="pills">' + $others + '</div></div></section>'
+    $kick = if ($multiSec) { SecTxt $L $sec 'name' } else { P $L.nav 'catalog' }
+    $body = (CrumbHtml $L $crumb) + (Band $kick $cat.title $cat.intro (ProdCount $list) $L @($list).Count) + (FilterBar $L @($c)) + '<section class="listing"><div class="wrap">' + (Grid $L $list 'h2') + '</div></section>' + $extra + '<section class="more"><div class="wrap">' + $more + '</div></section>'
     $desc = $cat.intro
     Page $L @{ path = ('c/' + $cat.slug + '/'); title = ($cat.title + ' | ' + (BrandOf $L)); desc = $desc; body = $body; cls = 'category'; og = (ImgAbs $list[0].img); ld = @((CrumbLd $L $crumb), (ItemListLd $L $list)) }
     if ($lang -eq 'he') { AddUrl ('c/' + $cat.slug + '/') '0.8' }
@@ -677,7 +738,11 @@ foreach ($lang in $Langs) {
     $cat = CatOf $L $fm.c
     $name = NameOf $L $fm
     $multi = $fm.n -gt 1
-    $crumb = @(@((T $L 'home'), ''), @($cat.name, ('c/' + $cat.slug + '/')), @($name, ('p/' + $fm.slug + '/')))
+    $psec = $SecOf[$fm.c]
+    $crumb = @(, @((T $L 'home'), ''))
+    if (SecMulti $psec) { $crumb += , @((SecTxt $L $psec 'name'), (SecPath $L $psec)) }
+    $crumb += , @($cat.name, ('c/' + $cat.slug + '/'))
+    $crumb += , @($name, ('p/' + $fm.slug + '/'))
     $gal = ''; $blk = ''; $opts = ''
     foreach ($v in $fm.vars) {
       $sel = ($v.slug -eq $fm.rep.slug)
@@ -819,7 +884,11 @@ Write-Out 'robots.txt' $robots
 $llm = "# $BrandFull`n`n> " + $he.metaDescHome + "`n> " + $fr.metaDescHome + "`n`n"
 $llm += "Languages: Hebrew (default, $Base/), English ($Base/en/) and French ($Base/fr/). Prices are in ILS and include Israeli VAT. Products without a listed price are quoted on request.`n`n"
 $llm += "## Catalog`n`n- [Full catalog (he)]($Base/catalog/): " + $Items.Count + " products`n- [Catalogue complet (fr)]($Base/fr/catalog/)`n"
-foreach ($c in $CatOrder) { $ch = CatOf $he $c; $cf = CatOf $fr $c; $llm += "- [" + $ch.name + " / " + $cf.name + "]($Base/c/" + $ch.slug + "/): " + @($Items | Where-Object { $_.c -eq $c }).Count + " products. " + $cf.intro + "`n" }
+foreach ($sec in $Sections) {
+  $llm += "`n### " + (SecTxt $he $sec 'name') + " / " + (SecTxt $en $sec 'name') + "`n`n"
+  if (SecMulti $sec) { $llm += "- [" + (SecTxt $en $sec 'title') + "]($Base/" + (SecPath $he $sec) + "): " + (ProdCount (SecFams $sec)) + " products. " + (SecTxt $en $sec 'intro') + "`n" }
+  foreach ($c in $sec.cats) { $ch = CatOf $he $c; $cf = CatOf $fr $c; $llm += "- [" + $ch.name + " / " + $cf.name + "]($Base/c/" + $ch.slug + "/): " + @($Items | Where-Object { $_.c -eq $c }).Count + " products. " + $cf.intro + "`n" }
+}
 $llm += "`n## Looks`n`n"
 foreach ($k in $LookOrder) { $lh = LookOf $he $k; $lf = LookOf $fr $k; $llm += "- [" + $lh.name + " / " + $lf.name + "]($Base/look/" + $lh.slug + "/)`n" }
 $llm += "`n## Guides`n`n- [" + $he.guideTitle + "]($Base/guide/)`n- [" + $fr.guideTitle + "]($Base/fr/guide/)`n- [Studio & quantity calculator]($Base/studio/)`n`n## Contact`n`n"

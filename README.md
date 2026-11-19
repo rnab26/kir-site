@@ -5,6 +5,24 @@ Site statique trilingue (hébreu par défaut, anglais sur `/en/`, français sur 
 
 Showroom : צבי שכטרמן 2, נתניה · WhatsApp / téléphone : 055-294-2609 (`data/site.json`).
 
+## Organisation en univers
+
+Les 14 catégories sont regroupées en 7 univers (`data/taxonomy.json` > `sections`, noms et textes en he/fr/en) :
+
+| Univers | Catégories | Page |
+|---|---|---|
+| Lames & panneaux à lames | lames, panneaux à lames acoustiques | `/s/wall-slats/` |
+| Panneaux muraux | PVC/SPC, panneaux 3D | `/s/wall-panels/` |
+| Parement effet pierre | pierre | `/c/stone/` (une seule catégorie : pas de page en double) |
+| Extérieur : bardage & terrasse | bardage extérieur, terrasse WPC | `/s/exterior/` |
+| Miroirs LED | miroirs | `/c/led-mirrors/` |
+| Corniches, plinthes & moulures | corniches, plinthes, moulures, colonnes, bandeaux | `/s/trims/` |
+| Colles & pose | colles | `/c/adhesives/` |
+
+Ils apparaissent sur l'accueil (tuiles juste après le haut de page), dans le menu « Catalogue » (déroulant), dans le pied de page,
+en filtres du catalogue (`?s=exterior`) et dans le fil d'Ariane (accueil › univers › catégorie › produit).
+Une nouvelle catégorie doit être ajoutée à un univers, sinon le build s'arrête avec un message.
+
 ## Ce que contient le site
 
 | Page | Rôle |
