@@ -145,6 +145,13 @@ docs/SEO-strategie.md   mots-clés, plan de contenu, actions de référencement
 .github/workflows/      deploy.yml (GitHub Pages), sync.yml (Sheet toutes les 10 min)
 ```
 
+## Couleurs et images « dans une pièce »
+
+- **Filtres couleur** : la couleur de chaque produit est lue sur sa photo (`scripts/detect-colors.ps1` → `data/colors.json`) ;
+  le nom ne sert qu'à confirmer blanc/noir et à ajouter « doré ». Relancer le script après de nouvelles photos.
+- **Vue « dans une pièce » des fiches produit** : `scripts/room-shots.ps1` pose chaque produit du studio mur sur une vraie pièce
+  (`-Room r23` par défaut) et enregistre `src/assets/img/room/<id>.jpg` ; la fiche affiche alors cette seconde image.
+
 ## Photos HD (sur le PC)
 
 - `scripts/process-images.ps1` : repère les cadres rouges des photos sources, recadre le produit redressé en pleine résolution, corrige la lumière et génère : la photo réelle (`tex/`), le rendu « plaque entière + loupe » (`pack/`) et la vignette (`thumb/`).
