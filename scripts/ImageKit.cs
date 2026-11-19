@@ -369,6 +369,280 @@ public static class Kit
         for (int y = Math.Max(0, (int)miny); y < Math.Min(H, (int)maxy + 1); y++) for (int x = Math.Max(0, (int)minx); x < Math.Min(W, (int)maxx + 1); x++) if (InQuad(q, x + 0.5, y + 0.5)) m[y * W + x] = 1;
     }
 
+    // ---------- texture synthesis (image quilting, Efros & Freeman 2001) ----------
+    // Removes a linear lighting gradient (photo falloff) so patches from different places match.
+    public static void FlattenLight(KImg im, bool fitX, bool fitY)
+    {
+        int W = im.W, H = im.H; double sx = 0, sy = 0, sl = 0, sxx = 0, syy = 0, sxl = 0, syl = 0, n = 0;
+        for (int y = 0; y < H; y += 2) for (int x = 0; x < W; x += 2)
+        {
+            int i = (y * W + x) * 3; double l = 0.114 * im.D[i] + 0.587 * im.D[i + 1] + 0.299 * im.D[i + 2];
+            double u = x - W / 2.0, v = y - H / 2.0; sx += u; sy += v; sl += l; sxx += u * u; syy += v * v; sxl += u * l; syl += v * l; n++;
+        }
+        double mean = sl / n, bx = fitX && sxx > 0 ? (sxl - sx * mean) / (sxx - sx * sx / n) : 0, by = fitY && syy > 0 ? (syl - sy * mean) / (syy - sy * sy / n) : 0;
+        if (mean < 1) return;
+        for (int y = 0; y < H; y++) for (int x = 0; x < W; x++)
+        {
+            double fit = mean + bx * (x - W / 2.0) + by * (y - H / 2.0); double g = Math.Max(0.8, Math.Min(1.25, mean / Math.Max(1, fit)));
+            int i = (y * W + x) * 3; for (int c = 0; c < 3; c++) im.D[i + c] = (byte)Math.Min(255, im.D[i + c] * g);
+        }
+    }
+    // Evens out uneven lighting over the sample (large-scale luminance), keeps colour and detail.
+    public static void FlattenLowFreq(KImg im, int radius)
+    {
+        int W = im.W, H = im.H, n = W * H; if (radius < 2) return;
+        float[] L = new float[n]; double mean = 0;
+        for (int p2 = 0, i = 0; p2 < n; p2++, i += 3) { L[p2] = (float)(0.114 * im.D[i] + 0.587 * im.D[i + 1] + 0.299 * im.D[i + 2]); mean += L[p2]; }
+        mean /= n; if (mean < 4) return;
+        float[] Bl = (float[])L.Clone(); BoxBlur(Bl, W, H, radius); BoxBlur(Bl, W, H, radius);
+        for (int p2 = 0, i = 0; p2 < n; p2++, i += 3) { double g = Math.Max(0.85, Math.Min(1.18, mean / Math.Max(1, Bl[p2]))); for (int c = 0; c < 3; c++) im.D[i + c] = (byte)Math.Min(255, im.D[i + c] * g); }
+    }
+    // >1: structure runs vertically (streaks), <1: horizontally.
+    public static double Anisotropy(KImg im)
+    {
+        double gx = 0, gy = 0;
+        for (int y = 1; y < im.H; y += 2) for (int x = 1; x < im.W; x += 2)
+        {
+            int i = (y * im.W + x) * 3, l = i - 3, u = i - im.W * 3;
+            double c0 = im.D[i] + im.D[i + 1] + im.D[i + 2];
+            gx += Math.Abs(c0 - im.D[l] - im.D[l + 1] - im.D[l + 2]); gy += Math.Abs(c0 - im.D[u] - im.D[u + 1] - im.D[u + 2]);
+        }
+        return gx / Math.Max(1, gy);
+    }
+    static int Px(KImg s, int sx, int sy, int bw, int bh, int f, int x, int y)
+    {
+        int xx = (f & 1) == 1 ? sx + bw - 1 - x : sx + x, yy = (f & 2) == 2 ? sy + bh - 1 - y : sy + y;
+        return (yy * s.W + xx) * 3;
+    }
+    // Synthesises an outW x outH texture that continues the sample: blocks of the real photo, chosen to match
+    // their neighbours, joined along minimum-error seams. vertOnly: blocks span the full width (slats, grooves stay aligned).
+    public static KImg Quilt(KImg src, int outW, int outH, int B, int ov, bool vertOnly, bool flips, int seed)
+    { return Quilt(src, outW, outH, B, B, ov, vertOnly, flips, seed); }
+    // Bw x Bh blocks: elongated blocks follow streaky materials (fewer seams across the streaks).
+    public static KImg Quilt(KImg src, int outW, int outH, int Bw, int Bh, int ov, bool vertOnly, bool flips, int seed)
+    { return Quilt(src, outW, outH, Bw, Bh, ov, vertOnly, flips, seed, false); }
+    // allowCont: the sample may continue into itself (fewer seams; used for straight stripes that must stay aligned)
+    public static KImg Quilt(KImg src, int outW, int outH, int Bw, int Bh, int ov, bool vertOnly, bool flips, int seed, bool allowCont)
+    {
+        Random rnd = new Random(seed);
+        int sw = src.W, sh = src.H;
+        if (vertOnly) { if (outW != sw) src = src.Resize(outW, Math.Max(2, (int)Math.Round(sh * (double)outW / sw))); sw = src.W; sh = src.H; }
+        Bw = vertOnly ? outW : Math.Max(8, Math.Min(Bw, sw - 2)); Bh = Math.Max(8, Math.Min(Bh, sh - 2)); ov = Math.Max(2, Math.Min(ov, Math.Min(Bw, Bh) / 3));
+        float[] o = new float[outW * outH * 3];
+        int stepX = Bw - ov, stepY = Bh - ov, cols = vertOnly ? 1 : Math.Max(1, (int)Math.Ceiling((outW - ov) / (double)stepX)), rows = Math.Max(1, (int)Math.Ceiling((outH - ov) / (double)stepY));
+        int[] lastSx = new int[cols], lastSy = new int[cols]; for (int k = 0; k < cols; k++) { lastSx[k] = -9999; lastSy[k] = -9999; }
+        int[,] usedX = new int[rows, cols], usedY = new int[rows, cols];
+        for (int r0 = 0; r0 < rows; r0++) for (int q0 = 0; q0 < cols; q0++) { usedX[r0, q0] = -99999; usedY[r0, q0] = -99999; }
+        int K = vertOnly ? 260 : 360;
+        double[] errs = new double[K], pens = new double[K]; int[] cx = new int[K], cy = new int[K], cf = new int[K];
+        const int GN = 12; double[] G = new double[GN * GN];   // how often each part of the sample was used
+        for (int r = 0; r < rows; r++)
+        {
+            int by = r * stepY, bh = Math.Min(Bh, outH - by); if (bh <= 0) break;
+            int leftSx = -9999, leftSy = -9999;
+            for (int q = 0; q < cols; q++)
+            {
+                int bx = vertOnly ? 0 : q * stepX, bw = vertOnly ? outW : Math.Min(Bw, outW - bx); if (bw <= 0) break;
+                bool hasL = bx > 0, hasT = by > 0;
+                // candidate search
+                double minE = double.MaxValue; int nc = 0;
+                double rxN = Math.Min(Bw * 0.6, (sw - bw) / 3.0), ryN = Math.Min(Bh * 0.6, (sh - bh) / 3.0);
+                for (int pass = 0; pass < 2 && nc == 0; pass++)
+                for (int k = 0; k < K; k++)
+                {
+                    int sx = vertOnly ? 0 : rnd.Next(0, sw - bw + 1), sy = rnd.Next(0, sh - bh + 1);
+                    int f = flips ? (vertOnly ? rnd.Next(2) * 2 : rnd.Next(2) * 3) : 0;   // 2d: 180 degree turn only (no mirror)
+                    // force a new placement instead of copying the sample's own continuation
+                    if (!allowCont && pass == 0 && hasT && f == 0 && Math.Abs(sx - lastSx[q]) < Bw / 3 && Math.Abs(sy - (lastSy[q] + stepY)) < Bh / 3) continue;
+                    if (!allowCont && pass == 0 && hasL && f == 0 && Math.Abs(sy - leftSy) < Bh / 3 && Math.Abs(sx - (leftSx + stepX)) < Bw / 3) continue;
+                    bool near = false;
+                    if (pass == 0 && !allowCont) for (int dr = -2; dr <= 0 && !near; dr++) for (int dq = -2; dq <= 2 && !near; dq++)
+                    {
+                        if (dr == 0 && dq >= 0) continue; int rr = r + dr, qq = q + dq; if (rr < 0 || qq < 0 || qq >= cols) continue;
+                        if (Math.Abs(sx - usedX[rr, qq]) < rxN && Math.Abs(sy - usedY[rr, qq]) < ryN) near = true;
+                    }
+                    if (near) continue;
+                    double e = 0;
+                    if (hasL) for (int y = 0; y < bh; y += 2) for (int x = 0; x < ov; x += 2) { int oi = ((by + y) * outW + bx + x) * 3, si = Px(src, sx, sy, bw, bh, f, x, y); for (int c = 0; c < 3; c++) { double d = o[oi + c] - src.D[si + c]; e += d * d; } }
+                    if (hasT) for (int y = 0; y < ov; y += 2) for (int x = hasL ? ov : 0; x < bw; x += 2) { int oi = ((by + y) * outW + bx + x) * 3, si = Px(src, sx, sy, bw, bh, f, x, y); for (int c = 0; c < 3; c++) { double d = o[oi + c] - src.D[si + c]; e += d * d; } }
+                    double pen = 0; int pc = 0;
+                    for (int gy = sy * GN / sh; gy <= Math.Min(GN - 1, (sy + bh - 1) * GN / sh); gy++) for (int gx = sx * GN / sw; gx <= Math.Min(GN - 1, (sx + bw - 1) * GN / sw); gx++) { pen += G[gy * GN + gx]; pc++; }
+                    errs[nc] = e; pens[nc] = pc > 0 ? pen / pc : 0; cx[nc] = sx; cy[nc] = sy; cf[nc] = f; nc++;
+                }
+                if (nc == 0) { errs[0] = 0; pens[0] = 0; cx[0] = vertOnly ? 0 : rnd.Next(0, sw - bw + 1); cy[0] = rnd.Next(0, sh - bh + 1); cf[0] = 0; nc = 1; }
+                double avgE = 0; for (int k = 0; k < nc; k++) avgE += errs[k]; avgE = avgE / nc + 1;
+                double avgP = 0; for (int k = 0; k < nc; k++) avgP += pens[k]; avgP = avgP / nc + 0.5;
+                for (int k = 0; k < nc; k++) { errs[k] += 0.6 * avgE * pens[k] / avgP; if (errs[k] < minE) minE = errs[k]; }
+                double lim = minE * 1.12 + 1e-6; int pick = -1, seen = 0;
+                for (int k = 0; k < nc; k++) if (errs[k] <= lim) { seen++; if (rnd.Next(seen) == 0) pick = k; }
+                int psx = cx[pick], psy = cy[pick], pf = cf[pick];
+                // tone match: shift the patch towards the colour of what it overlaps (hides brightness jumps between blocks)
+                double[] off = new double[3]; int cnt = 0;
+                if (hasL || hasT)
+                {
+                    for (int y = 0; y < bh; y += 2) for (int x = 0; x < bw; x += 2)
+                    {
+                        if (!((hasL && x < ov) || (hasT && y < ov))) continue;
+                        int oi = ((by + y) * outW + bx + x) * 3, si = Px(src, psx, psy, bw, bh, pf, x, y);
+                        for (int c = 0; c < 3; c++) off[c] += o[oi + c] - src.D[si + c]; cnt++;
+                    }
+                    for (int c = 0; c < 3; c++) off[c] = cnt > 0 ? Math.Max(-18, Math.Min(18, off[c] / cnt * 0.85)) : 0;
+                }
+                // minimum-error seams
+                int[] vs = null, hs = null;
+                if (hasL)
+                {
+                    double[] E = new double[bh * ov];
+                    for (int y = 0; y < bh; y++) for (int x = 0; x < ov; x++)
+                    {
+                        int oi = ((by + y) * outW + bx + x) * 3, si = Px(src, psx, psy, bw, bh, pf, x, y); double e = 0; for (int c = 0; c < 3; c++) { double d = o[oi + c] - src.D[si + c]; e += d * d; }
+                        if (y > 0) { double m = E[(y - 1) * ov + x]; if (x > 0) m = Math.Min(m, E[(y - 1) * ov + x - 1]); if (x < ov - 1) m = Math.Min(m, E[(y - 1) * ov + x + 1]); e += m; }
+                        E[y * ov + x] = e;
+                    }
+                    vs = new int[bh]; int bxs = 0; for (int x = 1; x < ov; x++) if (E[(bh - 1) * ov + x] < E[(bh - 1) * ov + bxs]) bxs = x; vs[bh - 1] = bxs;
+                    for (int y = bh - 2; y >= 0; y--) { int px0 = vs[y + 1], b = px0; for (int d = -1; d <= 1; d++) { int x = px0 + d; if (x >= 0 && x < ov && E[y * ov + x] < E[y * ov + b]) b = x; } vs[y] = b; }
+                }
+                if (hasT)
+                {
+                    double[] E = new double[bw * ov];
+                    for (int x = 0; x < bw; x++) for (int y = 0; y < ov; y++)
+                    {
+                        int oi = ((by + y) * outW + bx + x) * 3, si = Px(src, psx, psy, bw, bh, pf, x, y); double e = 0; for (int c = 0; c < 3; c++) { double d = o[oi + c] - src.D[si + c]; e += d * d; }
+                        if (x > 0) { double m = E[(x - 1) * ov + y]; if (y > 0) m = Math.Min(m, E[(x - 1) * ov + y - 1]); if (y < ov - 1) m = Math.Min(m, E[(x - 1) * ov + y + 1]); e += m; }
+                        E[x * ov + y] = e;
+                    }
+                    hs = new int[bw]; int bys = 0; for (int y = 1; y < ov; y++) if (E[(bw - 1) * ov + y] < E[(bw - 1) * ov + bys]) bys = y; hs[bw - 1] = bys;
+                    for (int x = bw - 2; x >= 0; x--) { int py0 = hs[x + 1], b = py0; for (int d = -1; d <= 1; d++) { int y = py0 + d; if (y >= 0 && y < ov && E[x * ov + y] < E[x * ov + b]) b = y; } hs[x] = b; }
+                }
+                // paste with a soft edge along the seams
+                for (int y = 0; y < bh; y++) for (int x = 0; x < bw; x++)
+                {
+                    double a = 1;
+                    if (vs != null && x < ov) a = Math.Min(a, Math.Max(0, Math.Min(1, (x - vs[y]) / 5.0 + 0.5)));
+                    if (hs != null && y < ov) a = Math.Min(a, Math.Max(0, Math.Min(1, (y - hs[x]) / 5.0 + 0.5)));
+                    if (a <= 0) continue;
+                    int oi = ((by + y) * outW + bx + x) * 3, si = Px(src, psx, psy, bw, bh, pf, x, y);
+                    for (int c = 0; c < 3; c++) o[oi + c] = (float)(o[oi + c] * (1 - a) + (src.D[si + c] + off[c]) * a);
+                }
+                lastSx[q] = psx; lastSy[q] = psy; leftSx = psx; leftSy = psy; usedX[r, q] = psx; usedY[r, q] = psy;
+                for (int gy = psy * GN / sh; gy <= Math.Min(GN - 1, (psy + bh - 1) * GN / sh); gy++) for (int gx = psx * GN / sw; gx <= Math.Min(GN - 1, (psx + bw - 1) * GN / sw); gx++) G[gy * GN + gx] += 1;
+            }
+        }
+        KImg res = new KImg(outW, outH); for (int i = 0; i < o.Length; i++) res.D[i] = (byte)Math.Max(0, Math.Min(255, o[i] + 0.5));
+        return res;
+    }
+    // Makes vertical grooves/stripes truly vertical (photos are often slightly tilted): shear by the measured drift.
+    public static KImg Deskew(KImg im)
+    {
+        int W = im.W, H = im.H; if (W < 16 || H < 24) return im;
+        int band = Math.Max(4, H / 4); double[] top = new double[W], bot = new double[W];
+        for (int x = 0; x < W; x++)
+        {
+            double a = 0, b = 0;
+            for (int y = 0; y < band; y++) { int i = (y * W + x) * 3; a += im.D[i] + im.D[i + 1] + im.D[i + 2]; int j = ((H - 1 - y) * W + x) * 3; b += im.D[j] + im.D[j + 1] + im.D[j + 2]; }
+            top[x] = a; bot[x] = b;
+        }
+        Func<double[], double[]> hp = delegate (double[] v) { double[] r = new double[v.Length]; int k = Math.Max(2, v.Length / 12); for (int x = 0; x < v.Length; x++) { double s2 = 0; int n = 0; for (int d = -k; d <= k; d++) { int xx = x + d; if (xx >= 0 && xx < v.Length) { s2 += v[xx]; n++; } } r[x] = v[x] - s2 / n; } return r; };
+        double[] t2 = hp(top), b2 = hp(bot);
+        int maxS = Math.Max(1, W / 6), best = 0; double bestC = double.MinValue;
+        for (int sft = -maxS; sft <= maxS; sft++)
+        {
+            double c = 0; int n = 0; for (int x = 0; x < W; x++) { int xx = x + sft; if (xx < 0 || xx >= W) continue; c += t2[x] * b2[xx]; n++; }
+            if (n > W / 2) { c /= n; if (c > bestC) { bestC = c; best = sft; } }
+        }
+        if (best == 0) return im;
+        double slope = best / (double)(H - band); int m = (int)Math.Ceiling(Math.Abs(slope) * H / 2.0) + 1;
+        if (W - 2 * m < W / 2) return im;
+        KImg o = new KImg(W - 2 * m, H);
+        for (int y = 0; y < H; y++) for (int x = 0; x < o.W; x++)
+        {
+            double sx = x + m + slope * (y - H / 2.0); double bl, gr, rd; im.Sample(sx, y, out bl, out gr, out rd);
+            int i = (y * o.W + x) * 3; o.D[i] = (byte)bl; o.D[i + 1] = (byte)gr; o.D[i + 2] = (byte)rd;
+        }
+        return o;
+    }
+    // Removes near-white margins around a product shot so only the material is used.
+    public static KImg TrimWhite(KImg im)
+    {
+        int W = im.W, H = im.H;
+        Func<int, bool, bool> white = delegate (int k, bool col)
+        {
+            int n = 0, t = 0; int len = col ? H : W;
+            for (int j = 0; j < len; j += 3) { int x = col ? k : j, y = col ? j : k; int i = (y * W + x) * 3; t++; if (im.D[i] > 236 && im.D[i + 1] > 236 && im.D[i + 2] > 236) n++; }
+            return n >= t * 0.9;
+        };
+        int x0 = 0, x1 = W - 1, y0 = 0, y1 = H - 1;
+        while (x0 < x1 && white(x0, true)) x0++; while (x1 > x0 && white(x1, true)) x1--;
+        while (y0 < y1 && white(y0, false)) y0++; while (y1 > y0 && white(y1, false)) y1--;
+        int m = 6; x0 = Math.Min(x1, x0 + (x0 > 0 ? m : 0)); x1 = Math.Max(x0, x1 - (x1 < W - 1 ? m : 0)); y0 = Math.Min(y1, y0 + (y0 > 0 ? m : 0)); y1 = Math.Max(y0, y1 - (y1 < H - 1 ? m : 0));
+        int w = x1 - x0 + 1, h = y1 - y0 + 1;
+        if ((w == W && h == H) || w < W / 5 || h < H / 5) return im;
+        return im.Crop(x0, y0, w, h);
+    }
+    public static KImg Rotate90(KImg im)
+    {
+        KImg o = new KImg(im.H, im.W);
+        for (int y = 0; y < im.H; y++) for (int x = 0; x < im.W; x++) { int si = (y * im.W + x) * 3, di = (x * o.W + (im.H - 1 - y)) * 3; o.D[di] = im.D[si]; o.D[di + 1] = im.D[si + 1]; o.D[di + 2] = im.D[si + 2]; }
+        return o;
+    }
+    // Crops a striped sample (dark gaps between slats) from gap to gap so columns can sit side by side without a seam.
+    public static KImg CropToGaps(KImg im)
+    {
+        int W = im.W, H = im.H; double[] col = new double[W];
+        for (int x = 0; x < W; x++) { double s = 0; for (int y = 0; y < H; y += 2) { int i = (y * W + x) * 3; s += 0.114 * im.D[i] + 0.587 * im.D[i + 1] + 0.299 * im.D[i + 2]; } col[x] = s; }
+        int a = 0, b = W - 1; for (int x = 0; x < W / 4; x++) if (col[x] < col[a]) a = x; for (int x = W - 1; x > W * 3 / 4; x--) if (col[x] < col[b]) b = x;
+        if (b - a < W / 2) return im; return im.Crop(a, 0, b - a, H);
+    }
+    // Plate face at true scale: the sample covers sampleWcm; the rest is synthesised, not stretched.
+    // mode: slats (one quilted column per slat), cols (striped panel: gap-to-gap columns), 2d (free quilting)
+    static KImg PlateSynth(KImg tex, string mode, double wcm, double hcm, double sampleWcm, int slats, int maxPx, int seed)
+    {
+        double ppc = maxPx / Math.Max(wcm, hcm);
+        int pw = Math.Max(8, (int)(wcm * ppc)), ph = Math.Max(8, (int)(hcm * ppc));
+        KImg p = new KImg(pw, ph);
+        KImg s = TrimWhite(tex);
+        bool free2d = mode == "2d" || mode == "2dn";
+        if (mode == "slats" && Anisotropy(s) < 0.6) s = Rotate90(s);   // boards photographed lying down
+        if (free2d && Anisotropy(s) > 2.0) { mode = "lines"; free2d = false; }   // straight vertical relief: keep the lines continuous
+        int baseW = s.W;
+        if (!free2d) s = Deskew(s);
+        if (mode == "cols") s = CropToGaps(s);
+        double colWcm = mode == "slats" ? wcm / slats : sampleWcm * s.W / baseW;
+        int sw = Math.Max(8, (int)Math.Round((free2d ? sampleWcm : colWcm) * ppc)), sh = Math.Max(8, (int)Math.Round(sw * (double)s.H / s.W));
+        s = s.Resize(sw, sh); FlattenLight(s, free2d, true); if (free2d) FlattenLowFreq(s, Math.Max(3, Math.Min(sw, sh) / 4));
+        if (free2d)
+        {
+            double an = Anisotropy(s); int Bw, Bh;
+            if (an > 1.45) { Bw = (int)(sw * 0.45); Bh = (int)(sh * 0.88); }
+            else if (an < 0.69) { Bw = (int)(sw * 0.88); Bh = (int)(sh * 0.45); }
+            else { Bw = Bh = (int)(Math.Min(sw, sh) * 0.55); }
+            KImg q = Quilt(s, pw, ph, Bw, Bh, Math.Max(6, Math.Min(Bw, Bh) / 4), false, mode == "2d" && an <= 1.45 && an >= 0.69, seed);
+            Buffer.BlockCopy(q.D, 0, p.D, 0, q.D.Length); return p;
+        }
+        int n = mode == "slats" ? slats : Math.Max(1, (int)Math.Ceiling(pw / (double)sw));
+        for (int k = 0; k < n; k++)
+        {
+            int x0 = mode == "slats" ? (int)(pw * (double)k / n) : k * sw, x1 = mode == "slats" ? (int)(pw * (double)(k + 1) / n) : Math.Min(pw, (k + 1) * sw);
+            int cw = x1 - x0; if (cw <= 0) continue;
+            int B = (int)(Math.Min(sh, Math.Max(sh * 0.5, 12))); KImg q = Quilt(s, s.W, ph, B, B, Math.Max(4, B / 4), true, false, seed * 31 + k * 7919, mode != "slats");
+            for (int y = 0; y < ph; y++) for (int x = 0; x < cw; x++) { int si = (y * q.W + Math.Min(q.W - 1, x)) * 3, di = (y * pw + x0 + x) * 3; p.D[di] = q.D[si]; p.D[di + 1] = q.D[si + 1]; p.D[di + 2] = q.D[si + 2]; }
+        }
+        if (mode == "slats" && slats > 1)
+        {
+            for (int k = 1; k < slats; k++)
+            {
+                int gx = (int)(pw * (double)k / slats);
+                for (int y = 0; y < ph; y++) for (int d = -2; d <= 2; d++)
+                {
+                    int x = gx + d; if (x < 0 || x >= pw) continue; int i = (y * pw + x) * 3;
+                    double f = d <= 0 ? 0.45 + 0.12 * (d + 2) : 1.10;
+                    for (int c2 = 0; c2 < 3; c2++) p.D[i + c2] = (byte)Math.Min(255, p.D[i + c2] * f);
+                }
+            }
+        }
+        return p;
+    }
+
     // Build the flat plate surface (front face) by tiling the texture at an assumed physical scale.
     // tileHcm <= 0: keep the photo's aspect (mirrored vertical repeats); > 0: stretch each tile to that height.
     static KImg PlateSurface(KImg tex, double wcm, double hcm, double tileWcm, double tileHcm, int slats, bool mirrorX, int maxPx)
@@ -408,6 +682,8 @@ public static class Kit
 
     // kind: plate | photo. Returns a 1000x1250 product shot.
     public static KImg RenderPack(KImg tex, string kind, double wcm, double hcm, double tileWcm, double tileHcm, int slats, bool mirrorX, bool gloss)
+    { return RenderPack(tex, kind, wcm, hcm, tileWcm, tileHcm, slats, mirrorX, gloss, "tile", 0, 1); }
+    public static KImg RenderPack(KImg tex, string kind, double wcm, double hcm, double tileWcm, double tileHcm, int slats, bool mirrorX, bool gloss, string synth, double sampleWcm, int seed)
     {
         int W = 1000, H = 1250; KImg c = new KImg(W, H); Background(c);
         if (kind == "photo")
@@ -445,7 +721,7 @@ public static class Kit
         float[] em = new float[W * H]; FillQuadMask(em, W, H, edge);
         for (int p = 0, i = 0; p < em.Length; p++, i += 3) if (em[p] > 0) { c.D[i] = (byte)eb; c.D[i + 1] = (byte)eg; c.D[i + 2] = (byte)er; }
         // plate face
-        KImg face = PlateSurface(tex, wcm, hcm, tileWcm, tileHcm, slats, mirrorX, 1300);
+        KImg face = synth == "tile" ? PlateSurface(TrimWhite(tex), wcm, hcm, tileWcm, tileHcm, slats, mirrorX, 1300) : PlateSynth(tex, synth, wcm, hcm, sampleWcm, slats, 1300, seed);
         double[] inv = Invert(SquareToQuad(q));
         int bx0 = (int)Math.Floor(q[0]) - 2, bx1 = (int)Math.Ceiling(q[2]) + 2, by0 = (int)Math.Floor(q[1]) - 2, by1 = (int)Math.Ceiling(q[7]) + 2;
         double pxU = 1.0 / appW, pxV = 1.0 / Hs;

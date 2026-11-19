@@ -61,20 +61,8 @@ foreach ($pr in ($pairs | Sort-Object s -Descending)) {
 }
 Write-Host ("matched {0} / {1}" -f $assign.Count, $Prods.Count)
 
-# ---- physical model per category ----
-function Model($p) {
-  $w = $null; $l = $null
-  if ($p.s -match '^(\d+(?:\.\d+)?)/(\d+(?:\.\d+)?)$') { $w = [double]$matches[1]; $l = [double]$matches[2] * 100; if ($l -gt 1000) { $l = $l / 100 } }
-  switch ($p.c) {
-    'slat'    { if (-not $w) { $w = 20 }; if (-not $l) { $l = 290 }; $n = [Math]::Max(3, [Math]::Min(7, [Math]::Round(100 / $w))); return @{ kind = 'plate'; w = $w * $n; h = $l; tile = $w; tileH = $l; slats = $n; mirror = $false } }
-    'flex'    { if (-not $w) { $w = 120 }; if (-not $l) { $l = 290 }; return @{ kind = 'plate'; w = $w; h = $l; tile = $w / 3; tileH = $l; slats = 1; mirror = $false } }
-    'panel'   { if (-not $w) { $w = 122 }; if (-not $l) { $l = 280 }; return @{ kind = 'plate'; w = $w; h = $l; tile = $w; tileH = 0; slats = 1; mirror = $false } }
-    'stone'   { if (-not $w) { $w = 60 }; if (-not $l) { $l = 120 }; return @{ kind = 'plate'; w = $w; h = $l; tile = $w; tileH = 0; slats = 1; mirror = $false } }
-    'deco'    { if (-not $w) { $w = 80 }; if (-not $l) { $l = 50 }; return @{ kind = 'plate'; w = $w; h = $l; tile = $w; tileH = 0; slats = 1; mirror = $false } }
-    'outdoor' { if (-not $w) { $w = 15 }; if (-not $l) { $l = 290 }; return @{ kind = 'plate'; w = $w * 6; h = $l; tile = $w; tileH = $l; slats = 6; mirror = $false } }
-    default   { return @{ kind = 'photo'; w = 1; h = 1; tile = 1; tileH = 0; slats = 1; mirror = $false } }
-  }
-}
+# ---- physical model per category (shared with render-packs.ps1) ----
+. (Join-Path $PSScriptRoot 'plate-model.ps1')
 
 # ---- extract, enhance, render ----
 $report = New-Object System.Collections.ArrayList
@@ -108,8 +96,8 @@ foreach ($ph in $byPhoto.Keys) {
     if ($target -ne $long) { $sc = $target / $long; $tex = $tex.Resize([int]($tex.W * $sc), [int]($tex.H * $sc)) }
     [Kit]::Sharpen($tex, $(if ($native -lt 700 -and -not (Test-Path $ai)) { 0.8 } else { 0.45 }))
     $tex.SaveJpg((Join-Path $img "tex/$id.jpg"), 88)
-    $m = Model $p
-    $pack = [Kit]::RenderPack($tex, $m.kind, $m.w, $m.h, $m.tile, $m.tileH, $m.slats, $m.mirror, ($p.f -eq 'g'))
+    $m = PlateModel $p
+    $pack = [Kit]::RenderPack($tex, $m.kind, $m.w, $m.h, $m.tile, $m.tileH, $m.slats, $m.mirror, ($p.f -eq 'g'), $m.synth, $m.sample, (PlateSeed $id))
     $pack.SaveJpg((Join-Path $img "pack/$id.jpg"), 88)
     $pack.Resize(520, 650).SaveJpg((Join-Path $img "thumb/$id.jpg"), 84)
     [void]$report.Add([ordered]@{ img = $id; sku = $p.sku; native = "$($raw.W)x$($raw.H)"; tex = "$($tex.W)x$($tex.H)"; needAI = ($native -lt 700); note = $note })
