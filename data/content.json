@@ -4,17 +4,17 @@
     "tagline": "חיפוי קירות שמרגישים",
     "metaTitleHome": "חיפוי קירות ופאנלים לקיר — סרגלים, דמוי עץ, שיש וטרוורטין | {brand}",
     "metaDescHome": "קטלוג חיפוי קירות: סרגלים מחורצים לקיר, פלטות PVC ו־SPC דמוי שיש וטרוורטין, חיפוי אבן גמיש, פאנלים תלת־ממדיים ומראות LED. מחירים כולל מע״מ והצעת מחיר מהירה בוואטסאפ.",
-    "nav": {"catalog": "קטלוג", "looks": "מראות וחומרים", "studio": "סטודיו קיר", "calc": "מחשבון", "guide": "מדריך", "contact": "צור קשר", "list": "רשימת הצעת מחיר"},
+    "nav": {"catalog": "קטלוג", "looks": "מראות וחומרים", "studio": "סטודיו קיר", "calc": "מחשבון", "guide": "מדריך", "contact": "צור קשר", "list": "עגלת קניות"},
     "ui": {
       "skip": "דלג לתוכן", "menu": "תפריט", "close": "סגירה", "search": "חיפוש לפי שם, צבע או מק״ט", "all": "הכול",
       "category": "סוג מוצר", "look": "מראה", "color": "צבע", "sort": "מיון", "sortDefault": "מומלץ", "sortPriceAsc": "מחיר: מהנמוך", "sortPriceDesc": "מחיר: מהגבוה",
       "results": "מוצרים", "noResults": "לא נמצאו מוצרים. נסו לנקות את הסינון.", "clear": "ניקוי סינון",
       "sku": "מק״ט", "size": "מידה", "finish": "גימור", "matte": "מט", "gloss": "מבריק", "priceVat": "כולל מע״מ", "perUnit": "ליחידה", "perM2": "למ״ר (משוער)",
-      "onRequest": "מחיר לפי בקשה", "preorder": "בהזמנה מראש", "inStock": "זמין", "add": "הוספה לרשימה", "added": "ברשימה ✓", "ask": "שאלו בוואטסאפ",
+      "onRequest": "מחיר לפי בקשה", "preorder": "בהזמנה מראש", "inStock": "זמין", "add": "הוספה לעגלה", "added": "בעגלה ✓", "ask": "שאלו בוואטסאפ",
       "width": "רוחב", "length": "אורך", "cm": "ס״מ", "m": "מ׳", "height": "גובה",
       "related": "עוד באותו סגנון", "seeOnWall": "ראו על הקיר", "details": "פרטי המוצר", "home": "ראשי", "viewAll": "לכל המוצרים", "explore": "לגלות",
-      "listTitle": "רשימת הצעת מחיר", "listEmpty": "הרשימה ריקה. הוסיפו מוצרים מהקטלוג ונחזור אליכם עם הצעת מחיר.", "qty": "כמות", "remove": "הסרה",
-      "sendWa": "שליחה בוואטסאפ", "copy": "העתקת הרשימה", "copied": "הועתק ✓", "listIntro": "שלום, אשמח להצעת מחיר עבור:", "estTotal": "סה״כ משוער (מוצרים עם מחיר)",
+      "listTitle": "עגלת קניות", "listEmpty": "העגלה ריקה. הוסיפו מוצרים מהקטלוג.", "qty": "כמות", "remove": "הסרה",
+      "sendWa": "שליחה בוואטסאפ", "copy": "העתקת הרשימה", "copied": "הועתק ✓", "listIntro": "שלום, אני רוצה להזמין:", "estTotal": "סה״כ משוער (מוצרים עם מחיר)",
       "noContact": "פרטי הקשר יתעדכנו בקרוב. בינתיים אפשר להעתיק את הרשימה.", "ref": "מק״ט פנימי",
       "illustration": "הדמיה להמחשה בלבד. הגוון בפועל עשוי להשתנות — מומלץ לראות דוגמה.",
       "lang": "Français", "langCode": "fr", "priceNote": "המחירים כוללים מע״מ ועשויים להשתנות. המחיר הסופי נקבע בהצעת המחיר.",
@@ -41,7 +41,7 @@
     },
     "steps": {
       "title": "איך זה עובד",
-      "items": [["בוחרים", "מסננים לפי מראה, צבע ומידה ומוסיפים לרשימה."], ["שולחים", "שולחים את הרשימה בלחיצה אחת בוואטסאפ."], ["מקבלים הצעה", "חוזרים אליכם עם זמינות והצעת מחיר מסודרת."]]
+      "items": [["בוחרים", "מסננים לפי מראה, צבע ומידה ומוסיפים לעגלה."], ["מזמינים", "שולחים את ההזמנה בלחיצה אחת בוואטסאפ."], ["מאשרים", "חוזרים אליכם לאישור זמינות, משלוח ותשלום."]]
     },
     "featured": "דגמים נבחרים",
     "faqTitle": "שאלות נפוצות",
@@ -66,11 +66,11 @@
       ["דבק ופרופילים", "<p>להתקנה על קיר ישר ויבש משתמשים בדבק היברידי חזק. לסיום נקי משלבים שיפולים, קרניזים ופרופילי עיטור — כולם מופיעים בקטלוג.</p>"]
     ],
     "contactTitle": "צור קשר",
-    "contactDesc": "שאלה על דגם, זמינות או הצעת מחיר? כתבו לנו — הדרך המהירה ביותר היא וואטסאפ.",
+    "contactDesc": "שאלה על דגם, זמינות או הזמנה? כתבו לנו בוואטסאפ — הכי מהיר — או בואו לאולם התצוגה בנתניה.",
     "contactPending": "פרטי הקשר המלאים יפורסמו כאן בקרוב.",
-    "listDesc": "כאן נשמרים המוצרים שבחרתם. שלחו את הרשימה ונחזור אליכם עם הצעת מחיר.",
+    "listDesc": "כאן נשמרים המוצרים שבחרתם. בדקו כמויות והמשיכו להשלמת ההזמנה.",
     "notFound": "העמוד לא נמצא", "notFoundLead": "אולי הקיר הזה עדיין ריק. חזרו לקטלוג.",
-    "footer": "קטלוג חיפוי קירות ופאנלים דקורטיביים. המחירים כוללים מע״מ.",
+    "footer": "חיפוי קירות ופאנלים דקורטיביים. אולם תצוגה בנתניה. המחירים כוללים מע״מ.",
     "productTitle": "{name} — {sku} | {brand}",
     "productDesc": "{name}. {size}{price} צפו בתמונה, חשבו כמויות ובקשו הצעת מחיר בוואטסאפ.",
     "categories": {
@@ -106,17 +106,17 @@
     "tagline": "Des murs qui se ressentent",
     "metaTitleHome": "Revêtement mural en Israël — lames, panneaux effet bois, marbre, travertin | {brand}",
     "metaDescHome": "Catalogue de revêtements muraux en Israël : lames rainurées (tasseaux), panneaux PVC et SPC effet marbre et travertin, pierre flexible, panneaux 3D et miroirs LED. Prix TTC et devis rapide sur WhatsApp.",
-    "nav": {"catalog": "Catalogue", "looks": "Matières", "studio": "Studio mur", "calc": "Calculateur", "guide": "Guide", "contact": "Contact", "list": "Liste de devis"},
+    "nav": {"catalog": "Catalogue", "looks": "Matières", "studio": "Studio mur", "calc": "Calculateur", "guide": "Guide", "contact": "Contact", "list": "Panier"},
     "ui": {
       "skip": "Aller au contenu", "menu": "Menu", "close": "Fermer", "search": "Rechercher par nom, couleur ou référence", "all": "Tout",
       "category": "Type", "look": "Aspect", "color": "Couleur", "sort": "Trier", "sortDefault": "Recommandé", "sortPriceAsc": "Prix croissant", "sortPriceDesc": "Prix décroissant",
       "results": "produits", "noResults": "Aucun produit trouvé. Essayez d'effacer les filtres.", "clear": "Effacer les filtres",
       "sku": "Réf.", "size": "Dimensions", "finish": "Finition", "matte": "Mat", "gloss": "Brillant", "priceVat": "TTC", "perUnit": "l'unité", "perM2": "le m² (estimé)",
-      "onRequest": "Prix sur demande", "preorder": "Sur commande", "inStock": "Disponible", "add": "Ajouter à la liste", "added": "Dans la liste ✓", "ask": "Demander sur WhatsApp",
+      "onRequest": "Prix sur demande", "preorder": "Sur commande", "inStock": "Disponible", "add": "Ajouter au panier", "added": "Dans le panier ✓", "ask": "Demander sur WhatsApp",
       "width": "Largeur", "length": "Longueur", "cm": "cm", "m": "m", "height": "Hauteur",
       "related": "Dans le même style", "seeOnWall": "Voir sur le mur", "details": "Détails du produit", "home": "Accueil", "viewAll": "Tous les produits", "explore": "Découvrir",
-      "listTitle": "Liste de devis", "listEmpty": "Votre liste est vide. Ajoutez des produits depuis le catalogue et nous revenons vers vous avec un devis.", "qty": "Qté", "remove": "Retirer",
-      "sendWa": "Envoyer sur WhatsApp", "copy": "Copier la liste", "copied": "Copié ✓", "listIntro": "Bonjour, je souhaite un devis pour :", "estTotal": "Total estimé (produits avec prix)",
+      "listTitle": "Panier", "listEmpty": "Votre panier est vide. Ajoutez des produits depuis le catalogue.", "qty": "Qté", "remove": "Retirer",
+      "sendWa": "Envoyer sur WhatsApp", "copy": "Copier la liste", "copied": "Copié ✓", "listIntro": "Bonjour, je souhaite commander :", "estTotal": "Total estimé (produits avec prix)",
       "noContact": "Les coordonnées seront publiées très bientôt. En attendant, vous pouvez copier la liste.", "ref": "Réf. interne",
       "illustration": "Simulation à titre indicatif. La teinte réelle peut varier : demandez un échantillon.",
       "lang": "עברית", "langCode": "he", "priceNote": "Prix TTC (TVA israélienne incluse), susceptibles d'évoluer. Le prix final figure sur le devis.",
@@ -143,7 +143,7 @@
     },
     "steps": {
       "title": "Comment ça marche",
-      "items": [["Choisir", "Filtrez par aspect, couleur et dimension, puis ajoutez à la liste."], ["Envoyer", "Envoyez la liste en un clic sur WhatsApp."], ["Recevoir le devis", "Nous revenons vers vous avec la disponibilité et un devis détaillé."]]
+      "items": [["Choisir", "Filtrez par aspect, couleur et dimension, puis ajoutez au panier."], ["Commander", "Envoyez la commande en un clic sur WhatsApp."], ["Confirmer", "Nous confirmons avec vous disponibilité, livraison et paiement."]]
     },
     "featured": "Sélection",
     "faqTitle": "Questions fréquentes",
@@ -168,11 +168,11 @@
       ["Colle et finitions", "<p>Sur un mur plan et sec, on utilise une colle hybride à forte prise initiale. Pour une finition nette, combinez plinthes, corniches et moulures, toutes disponibles au catalogue.</p>"]
     ],
     "contactTitle": "Contact",
-    "contactDesc": "Une question sur un modèle, la disponibilité ou un devis ? Écrivez-nous : le plus rapide est WhatsApp.",
+    "contactDesc": "Une question sur un modèle, la disponibilité ou une commande ? Écrivez-nous sur WhatsApp (le plus rapide) ou venez au showroom à Netanya.",
     "contactPending": "Nos coordonnées complètes seront publiées ici très bientôt.",
-    "listDesc": "Vos produits sélectionnés sont enregistrés ici. Envoyez la liste et nous revenons vers vous avec un devis.",
+    "listDesc": "Vos produits sélectionnés sont enregistrés ici. Vérifiez les quantités et passez commande.",
     "notFound": "Page introuvable", "notFoundLead": "Ce mur est encore vide. Retournez au catalogue.",
-    "footer": "Catalogue de revêtements muraux et panneaux décoratifs en Israël. Prix TTC.",
+    "footer": "Revêtements muraux et panneaux décoratifs. Showroom à Netanya. Prix TTC.",
     "productTitle": "{name} — {sku} | {brand}",
     "productDesc": "{name}. {size}{price} Photo, calcul des quantités et devis sur WhatsApp.",
     "categories": {

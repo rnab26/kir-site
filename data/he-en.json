@@ -1,0 +1,30 @@
+{
+  "_lisezmoi": "Traduction automatique des noms de produits hébreu -> anglais. Rôle N = nom (placé à la fin), A = adjectif (placé avant le nom), P = gardé à sa place.",
+  "entries": [
+    ["מרקם הרינגבון", "herringbone texture", "N"], ["הרינגבון", "herringbone", "A"], ["סיבים דקים", "fine grain", "N"], ["סיבים", "grain", "N"], ["בנקודות כהות", "with dark specks", "P"], ["עורקים אפורים וחומים", "grey and brown veins", "N"], ["אפור-טאופ", "grey-taupe", "A"], ["בז׳ חול", "sand-beige", "A"], ["חול", "sand", "A"], ["סרגלים", "slatted", "A"], ["קצה", "edge", "N"], ["מדורגים", "stepped", "A"], 
+    ["פלטת סרגלים", "slat panel", "N"], ["חיפוי אבן גמיש", "flexible stone cladding", "N"], ["חיפוי חוץ", "exterior cladding", "N"], ["חיפוי", "cladding", "N"],
+    ["דק WPC", "WPC decking", "N"], ["מראה LED", "LED mirror", "N"], ["מראה", "mirror", "N"], ["סרגל", "slat", "N"], ["פלטה", "panel", "N"], ["פלטת", "panel", "N"],
+    ["קרניז", "cornice", "N"], ["שיפולית", "skirting board", "N"], ["פרופיל עיטור", "decorative molding", "N"], ["פרופיל", "molding", "N"], ["עמוד דקורטיבי", "decorative column", "N"], ["עמוד", "column", "N"],
+    ["פס דקורטיבי", "decorative strip", "N"], ["דבק היברידי", "hybrid adhesive", "N"], ["דבק", "adhesive", "N"], ["שפופרת", "cartridge", "N"],
+    ["עורקי זהב", "golden veins", "N"], ["עורקים", "veins", "N"], ["עורק", "vein", "N"], ["חריצים", "grooves", "N"], ["חריץ", "groove", "N"], ["פסים", "stripes", "N"], ["פס", "stripe", "N"],
+    ["קשרים", "knots", "N"], ["עיניים", "knots", "N"], ["נקודות כהות", "dark specks", "N"], ["שבבים", "chips", "N"], ["סדקים", "cracks", "N"], ["בלוקים", "blocks", "N"], ["שכבות", "layers", "N"], ["גלים", "waves", "N"],
+    ["תאורה אחורית", "backlight", "N"], ["גימור מבריק", "gloss finish", "N"], ["גימור", "finish", "N"], ["טקסטורת סלע", "rock texture", "N"], ["מרקם סלע", "rock texture", "N"], ["טקסטורת קווים שתי וערב", "cross-hatched texture", "N"],
+    ["טקסטורה", "texture", "N"], ["טקסטורת", "texture", "N"], ["מרקם", "texture", "N"], ["כותרת מעוטרת עלים ופרחים", "capital with leaves and flowers", "N"], ["כותרת יונית", "Ionic capital", "N"], ["כותרת חלקה עגולה", "smooth round capital", "N"], ["כותרת", "capital", "N"],
+    ["דוגמת אדרה (הרינגבון)", "herringbone pattern", "N"], ["דוגמת עלים משולשת", "triple-leaf pattern", "N"], ["דוגמת עלים", "leaf pattern", "N"], ["דוגמת פרחים", "flower pattern", "N"], ["דוגמת ריבועים", "square pattern", "N"],
+    ["בדוגמת קשקשים שחורים", "black scale-pattern", "A"], ["בדוגמת קשקשים", "scale-pattern", "A"], ["בדוגמת משושים", "hexagon-pattern", "A"], ["בתבליט מערבולות", "swirl-relief", "A"],
+    ["חיפוי דמוי אבן", "stone-look cladding", "N"], ["דמוי עץ אגוז", "walnut-look", "A"], ["דמוי עץ אלון", "oak-look", "A"], ["דמוי עץ", "wood-look", "A"], ["דמוי בד", "fabric-look", "A"], ["דמוי שיש", "marble-look", "A"],
+    ["דמוי טרוורטין", "travertine-look", "A"], ["דמוי בטון", "concrete-look", "A"], ["דמוי טיח", "plaster-look", "A"], ["דמוי אבן חול", "sandstone-look", "A"], ["דמוי אבן צפחה", "slate-look", "A"], ["דמוי אבן גרניט", "granite-look", "A"],
+    ["דמוי אבן סלע", "rock-look", "A"], ["דמוי אבן", "stone-look", "A"], ["דמוי טראצו", "terrazzo-look", "A"], ["דמוי לבנים", "brick-look", "A"], ["דמוי", "look", "A"],
+    ["מסותת בבלוקים", "chiselled block", "A"], ["בצורת חצי עיגול", "half-moon", "A"], ["בצורת קפסולה", "capsule", "A"], ["בצורה", "", "A"], ["בגוון", "", "A"], ["אבן חול", "sandstone", "A"], ["סלע", "rock", "A"], ["צפחה", "slate", "A"],
+    ["אפור-כחול", "blue-grey", "A"], ["לבן-אפור", "white-grey", "A"], ["בז׳-אפור", "beige-grey", "A"], ["אפור-בז׳", "grey-beige", "A"], ["אפורה-בז׳", "grey-beige", "A"], ["בהיר מאוד", "very light", "A"], ["3 צבעים", "3-tone", "A"],
+    ["שחורה", "black", "A"], ["שחורים", "black", "A"], ["שחור", "black", "A"], ["לבנה", "white", "A"], ["לבנים", "white", "A"], ["לבן", "white", "A"], ["אפורה", "grey", "A"], ["אפורים", "grey", "A"], ["אפור", "grey", "A"], ["אפרפר", "greyish", "A"],
+    ["בז׳", "beige", "A"], ["טאופ", "taupe", "A"], ["חומים", "brown", "A"], ["חום", "brown", "A"], ["כהים", "dark", "A"], ["כהה", "dark", "A"], ["בהירה", "light", "A"], ["בהירים", "light", "A"], ["בהיר", "light", "A"], ["קרם", "cream", "A"],
+    ["ברונזה", "bronze", "A"], ["זהובים", "golden", "A"], ["זהוב", "golden", "A"], ["אדומות", "red", "A"], ["כחלחל", "bluish", "A"], ["אדמדם", "reddish", "A"], ["כתום", "orange", "A"], ["בינוני", "medium", "A"], ["חם", "warm", "A"],
+    ["מחורצת", "fluted", "A"], ["מחורץ", "fluted", "A"], ["חלקה", "smooth", "A"], ["חלק", "smooth", "A"], ["מט", "matte", "A"], ["מבריק", "gloss", "A"], ["מחוספס", "textured", "A"], ["מחוספסת", "textured", "A"], ["מוחלק", "smooth", "A"], ["מובלטת", "embossed", "A"],
+    ["גמישה", "flexible", "A"], ["גמיש", "flexible", "A"], ["אקוסטית", "acoustic", "A"], ["אקוסטי", "acoustic", "A"], ["דקורטיבית", "decorative", "A"], ["מנומרת", "speckled", "A"], ["עדינים", "fine", "A"], ["דקים", "fine", "A"], ["דק", "thin", "A"],
+    ["רחבים", "wide", "A"], ["רחב", "wide", "A"], ["צרים", "narrow", "A"], ["צר", "narrow", "A"], ["מעוגלים", "rounded", "A"], ["מעוגל", "rounded", "A"], ["מרובעים", "square", "A"], ["צפופים", "dense", "A"], ["אנכיים", "vertical", "A"], ["אנכי", "vertical", "A"],
+    ["אופקיים", "horizontal", "A"], ["אופקי", "horizontal", "A"], ["בולטים", "raised", "A"], ["מדורג", "stepped", "A"], ["מחורר", "perforated", "A"], ["מסותתת", "chiselled", "A"], ["גליות", "wavy", "A"], ["עגולה", "round", "A"], ["אורגנית", "organic", "A"],
+    ["גבוהה", "tall", "A"], ["מוארכת", "elongated", "A"], ["קטן", "small", "A"], ["קעור", "concave", "A"], ["שיבורד", "shiplap", "A"], ["שני", "two", "A"], ["ארוכים", "long", "A"], ["היברידי", "hybrid", "A"],
+    ["בסגנון קרניז", "cornice-style", "A"], ["בצד", "on the side", "P"], ["גובה", "height", "P"], ["ס״מ", "cm", "P"], ["מ״ל", "ml", "P"], ["ו", "and", "P"]
+  ]
+}

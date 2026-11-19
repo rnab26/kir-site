@@ -32,6 +32,9 @@ function Num([double]$v) { $v.ToString('0.##', $Inv) }
 # ---------- data ----------
 $Site = Read-Json 'data/site.json'
 $Content = Read-Json 'data/content.json'
+$Content | Add-Member -NotePropertyName en -NotePropertyValue (Read-Json 'data/content-en.json') -Force
+$Shop = Read-Json 'data/content-shop.json'
+$HeEn = Read-Json 'data/he-en.json'
 $Tax = Read-Json 'data/taxonomy.json'
 $Raw = @(Read-Json 'data/products.json' | ForEach-Object { $_ })  # PS 5.1 emits JSON arrays as one object: unroll
 $Dims = Read-Json 'data/images.json'
@@ -43,8 +46,41 @@ $Brand = [string]$Site.brand
 $BrandFull = [string]$Site.brandFull
 $Today = (Get-Date).ToString('yyyy-MM-dd')
 $Ver = (Get-Date).ToString('yyyyMMddHHmm')
-$Langs = @('he', 'fr')
+$Langs = @('he', 'en', 'fr')
 $Wa = ([string]$Site.whatsapp) -replace '[^0-9]', ''
+
+# ---------- English product names (rule-based from Hebrew, see data/he-en.json) ----------
+$script:EnDict = @($HeEn.entries | ForEach-Object { , @([string]$_[0], [string]$_[1], [string]$_[2], @(([string]$_[0]) -split ' ')) } | Sort-Object { - $_[3].Count }, { - ([string]$_[0]).Length })
+function EnSeg([string]$seg) {
+  $w = @($seg.Trim() -split '\s+' | Where-Object { $_ })
+  $A = @(); $N = @(); $Pp = @(); $i = 0
+  while ($i -lt $w.Count) {
+    $hit = $null
+    foreach ($e in $script:EnDict) {
+      $ew = $e[3]; $k = $ew.Count
+      if ($i + $k -gt $w.Count) { continue }
+      $ok = $true; for ($j = 0; $j -lt $k; $j++) { if ($w[$i + $j] -ne $ew[$j]) { $ok = $false; break } }
+      if ($ok) { $hit = $e; break }
+    }
+    if ($hit) { if ($hit[1]) { if ($hit[2] -eq 'N') { $N += $hit[1] } elseif ($hit[2] -eq 'A') { $A += $hit[1] } else { $Pp += $hit[1] } }; $i += $hit[3].Count }
+    elseif ($w[$i] -cmatch '^[A-Z][A-Za-z]*$') { $A += $w[$i]; $i++ }
+    else { $Pp += $w[$i]; $i++ }
+  }
+  ((@($A) + @($N) + @($Pp)) -join ' ').Trim()
+}
+function EnName([string]$he) {
+  $W = [string][char]0x05E2 + [char]0x05DD
+  $parts = @(); foreach ($seg in ($he -split ',')) {
+    $s = $seg.Trim(); if (-not $s) { continue }
+    $ix = (' ' + $s + ' ').IndexOf(' ' + $W + ' ')
+    if ($ix -ge 0) { $parts += ((EnSeg $s.Substring(0, $ix)) + ' with ' + (EnSeg $s.Substring($ix + $W.Length))).Trim() } else { $parts += (EnSeg $s) }
+  }
+  $r = ($parts -join ', ') -replace '\s{2,}', ' '
+  $r = $r -replace '\b(grey|beige|brown|taupe|white|black|cream|bronze|red|greyish|blue-grey|grey-beige|beige-grey|white-grey|grey-taupe|sand-beige)\s+(very light|light|dark)\b', '$2 $1'
+  $r = $r -replace '\b(brown|beige|grey)\s+(greyish|reddish|bluish)\b', '$2 $1'
+  if ($r.Length) { $r.Substring(0, 1).ToUpper() + $r.Substring(1) } else { $r }
+}
+function Cap([string]$s) { if ($s.Length) { $s.Substring(0, 1).ToUpper() + $s.Substring(1) } else { $s } }
 
 # ---------- products ----------
 $seen = @{}
@@ -52,6 +88,7 @@ $Items = New-Object System.Collections.ArrayList
 $i = 0
 foreach ($p in $Raw) {
   $i++
+  if ($p.PSObject.Properties['hide'] -and $p.hide) { continue }
   $skuRaw = ([string]$p.sku).Trim()
   $ref = if ($skuRaw) { $skuRaw } else { 'KIR-' + $i.ToString('000') }
   $core = ($ref.ToLowerInvariant() -replace '[^a-z0-9]+', '-').Trim('-')
@@ -72,7 +109,7 @@ foreach ($p in $Raw) {
   $d = P $Dims $p.img
   $fl = ($p.c -eq 'slat' -or $p.c -eq 'flex') -and ($he -match ([string][char]0x05DE + [char]0x05D7 + [char]0x05D5 + [char]0x05E8 + [char]0x05E5 + '|' + [char]0x05E1 + [char]0x05E8 + [char]0x05D2 + [char]0x05DC + [char]0x05D9 + [char]0x05DD))
   [void]$Items.Add([pscustomobject]@{
-    idx = $i; slug = $slug; ref = $ref; hasSku = [bool]$skuRaw; c = [string]$p.c; he = $he; fr = [string]$p.fr
+    idx = $i; slug = $slug; ref = $ref; hasSku = [bool]$skuRaw; c = [string]$p.c; he = $he; fr = [string]$p.fr; en = $(if ($p.PSObject.Properties['en'] -and $p.en) { [string]$p.en } else { EnName $he })
     s = $s; f = [string]$p.f; p = $p.p; oos = [bool]$p.oos; img = [string]$p.img
     iw = $(if ($d) { $d.w } else { 400 }); ih = $(if ($d) { $d.h } else { 500 })
     looks = $looks; colors = $colors; mat = $mat; w = $w; l = $l; ppm2 = $ppm2; fl = [bool]$fl
@@ -104,14 +141,15 @@ foreach ($k in $famMap.Keys) {
   $vs = @($famMap[$k]); $n = $vs.Count
   $rep = $vs | Where-Object { $null -ne $_.p -and -not $_.oos } | Select-Object -First 1; if (-not $rep) { $rep = $vs[0] }
   $code = ''; if ($k -match '^[a-z]+:(.+)$') { $code = $matches[1] }
-  if ($n -eq 1) { $slug = $rep.slug; $he = $rep.he; $fr = $rep.fr; $ref = $rep.ref }
+  if ($n -eq 1) { $slug = $rep.slug; $he = $rep.he; $fr = $rep.fr; $en = $rep.en; $ref = $rep.ref }
   else {
     $nm = P $Tax.familyNames $k
-    if ($nm) { $he = [string]$nm.he; $fr = [string]$nm.fr }
+    if ($nm) { $he = [string]$nm.he; $fr = [string]$nm.fr; $en = [string]$nm.en }
     else {
       $ascii = ($code -and $code -notmatch '[^\x00-\x7F]')
       $he = (BaseName $rep.he $Tax.nameStrip.he) + $(if ($ascii) { ' ' + $DOT + ' ' + (P (P $Content 'he').ui 'series') + ' ' + $code } else { '' })
       $fr = (BaseName $rep.fr $Tax.nameStrip.fr) + $(if ($ascii) { ' ' + $DOT + ' ' + (P (P $Content 'fr').ui 'series') + ' ' + $code } else { '' })
+      $en = (Cap (BaseName $rep.en $Tax.nameStrip.en)) + $(if ($ascii) { ' ' + $DOT + ' ' + (P (P $Content 'en').ui 'series') + ' ' + $code } else { '' })
     }
     $core = ($code.ToLowerInvariant() -replace '[^a-z0-9]+', '-').Trim('-'); if (-not $core -or $core -eq 'all') { $core = 'collection' }
     $slug = (P $Tax.catPrefix $rep.c) + '-' + $core + '-series'
@@ -124,7 +162,7 @@ foreach ($k in $famMap.Keys) {
   $prices = @($vs | Where-Object { $null -ne $_.p } | ForEach-Object { [double]$_.p })
   $pmin = if ($prices.Count) { ($prices | Measure-Object -Minimum).Minimum } else { $null }
   $fm = [pscustomobject]@{
-    key = $k; slug = $slug; ref = $ref; hasSku = $rep.hasSku; c = $rep.c; he = $he; fr = $fr; s = $(if ($n -eq 1) { $rep.s } else { '' })
+    key = $k; slug = $slug; ref = $ref; hasSku = $rep.hasSku; c = $rep.c; he = $he; fr = $fr; en = $en; s = $(if ($n -eq 1) { $rep.s } else { '' })
     p = $pmin; oos = (@($vs | Where-Object { -not $_.oos }).Count -eq 0); img = $rep.img; idx = $vs[0].idx; looks = $looks; colors = $colors
     n = $n; vars = $vs; rep = $rep
   }
@@ -145,7 +183,7 @@ function TexUrl([string]$id) { if (HasImg 'tex' $id) { $BasePath + '/assets/img/
 function ImgAbs([string]$id) { $Base + (PackUrl $id).Substring($BasePath.Length) }
 function TexDim([string]$id) { $d = P $TexDims $id; if ($d) { @([int]$d.w, [int]$d.h) } else { @(400, 500) } }
 $PlateCats = @('slat', 'panel', 'flex', 'deco', 'stone', 'outdoor')
-function T($L, [string]$k) { [string](P $L.ui $k) }
+function T($L, [string]$k) { $v = P $L.ui $k; if ($null -eq $v) { $v = P (P (P $Shop $L.lang) 'ui') $k }; [string]$v }
 function Other([string]$lang) { if ($lang -eq 'he') { 'fr' } else { 'he' } }
 function Lc([string]$lang) { P $Content $lang }
 function CatOf($L, [string]$c) { P $L.categories $c }
@@ -194,7 +232,8 @@ function CardBuild($L, $it, [string]$headTag) {
   $price = PriceHtml $L $it
   if ($multi -and $null -ne $it.p) { $price = '<span class="price"><small class="from">' + (Enc (T $L 'from')) + '</small><bdi>' + (Num $it.p) + '&nbsp;&#8362;</bdi></span>' }
   $btn = if ($multi) { '<a class="add" href="' + $url + '" aria-label="' + (Enc ((T $L 'choose') + ': ' + $name)) + '">' + $Icons.arrow + '</a>' } else { '<button class="add" type="button" data-add="' + $it.slug + '" aria-label="' + (Enc ((T $L 'add') + ': ' + $name)) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>' }
-  return '<article class="card" data-c="' + $it.c + '" data-looks="' + ($it.looks -join ' ') + '" data-colors="' + ($it.colors -join ' ') + '" data-p="' + $pp + '" data-i="' + $it.idx + '" data-q="' + (Enc $q) + '">' +
+  $imgs = if ($it.vars) { (@($it.vars | ForEach-Object { $_.img }) -join ' ') } else { $it.img }
+  return '<article class="card" data-imgs="' + $imgs + '" data-c="' + $it.c + '" data-looks="' + ($it.looks -join ' ') + '" data-colors="' + ($it.colors -join ' ') + '" data-p="' + $pp + '" data-i="' + $it.idx + '" data-q="' + (Enc $q) + '">' +
     '<a class="card-media" href="' + $url + '" tabindex="-1" aria-hidden="true"><img src="' + (ImgUrl $it.img) + '" alt="" width="520" height="650" loading="lazy" decoding="async">' + $badge + '</a>' +
     '<div class="card-body"><' + $headTag + ' class="card-title"><a href="' + $url + '">' + (Enc $name) + '</a></' + $headTag + '>' +
     '<p class="card-meta">' + $meta + '</p>' +
@@ -228,22 +267,28 @@ function ItemListLd($L, $list) {
   foreach ($it in $list) { [void]$arr.Add([ordered]@{ '@type' = 'ListItem'; position = $pos; url = (Abs $L ('p/' + $it.slug + '/')); name = (NameOf $L $it) }); $pos++ }
   [ordered]@{ '@context' = 'https://schema.org'; '@type' = 'ItemList'; numberOfItems = @($list).Count; itemListElement = @($arr) }
 }
+function BrandOf($L) { $b = [string](P $Site.brandByLang $L.lang); if ($b) { $b } else { $Brand } }
+function SiteBy([string]$key, $L) { [string](P (P $Site $key) $L.lang) }
+function MapUrl { 'https://www.google.com/maps/search/?api=1&query=' + [Uri]::EscapeDataString([string]$Site.mapQuery) }
+function WazeUrl { 'https://waze.com/ul?q=' + [Uri]::EscapeDataString([string]$Site.mapQuery) + '&navigate=yes' }
+function MapEmbed { 'https://maps.google.com/maps?q=' + [Uri]::EscapeDataString([string]$Site.mapQuery) + '&z=16&output=embed' }
+function WaLink([string]$text) { if (-not $Wa) { return '' }; 'https://wa.me/' + $Wa + $(if ($text) { '?text=' + [Uri]::EscapeDataString($text) } else { '' }) }
 function OrgLd($L) {
-  $o = [ordered]@{ '@context' = 'https://schema.org'; '@type' = 'Organization'; '@id' = ($Base + '/#org'); name = $BrandFull; alternateName = @($Brand, [string]$Site.brandHe); url = ($Base + '/'); logo = ($Base + '/assets/img/logo.png'); description = (Fill ([string]$L.metaDescHome) @{ brand = $Brand }) }
+  $o = [ordered]@{ '@context' = 'https://schema.org'; '@type' = 'HomeAndConstructionBusiness'; '@id' = ($Base + '/#org'); name = (BrandOf $L); alternateName = @([string]$Site.brandHe, [string]$Site.brand); url = ($Base + '/'); logo = ($Base + '/assets/img/logo.png'); image = ($Base + '/assets/img/og.jpg'); description = (Fill ([string]$L.metaDescHome) @{ brand = (BrandOf $L) }) }
+  if ($Site.phone) { $o.telephone = [string]$Site.phone }
   $same = @(); foreach ($k in @('instagram', 'facebook')) { $v = [string](P $Site $k); if ($v) { $same += $v } }
+  if ($Wa) { $same += ('https://wa.me/' + $Wa) }
   if ($same.Count) { $o.sameAs = $same }
-  if ($Site.phone -or $Site.email) {
-    $cp = [ordered]@{ '@type' = 'ContactPoint'; contactType = 'customer service'; availableLanguage = @('Hebrew', 'French') }
-    if ($Site.phone) { $cp.telephone = [string]$Site.phone }
-    if ($Site.email) { $cp.email = [string]$Site.email }
-    $o.contactPoint = $cp
-  }
-  if ($Site.address -and $Site.city) {
-    $o['@type'] = 'HomeAndConstructionBusiness'
+  $o.contactPoint = [ordered]@{ '@type' = 'ContactPoint'; contactType = 'customer service'; telephone = [string]$Site.phone; availableLanguage = @('Hebrew', 'English', 'French') }
+  if ($Site.address) {
     $o.address = [ordered]@{ '@type' = 'PostalAddress'; streetAddress = [string]$Site.address; addressLocality = [string]$Site.city; addressCountry = 'IL' }
-    if ($Site.phone) { $o.telephone = [string]$Site.phone }
-    if ($Site.openingHours) { $o.openingHours = [string]$Site.openingHours }
+    $o.hasMap = (MapUrl)
   }
+  if ($Site.openingHoursSpec) {
+    $spec = @(); foreach ($h in $Site.openingHoursSpec) { $spec += [ordered]@{ '@type' = 'OpeningHoursSpecification'; dayOfWeek = @($h.days); opens = [string]$h.opens; closes = [string]$h.closes } }
+    $o.openingHoursSpecification = $spec
+  }
+  $o.currenciesAccepted = 'ILS'
   $o.areaServed = [ordered]@{ '@type' = 'Country'; name = 'Israel' }
   $o
 }
@@ -256,55 +301,85 @@ function FaqLd($L) {
 # ---------- shared blocks ----------
 $Icons = @{
   list = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 7h15M6 12h15M6 17h15M2.5 7h.01M2.5 12h.01M2.5 17h.01"/></svg>'
+  cart = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.2 11.2a2 2 0 0 1-2 1.8H8.2a2 2 0 0 1-2-1.8Z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg>'
   wa = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 12a8.5 8.5 0 0 1-12.6 7.4L3.5 20.5l1.2-4.3A8.5 8.5 0 1 1 20.5 12Z"/><path d="M9 8.5c.3 2.6 2.4 5.2 5.5 6.3l1.3-1.3-2-1-1 .8c-1-.4-2-1.4-2.4-2.4l.8-1-1-2-1.2.6Z"/></svg>'
   arrow = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'
+  pin = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>'
+  clock = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'
+  phone = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 3h2.8l1.4 4.2-2 1.4a12 12 0 0 0 6.6 6.6l1.4-2 4.2 1.4v2.8a2 2 0 0 1-2.2 2A17 17 0 0 1 4.6 5.2 2 2 0 0 1 6.6 3Z"/></svg>'
+  a11y = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="4.5" r="1.8"/><path d="M5 8.5l7 1.5 7-1.5M12 10v4.5M12 14.5 9 21M12 14.5l3 6.5"/></svg>'
 }
+$LangLabel = @{ he = [string][char]0x05E2 + [char]0x05D1; en = 'EN'; fr = 'FR' }
+$LangName = @{ he = [string][char]0x05E2 + [char]0x05D1 + [char]0x05E8 + [char]0x05D9 + [char]0x05EA; en = 'English'; fr = 'Fran' + [char]0x00E7 + 'ais' }
 
+function LogoHtml($L, [string]$cls = 'logo') {
+  '<a class="' + $cls + '" href="' + (Href $L '') + '" aria-label="' + (Enc (BrandOf $L)) + '"><span class="logo-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="logo-text"><span class="logo-name">' + (Enc (BrandOf $L)) + '</span><small>' + (Enc (SiteBy 'tagByLang' $L)) + '</small></span></a>'
+}
+function LangSwitch($L, [string]$path) {
+  $s = '<div class="langs" role="group" aria-label="Language">'
+  foreach ($lg in $Langs) {
+    $X = Lc $lg
+    $cur = if ($lg -eq $L.lang) { ' aria-current="true"' } else { '' }
+    $s += '<a href="' + (Href $X $path) + '" hreflang="' + $lg + '" lang="' + $lg + '" title="' + (Enc $LangName[$lg]) + '"' + $cur + ' data-lang="' + $lg + '">' + (Enc $LangLabel[$lg]) + '</a>'
+  }
+  $s + '</div>'
+}
 function HeaderHtml($L, [string]$path) {
-  $o = Lc (Other $L.lang)
   $nav = ''
   foreach ($k in @(@('catalog', 'catalog/'), @('looks', 'looks/'), @('studio', 'studio/'), @('guide', 'guide/'), @('contact', 'contact/'))) {
     $cur = if ($path -eq $k[1]) { ' aria-current="page"' } else { '' }
     $nav += '<a href="' + (Href $L $k[1]) + '"' + $cur + '>' + (Enc (P $L.nav $k[0])) + '</a>'
   }
-  '<header class="site-header" data-header><div class="wrap header-inner">' +
-  '<a class="logo" href="' + (Href $L '') + '" aria-label="' + (Enc $BrandFull) + '"><span class="logo-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="logo-text">' + (Enc $Brand) + '<small>Wall Studio</small></span></a>' +
+  '<header class="site-header" data-header><div class="wrap header-inner">' + (LogoHtml $L) +
   '<nav class="nav" id="site-nav" aria-label="' + (Enc (T $L 'menu')) + '">' + $nav + '</nav>' +
-  '<div class="header-actions"><a class="lang" href="' + (Href $o $path) + '" hreflang="' + $o.lang + '" lang="' + $o.lang + '">' + (Enc (T $L 'lang')) + '</a>' +
-  '<a class="list-btn" href="' + (Href $L 'list/') + '" aria-label="' + (Enc (P $L.nav 'list')) + '">' + $Icons.list + '<span class="count" data-count hidden>0</span></a>' +
+  '<div class="header-actions">' + (LangSwitch $L $path) +
+  '<a class="list-btn" href="' + (Href $L 'cart/') + '" aria-label="' + (Enc (T $L 'cart')) + '">' + $Icons.cart + '<span class="count" data-count hidden>0</span></a>' +
   '<button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-nav" data-menu><span class="sr">' + (Enc (T $L 'menu')) + '</span><i></i><i></i></button></div>' +
   '</div></header>'
 }
 
 $script:FooterCache = @{}
 function FooterHtml($L, [string]$path) {
-  $o = Lc (Other $L.lang)
   if (-not $script:FooterCache.ContainsKey($L.lang)) { $script:FooterCache[$L.lang] = FooterBuild $L '@@ALT@@' }
-  return $script:FooterCache[$L.lang].Replace((Href $o '@@ALT@@'), (Href $o $path))
+  $h = $script:FooterCache[$L.lang]
+  foreach ($lg in $Langs) { $h = $h.Replace((Href (Lc $lg) '@@ALT@@'), (Href (Lc $lg) $path)) }
+  $h
 }
 function FooterBuild($L, [string]$path) {
-  $o = Lc (Other $L.lang)
   $cats = ''; foreach ($c in $CatOrder) { $cats += '<li><a href="' + (Href $L ('c/' + (P (CatOf $L $c) 'slug') + '/')) + '">' + (Enc (P (CatOf $L $c) 'name')) + '</a></li>' }
   $looks = ''; foreach ($k in $LookOrder) { $looks += '<li><a href="' + (Href $L ('look/' + (P (LookOf $L $k) 'slug') + '/')) + '">' + (Enc (P (LookOf $L $k) 'name')) + '</a></li>' }
   $contact = ''
-  if ($Wa) { $contact += '<li><a href="https://wa.me/' + $Wa + '" rel="noopener">WhatsApp</a></li>' }
-  if ($Site.phone) { $contact += '<li><a href="tel:' + (Enc $Site.phone) + '"><bdi>' + (Enc $Site.phone) + '</bdi></a></li>' }
+  if ($Wa) { $contact += '<li><a href="' + (WaLink (T $L 'waHello')) + '" rel="noopener" target="_blank">' + $Icons.wa + 'WhatsApp</a></li>' }
+  if ($Site.phone) { $contact += '<li><a href="tel:' + (Enc $Site.phone) + '">' + $Icons.phone + '<bdi>' + (Enc $Site.phoneDisplay) + '</bdi></a></li>' }
+  if ($Site.address) { $contact += '<li><a href="' + (MapUrl) + '" rel="noopener" target="_blank">' + $Icons.pin + (Enc (SiteBy 'addressByLang' $L)) + '</a></li>' }
+  if ($Site.hoursByLang) { $contact += '<li class="hours">' + $Icons.clock + (Enc (SiteBy 'hoursByLang' $L)) + '</li>' }
   if ($Site.email) { $contact += '<li><a href="mailto:' + (Enc $Site.email) + '">' + (Enc $Site.email) + '</a></li>' }
   if ($Site.instagram) { $contact += '<li><a href="' + (Enc $Site.instagram) + '" rel="noopener">Instagram</a></li>' }
   if ($Site.facebook) { $contact += '<li><a href="' + (Enc $Site.facebook) + '" rel="noopener">Facebook</a></li>' }
-  $contact += '<li><a href="' + (Href $L 'contact/') + '">' + (Enc (P $L.nav 'contact')) + '</a></li>'
-  $contact += '<li><a href="' + (Href $o $path) + '" lang="' + $o.lang + '" hreflang="' + $o.lang + '">' + (Enc (T $L 'lang')) + '</a></li>'
+  $legal = ''
+  foreach ($k in @('terms', 'privacy', 'shipping', 'accessibility')) { $legal += '<li><a href="' + (Href $L ($k + '/')) + '">' + (Enc (T $L $k)) + '</a></li>' }
+  $legal += '<li><a href="' + (Href $L 'orders/') + '">' + (Enc (T $L 'orders')) + '</a></li>'
   '<footer class="site-footer"><div class="footer-flutes" aria-hidden="true"></div><div class="wrap footer-grid">' +
-  '<div class="footer-brand"><a class="logo logo-light" href="' + (Href $L '') + '"><span class="logo-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="logo-text">' + (Enc $Brand) + '<small>Wall Studio</small></span></a><p>' + (Enc $L.footer) + '</p></div>' +
+  '<div class="footer-brand">' + (LogoHtml $L 'logo logo-light') + '<p>' + (Enc $L.footer) + '</p>' + (LangSwitch $L $path) + '</div>' +
   '<div><h2>' + (Enc (P $L.nav 'catalog')) + '</h2><ul>' + $cats + '</ul></div>' +
-  '<div><h2>' + (Enc (P $L.nav 'looks')) + '</h2><ul>' + $looks + '</ul><h2>' + (Enc (P $L.nav 'guide')) + '</h2><ul><li><a href="' + (Href $L 'guide/') + '">' + (Enc $L.guideTitle) + '</a></li><li><a href="' + (Href $L 'studio/') + '">' + (Enc (P $L.studio 'title')) + '</a></li></ul></div>' +
-  '<div><h2>' + (Enc (P $L.nav 'contact')) + '</h2><ul>' + $contact + '</ul></div>' +
-  '</div><div class="wrap footer-bottom"><span>&copy; ' + (Get-Date).Year + ' ' + (Enc $BrandFull) + '</span><span>' + (Enc (T $L 'priceNote')) + '</span></div></footer>'
+  '<div><h2>' + (Enc (P $L.nav 'looks')) + '</h2><ul>' + $looks + '</ul><h2>' + (Enc (T $L 'legal')) + '</h2><ul>' + $legal + '</ul></div>' +
+  '<div><h2>' + (Enc (P $L.nav 'contact')) + '</h2><ul class="contact-list">' + $contact + '</ul></div>' +
+  '</div><div class="wrap footer-bottom"><span>&copy; ' + (Get-Date).Year + ' ' + (Enc (BrandOf $L)) + '</span><span>' + (Enc (T $L 'priceNote')) + '</span></div></footer>'
+}
+
+function Widgets($L) {
+  $wa = if ($Wa) { '<a class="wa-float" href="' + (WaLink (T $L 'waHello')) + '" target="_blank" rel="noopener" data-wa-float aria-label="' + (Enc (T $L 'chatWa')) + '">' + $Icons.wa + '<span>' + (Enc (T $L 'chatWa')) + '</span></a>' } else { '' }
+  $a11y = '<button type="button" class="a11y-btn" data-a11y-toggle aria-expanded="false" aria-controls="a11y-panel" aria-label="' + (Enc (T $L 'a11y')) + '">' + $Icons.a11y + '</button>' +
+    '<div class="a11y-panel" id="a11y-panel" role="dialog" aria-label="' + (Enc (T $L 'a11y')) + '" hidden><p class="a11y-title">' + (Enc (T $L 'a11y')) + '</p>' +
+    '<button type="button" data-a11y="bigger">A+ ' + (Enc (T $L 'a11yBigger')) + '</button><button type="button" data-a11y="smaller">A- ' + (Enc (T $L 'a11ySmaller')) + '</button>' +
+    '<button type="button" data-a11y="contrast" aria-pressed="false">' + (Enc (T $L 'a11yContrast')) + '</button><button type="button" data-a11y="links" aria-pressed="false">' + (Enc (T $L 'a11yLinks')) + '</button>' +
+    '<button type="button" data-a11y="motion" aria-pressed="false">' + (Enc (T $L 'a11yMotion')) + '</button><button type="button" data-a11y="reset">' + (Enc (T $L 'a11yReset')) + '</button>' +
+    '<a href="' + (Href $L 'accessibility/') + '">' + (Enc (T $L 'a11yStatement')) + '</a></div>'
+  $wa + $a11y
 }
 
 function Page($L, [hashtable]$pg) {
   $path = [string]$pg.path
-  $o = Lc (Other $L.lang)
   $title = [string]$pg.title; $desc = [string]$pg.desc
   $canon = Abs $L $path
   $og = if ($pg.og) { [string]$pg.og } else { $Base + '/assets/img/og.jpg' }
@@ -312,27 +387,34 @@ function Page($L, [hashtable]$pg) {
   if ($pg.ld) { foreach ($x in @($pg.ld)) { if ($x) { $ld += '<script type="application/ld+json">' + (To-Json $x) + '</script>' } } }
   $robots = if ($pg.noindex) { '<meta name="robots" content="noindex,follow">' } else { '<meta name="robots" content="index,follow,max-image-preview:large">' }
   $verif = if ($Site.googleSiteVerification) { '<meta name="google-site-verification" content="' + (Enc $Site.googleSiteVerification) + '">' } else { '' }
+  $t = [ordered]@{}
+  foreach ($k in @('add', 'added', 'onRequest', 'priceVat', 'qty', 'remove', 'sendWa', 'copy', 'copied', 'listIntro', 'listEmpty', 'estTotal', 'noContact', 'results', 'cm', 'm', 'sku', 'viewAll', 'preorder', 'size')) { $t[$k] = T $L $k }
+  foreach ($k in @('units', 'tooTall', 'noPrice', 'waste')) { $t[$k] = [string](P $L.calc $k) }
+  $shopUi = P (P $Shop $L.lang) 'ui'
+  foreach ($pp in $shopUi.PSObject.Properties) { $t[$pp.Name] = [string]$pp.Value }
   $cfg = [ordered]@{
-    lang = $L.lang; base = $BasePath; prefix = [string]$L.prefix; wa = $Wa; brand = $Brand; v = $Ver
-    data = (AssetUrl ('data/products.json?v=' + $Ver))
-    t = [ordered]@{ add = (T $L 'add'); added = (T $L 'added'); onRequest = (T $L 'onRequest'); priceVat = (T $L 'priceVat'); qty = (T $L 'qty'); remove = (T $L 'remove'); sendWa = (T $L 'sendWa'); copy = (T $L 'copy'); copied = (T $L 'copied'); listIntro = (T $L 'listIntro'); listEmpty = (T $L 'listEmpty'); estTotal = (T $L 'estTotal'); noContact = (T $L 'noContact'); results = (T $L 'results'); cm = (T $L 'cm'); m = (T $L 'm'); sku = (T $L 'sku'); viewAll = (T $L 'viewAll'); units = (P $L.calc 'units'); tooTall = (P $L.calc 'tooTall'); noPrice = (P $L.calc 'noPrice'); waste = (P $L.calc 'waste'); preorder = (T $L 'preorder') }
+    lang = $L.lang; base = $BasePath; prefix = [string]$L.prefix; wa = $Wa; brand = (BrandOf $L); v = $Ver; phone = [string]$Site.phoneDisplay
+    data = (AssetUrl ('data/products.json?v=' + $Ver)); live = [string]$Site.sheetCsvUrl
+    langs = @($Langs); t = $t
   }
   $sb = New-Object Text.StringBuilder
   [void]$sb.Append('<!doctype html><html lang="' + $L.lang + '" dir="' + $L.dir + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">')
   [void]$sb.Append('<title>' + (Enc $title) + '</title><meta name="description" content="' + (Enc $desc) + '">' + $robots + $verif)
   [void]$sb.Append('<link rel="canonical" href="' + $canon + '">')
   if (-not $pg.noalt) {
-    [void]$sb.Append('<link rel="alternate" hreflang="he" href="' + (Abs (Lc 'he') $path) + '"><link rel="alternate" hreflang="fr" href="' + (Abs (Lc 'fr') $path) + '"><link rel="alternate" hreflang="x-default" href="' + (Abs (Lc 'he') $path) + '">')
+    foreach ($lg in $Langs) { [void]$sb.Append('<link rel="alternate" hreflang="' + $lg + '" href="' + (Abs (Lc $lg) $path) + '">') }
+    [void]$sb.Append('<link rel="alternate" hreflang="x-default" href="' + (Abs (Lc 'he') $path) + '">')
   }
-  [void]$sb.Append('<meta property="og:type" content="' + $(if ($pg.ogType) { $pg.ogType } else { 'website' }) + '"><meta property="og:site_name" content="' + (Enc $BrandFull) + '"><meta property="og:title" content="' + (Enc $title) + '"><meta property="og:description" content="' + (Enc $desc) + '"><meta property="og:url" content="' + $canon + '"><meta property="og:image" content="' + $og + '"><meta property="og:locale" content="' + $L.locale + '"><meta property="og:locale:alternate" content="' + $o.locale + '"><meta name="twitter:card" content="summary_large_image">')
-  [void]$sb.Append('<meta name="theme-color" content="#1b1916"><link rel="icon" href="' + $BasePath + '/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="' + (AssetUrl 'img/logo.png') + '"><link rel="manifest" href="' + $BasePath + '/manifest.webmanifest">')
-  [void]$sb.Append('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap">')
-  [void]$sb.Append('<link rel="stylesheet" href="' + (AssetUrl ('css/style.css?v=' + $Ver)) + '">' + $ld + '</head>')
+  [void]$sb.Append('<meta property="og:type" content="' + $(if ($pg.ogType) { $pg.ogType } else { 'website' }) + '"><meta property="og:site_name" content="' + (Enc (BrandOf $L)) + '"><meta property="og:title" content="' + (Enc $title) + '"><meta property="og:description" content="' + (Enc $desc) + '"><meta property="og:url" content="' + $canon + '"><meta property="og:image" content="' + $og + '"><meta property="og:locale" content="' + $L.locale + '">')
+  foreach ($lg in $Langs) { if ($lg -ne $L.lang) { [void]$sb.Append('<meta property="og:locale:alternate" content="' + (Lc $lg).locale + '">') } }
+  [void]$sb.Append('<meta name="twitter:card" content="summary_large_image"><meta name="theme-color" content="#1b1916"><link rel="icon" href="' + $BasePath + '/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="' + (AssetUrl 'img/logo.png') + '"><link rel="manifest" href="' + $BasePath + '/manifest.webmanifest">')
+  [void]$sb.Append('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://docs.google.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap">')
+  [void]$sb.Append('<link rel="stylesheet" href="' + (AssetUrl ('css/style.css?v=' + $Ver)) + '">' + $ld + '<script>try{var a=JSON.parse(localStorage.getItem("kir-a11y")||"{}");var d=document.documentElement;if(a.fs)d.style.fontSize=a.fs+"%";if(a.contrast)d.classList.add("a11y-contrast");if(a.links)d.classList.add("a11y-links");if(a.motion)d.classList.add("a11y-motion");}catch(e){}</script></head>')
   [void]$sb.Append('<body class="' + [string]$pg.cls + '"><a class="skip" href="#main">' + (Enc (T $L 'skip')) + '</a>')
   [void]$sb.Append((HeaderHtml $L $path))
   [void]$sb.Append('<main id="main">' + [string]$pg.body + '</main>')
   [void]$sb.Append((FooterHtml $L $path))
-  [void]$sb.Append('<div class="toast" role="status" aria-live="polite" data-toast></div>')
+  [void]$sb.Append((Widgets $L) + '<div class="toast" role="status" aria-live="polite" data-toast></div>')
   [void]$sb.Append('<script>window.KIR=' + (To-Json $cfg) + ';</script><script src="' + (AssetUrl ('js/app.js?v=' + $Ver)) + '" defer></script></body></html>')
   Write-Out ((Rel $L $path) + 'index.html') $sb.ToString()
 }
@@ -394,7 +476,7 @@ function CalcHtml($L, $sel, [string]$tag = 'h2') {
   '<label><span>' + (Enc $C.wallW) + '</span><input type="number" inputmode="numeric" min="10" max="5000" value="400" data-ww></label>' +
   '<label><span>' + (Enc $C.wallH) + '</span><input type="number" inputmode="numeric" min="10" max="1000" value="270" data-wh></label>' +
   '<label class="full"><span>' + (Enc $C.model) + '</span><select data-model>' + $opts + '</select></label>' +
-  '<output class="calc-out full" data-out aria-live="polite"><span class="k">' + (Enc $C.result) + '</span><strong data-n>-</strong><span data-unit>' + (Enc $C.units) + '</span><span class="k">' + (Enc $C.cost) + '</span><strong data-cost>-</strong><small data-note>' + (Enc $C.waste) + '</small></output>' +
+  '<button type="button" class="btn btn-dark full" data-calc-add hidden data-tpl="' + (Enc (T $L 'calcAdd')) + '"></button><output class="calc-out full" data-out aria-live="polite"><span class="k">' + (Enc $C.result) + '</span><strong data-n>-</strong><span data-unit>' + (Enc $C.units) + '</span><span class="k">' + (Enc $C.cost) + '</span><strong data-cost>-</strong><small data-note>' + (Enc $C.waste) + '</small></output>' +
   '</form></div></section>'
 }
 
@@ -444,6 +526,41 @@ function Band([string]$kicker, [string]$title, [string]$lead, [int]$count = -1, 
   '<section class="band"><div class="band-flutes" aria-hidden="true"></div><div class="wrap"><p class="kicker">' + (Enc $kicker) + '</p><h1>' + (Enc $title) + '</h1>' + $(if ($lead) { '<p class="lead">' + (Enc $lead) + '</p>' } else { '' }) + $c + '</div></section>'
 }
 
+function ContactCards($L) {
+  $c = ''
+  if ($Wa) { $c += '<a class="contact-card" href="' + (WaLink (T $L 'waHello')) + '" target="_blank" rel="noopener">' + $Icons.wa + '<strong>WhatsApp</strong><bdi>' + (Enc $Site.phoneDisplay) + '</bdi><span class="cc-cta">' + (Enc (T $L 'chatWa')) + '</span></a>' }
+  if ($Site.phone) { $c += '<a class="contact-card" href="tel:' + (Enc $Site.phone) + '">' + $Icons.phone + '<strong>' + (Enc (T $L 'phone')) + '</strong><bdi>' + (Enc $Site.phoneDisplay) + '</bdi></a>' }
+  if ($Site.address) { $c += '<a class="contact-card" href="' + (MapUrl) + '" target="_blank" rel="noopener">' + $Icons.pin + '<strong>' + (Enc (T $L 'address')) + '</strong><span>' + (Enc (SiteBy 'addressByLang' $L)) + '</span></a>' }
+  if ($Site.hoursByLang) { $c += '<div class="contact-card">' + $Icons.clock + '<strong>' + (Enc (T $L 'hours')) + '</strong><span>' + (Enc (SiteBy 'hoursByLang' $L)) + '</span></div>' }
+  if ($Site.email) { $c += '<a class="contact-card" href="mailto:' + (Enc $Site.email) + '"><strong>Email</strong><span>' + (Enc $Site.email) + '</span></a>' }
+  '<section class="contact"><div class="wrap contact-grid">' + $c + '</div></section>'
+}
+function VisitHtml($L, [bool]$withMap) {
+  if (-not $Site.address) { return '' }
+  $map = if ($withMap) { '<div class="map-wrap"><iframe title="' + (Enc ((T $L 'address') + ': ' + (SiteBy 'addressByLang' $L))) + '" src="' + (MapEmbed) + '" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>' } else { '' }
+  '<section class="visit"><div class="wrap visit-grid"><div class="visit-copy reveal"><p class="kicker">' + (Enc (T $L 'visit')) + '</p><h2>' + (Enc (BrandOf $L)) + '</h2>' +
+  '<p class="visit-line">' + $Icons.pin + '<span>' + (Enc (SiteBy 'addressByLang' $L)) + '</span></p><p class="visit-line">' + $Icons.clock + '<span>' + (Enc (SiteBy 'hoursByLang' $L)) + '</span></p>' +
+  '<p class="visit-line">' + $Icons.phone + '<a href="tel:' + (Enc $Site.phone) + '"><bdi>' + (Enc $Site.phoneDisplay) + '</bdi></a></p>' +
+  '<div class="ctas"><a class="btn btn-dark" href="' + (MapUrl) + '" target="_blank" rel="noopener">' + (Enc (T $L 'openMaps')) + '</a><a class="btn" href="' + (WazeUrl) + '" target="_blank" rel="noopener">' + (Enc (T $L 'openWaze')) + '</a>' +
+  $(if ($Wa) { '<a class="btn btn-wa" href="' + (WaLink (T $L 'waHello')) + '" target="_blank" rel="noopener">' + $Icons.wa + 'WhatsApp</a>' } else { '' }) + '</div></div>' + $map + '</div></section>'
+}
+function CheckoutForm($L) {
+  function Fld([string]$name, [string]$label, [string]$type, [bool]$req, [string]$extra = '') {
+    '<label class="fld"><span>' + (Enc $label) + $(if ($req) { ' <b aria-hidden="true">*</b>' } else { '' }) + '</span><input name="' + $name + '" type="' + $type + '"' + $(if ($req) { ' required aria-required="true"' } else { '' }) + $extra + '><small class="err" data-err="' + $name + '"></small></label>'
+  }
+  '<section class="checkout-sec"><div class="wrap checkout-grid"><form class="checkout-form" data-checkout novalidate>' +
+  '<fieldset><legend>' + (Enc (T $L 'fName')) + ' / ' + (Enc (T $L 'phone')) + '</legend>' +
+  (Fld 'name' (T $L 'fName') 'text' $true ' autocomplete="name"') + (Fld 'phone' (T $L 'fPhone') 'tel' $true ' autocomplete="tel" inputmode="tel" dir="ltr"') + (Fld 'email' (T $L 'fEmail') 'email' $false ' autocomplete="email" dir="ltr"') + '</fieldset>' +
+  '<fieldset><legend>' + (Enc (T $L 'fDelivery')) + '</legend><label class="opt"><input type="radio" name="delivery" value="pickup" checked> ' + (Enc (T $L 'pickup')) + '</label><label class="opt"><input type="radio" name="delivery" value="delivery"> ' + (Enc (T $L 'delivery')) + '</label>' +
+  (Fld 'city' (T $L 'fCity') 'text' $true ' autocomplete="address-level2"') + '<div data-addr hidden>' + (Fld 'address' (T $L 'fAddress') 'text' $false ' autocomplete="street-address"') + '</div></fieldset>' +
+  '<fieldset><legend>' + (Enc (T $L 'fContact')) + '</legend><label class="opt"><input type="radio" name="contact" value="wa" checked> ' + (Enc (T $L 'byWa')) + '</label><label class="opt"><input type="radio" name="contact" value="phone"> ' + (Enc (T $L 'byPhone')) + '</label>' +
+  '<label class="fld"><span>' + (Enc (T $L 'fNotes')) + '</span><textarea name="notes" rows="3"></textarea></label></fieldset>' +
+  '<label class="consent"><input type="checkbox" name="consent" required aria-required="true"> <span>' + (Enc (T $L 'fConsent')) + ' (<a href="' + (Href $L 'terms/') + '" target="_blank">' + (Enc (T $L 'terms')) + '</a>, <a href="' + (Href $L 'privacy/') + '" target="_blank">' + (Enc (T $L 'privacy')) + '</a>)</span><small class="err" data-err="consent"></small></label>' +
+  '<button class="btn btn-wa btn-big" type="submit">' + $Icons.wa + (Enc (T $L 'placeOrder')) + '</button><p class="note">' + (Enc (T $L 'secure')) + '</p>' +
+  '</form><aside class="cart-summary" data-checkout-summary aria-live="polite"></aside></div>' +
+  '<div class="wrap narrow"><div class="pay-info"><h2>' + (Enc (T $L 'payInfo')) + '</h2><p>' + (Enc (T $L 'payText')) + '</p></div></div></section>'
+}
+
 function VariantGallery($L, $it, [bool]$sel) {
   $name = NameOf $L $it
   $hid = if ($sel) { '' } else { ' hidden' }
@@ -476,9 +593,9 @@ function VariantBlock($L, $it, $cat, [bool]$sel) {
   $waText = (T $L 'listIntro') + ' ' + $name + ' (' + $it.ref + ') ' + $url
   $ask = if ($Wa) { '<a class="btn btn-ghost-dark" href="https://wa.me/' + $Wa + '?text=' + [Uri]::EscapeDataString($waText) + '" rel="noopener">' + $Icons.wa + (Enc (T $L 'ask')) + '</a>' } else { '' }
   $wall = if ($it.c -in $PlateCats) { '<a class="btn btn-ghost-dark" href="#studio">' + (Enc (T $L 'seeOnWall')) + '</a>' } else { '' }
-  '<div class="vblock" data-vb="' + $it.slug + '"' + $(if ($sel) { '' } else { ' hidden' }) + '>' + $avail +
+  '<div class="vblock" data-img="' + $it.img + '" data-vb="' + $it.slug + '"' + $(if ($sel) { '' } else { ' hidden' }) + '>' + $avail +
   '<div class="pd-price">' + (PriceHtml $L $it) + $m2 + '</div><dl class="specs">' + $specs + '</dl>' +
-  '<div class="pd-actions"><button type="button" class="btn btn-dark" data-add="' + $it.slug + '" data-label>' + (Enc (T $L 'add')) + '</button>' + $ask + $wall + '</div></div>'
+  '<div class="pd-actions"><label class="qty-pick"><span class="sr">' + (Enc (T $L 'qty')) + '</span><button type="button" data-step="-1" aria-label="-">-</button><input type="number" min="1" max="999" value="1" inputmode="numeric" data-qty-in><button type="button" data-step="1" aria-label="+">+</button></label><button type="button" class="btn btn-dark" data-add="' + $it.slug + '" data-cart-add data-label>' + (Enc (T $L 'add')) + '</button>' + $ask + $wall + '</div></div>'
 }
 
 # ---------- build ----------
@@ -510,15 +627,16 @@ foreach ($lang in $Langs) {
     '<section class="featured"><div class="wrap">' + (SectionHead $L.featured '' (P $L.nav 'catalog')) + (Grid $L $feat) + '<p class="center"><a class="btn" href="' + (Href $L 'catalog/') + '">' + (Enc (T $L 'viewAll')) + ' (' + $Items.Count + ')' + $Icons.arrow + '</a></p></div></section>' +
     '<section class="categories"><div class="wrap">' + (SectionHead $L.catalogTitle '' (P $L.nav 'catalog')) + (CatTiles $L) + '</div></section>' +
     '<section class="steps"><div class="wrap">' + (SectionHead $L.steps.title '') + '<ol class="steps-list">' + $steps + '</ol></div></section>' +
+    (VisitHtml $L $false) +
     (FaqHtml $L)
   $web = [ordered]@{ '@context' = 'https://schema.org'; '@type' = 'WebSite'; '@id' = ($Base + '/#web'); name = $BrandFull; url = ($Base + '/'); inLanguage = @('he', 'fr'); publisher = @{ '@id' = ($Base + '/#org') } }
-  Page $L @{ path = ''; title = (Fill $L.metaTitleHome @{ brand = $Brand }); desc = $L.metaDescHome; body = $body; cls = 'home'; ld = @((OrgLd $L), $web, (FaqLd $L)) }
+  Page $L @{ path = ''; title = (Fill $L.metaTitleHome @{ brand = (BrandOf $L) }); desc = $L.metaDescHome; body = $body; cls = 'home'; ld = @((OrgLd $L), $web, (FaqLd $L)) }
   if ($lang -eq 'he') { AddUrl '' '1.0' }
 
   # Catalog
   $body = (Band (P $L.nav 'catalog') $L.catalogTitle $L.catalogDesc $Items.Count $L) + (FilterBar $L $CatOrder) + '<section class="listing"><div class="wrap">' + (Grid $L $Fams 'h2') + '</div></section>'
   $crumb = @(@((T $L 'home'), ''), @($L.catalogTitle, 'catalog/'))
-  Page $L @{ path = 'catalog/'; title = ($L.catalogTitle + ' | ' + $Brand); desc = $L.catalogDesc; body = (CrumbHtml $L $crumb) + $body; cls = 'catalog'; ld = @((CrumbLd $L $crumb), (ItemListLd $L $Items)) }
+  Page $L @{ path = 'catalog/'; title = ($L.catalogTitle + ' | ' + (BrandOf $L)); desc = $L.catalogDesc; body = (CrumbHtml $L $crumb) + $body; cls = 'catalog'; ld = @((CrumbLd $L $crumb), (ItemListLd $L $Items)) }
   if ($lang -eq 'he') { AddUrl 'catalog/' '0.9' }
 
   # Categories
@@ -530,14 +648,14 @@ foreach ($lang in $Langs) {
     if ($c -eq 'slat' -or $c -eq 'panel' -or $c -eq 'flex') { $extra = (CalcHtml $L ($catIndex[$c] | Where-Object { $_.w -and $_.l } | Select-Object -First 1)) }
     $body = (CrumbHtml $L $crumb) + (Band (P $L.nav 'catalog') $cat.title $cat.intro $list.Count $L) + (FilterBar $L @($c)) + '<section class="listing"><div class="wrap">' + (Grid $L $list 'h2') + '</div></section>' + $extra + '<section class="more"><div class="wrap"><div class="pills">' + $others + '</div></div></section>'
     $desc = $cat.intro
-    Page $L @{ path = ('c/' + $cat.slug + '/'); title = ($cat.title + ' | ' + $Brand); desc = $desc; body = $body; cls = 'category'; og = (ImgAbs $list[0].img); ld = @((CrumbLd $L $crumb), (ItemListLd $L $list)) }
+    Page $L @{ path = ('c/' + $cat.slug + '/'); title = ($cat.title + ' | ' + (BrandOf $L)); desc = $desc; body = $body; cls = 'category'; og = (ImgAbs $list[0].img); ld = @((CrumbLd $L $crumb), (ItemListLd $L $list)) }
     if ($lang -eq 'he') { AddUrl ('c/' + $cat.slug + '/') '0.8' }
   }
 
   # Looks index + looks
   $crumb = @(@((T $L 'home'), ''), @($L.looksTitle, 'looks/'))
   $body = (CrumbHtml $L $crumb) + (Band (P $L.nav 'looks') $L.looksTitle $L.materialsLead -1 $L) + '<section class="materials"><div class="wrap">' + (LookTiles $L 'h2') + '</div></section>' + (StudioHtml $L $null)
-  Page $L @{ path = 'looks/'; title = ($L.looksTitle + ' | ' + $Brand); desc = $L.materialsLead; body = $body; cls = 'looks'; ld = @((CrumbLd $L $crumb)) }
+  Page $L @{ path = 'looks/'; title = ($L.looksTitle + ' | ' + (BrandOf $L)); desc = $L.materialsLead; body = $body; cls = 'looks'; ld = @((CrumbLd $L $crumb)) }
   if ($lang -eq 'he') { AddUrl 'looks/' '0.7' }
   foreach ($k in $LookOrder) {
     $lk = LookOf $L $k
@@ -548,7 +666,7 @@ foreach ($lang in $Langs) {
     $crumb = @(@((T $L 'home'), ''), @($L.looksTitle, 'looks/'), @($lk.name, ('look/' + $lk.slug + '/')))
     $first = $ById[(P $Tax.lookCover $k)]
     $body = (CrumbHtml $L $crumb) + (Band (P $L.nav 'looks') $lk.title $lk.intro $list.Count $L) + (FilterBar $L $cats) + '<section class="listing"><div class="wrap">' + (Grid $L $list 'h2') + '</div></section>' + (StudioHtml $L $first) + '<section class="more"><div class="wrap"><div class="pills">' + $others + '</div></div></section>'
-    Page $L @{ path = ('look/' + $lk.slug + '/'); title = ($lk.title + ' | ' + $Brand); desc = $lk.intro; body = $body; cls = 'look'; og = (ImgAbs $first.img); ld = @((CrumbLd $L $crumb), (ItemListLd $L $list)) }
+    Page $L @{ path = ('look/' + $lk.slug + '/'); title = ($lk.title + ' | ' + (BrandOf $L)); desc = $lk.intro; body = $body; cls = 'look'; og = (ImgAbs $first.img); ld = @((CrumbLd $L $crumb), (ItemListLd $L $list)) }
     if ($lang -eq 'he') { AddUrl ('look/' + $lk.slug + '/') '0.8' }
   }
 
@@ -564,7 +682,7 @@ foreach ($lang in $Langs) {
       $gal += VariantGallery $L $v $sel
       $blk += VariantBlock $L $v $cat $sel
       if ($multi) {
-        $opts += '<button type="button" class="vopt" role="radio" aria-checked="' + $(if ($sel) { 'true' } else { 'false' }) + '" data-v="' + $v.slug + '"><img src="' + (ImgUrl $v.img) + '" alt="" width="52" height="65" loading="lazy"><span class="vtxt"><strong>' + (Enc (NameOf $L $v)) + '</strong><small><bdi>' + (Enc $v.ref) + '</bdi>' + $(if ($v.s) { ' ' + $DOT + ' <bdi>' + (Enc (SizeText $L $v.s)) + '</bdi>' } else { '' }) + '</small></span>' + (PriceHtml $L $v) + '</button>'
+        $opts += '<button type="button" class="vopt" role="radio" aria-checked="' + $(if ($sel) { 'true' } else { 'false' }) + '" data-v="' + $v.slug + '" data-img="' + $v.img + '"><img src="' + (ImgUrl $v.img) + '" alt="" width="52" height="65" loading="lazy"><span class="vtxt"><strong>' + (Enc (NameOf $L $v)) + '</strong><small><bdi>' + (Enc $v.ref) + '</bdi>' + $(if ($v.s) { ' ' + $DOT + ' <bdi>' + (Enc (SizeText $L $v.s)) + '</bdi>' } else { '' }) + '</small></span>' + (PriceHtml $L $v) + '</button>'
       }
     }
     $vpick = if ($multi) { '<div class="variants"><p class="label" id="vl">' + (Enc (T $L 'variants')) + ' (' + $fm.n + ')</p><div class="vlist" role="radiogroup" aria-labelledby="vl" data-variants>' + $opts + '</div></div>' } else { '' }
@@ -587,13 +705,13 @@ foreach ($lang in $Langs) {
     if ($multi) {
       $pricePart = if ($null -ne $fm.p) { (T $L 'from') + (Num $fm.p) + ' ' + $SHEKEL + ' ' + (T $L 'priceVat') + '.' } else { (T $L 'onRequest') + '.' }
       $desc = Fill $L.productDesc @{ name = ($name + ' (' + $fm.n + ' ' + (T $L 'models') + ')'); size = ''; price = $pricePart }
-      $title = $name + ' | ' + $Brand
+      $title = $name + ' | ' + (BrandOf $L)
     } else {
       $sz = SizeText $L $rp.s
       $sizePart = if ($sz) { (T $L 'size') + ': ' + $sz + '. ' } else { '' }
       $pricePart = if ($null -ne $rp.p) { (PriceText $L $rp) + ' ' + (T $L 'priceVat') + '.' } else { (T $L 'onRequest') + '.' }
       $desc = Fill $L.productDesc @{ name = $name; size = $sizePart; price = $pricePart }
-      $title = Fill $L.productTitle @{ name = $name; sku = $rp.ref; brand = $Brand }
+      $title = Fill $L.productTitle @{ name = $name; sku = $rp.ref; brand = (BrandOf $L) }
     }
     $ld = @((CrumbLd $L $crumb))
     $offers = New-Object System.Collections.ArrayList
@@ -613,7 +731,7 @@ foreach ($lang in $Langs) {
   # Studio + calculator page
   $crumb = @(@((T $L 'home'), ''), @((P $L.studio 'title'), 'studio/'))
   $body = (CrumbHtml $L $crumb) + (Band (P $L.nav 'studio') (P $L.studio 'title') (P $L.studio 'lead') -1 $L) + (StudioHtml $L $null 'h2') + (CalcHtml $L $null)
-  Page $L @{ path = 'studio/'; title = ((P $L.studio 'title') + ' - ' + (P $L.calc 'title') + ' | ' + $Brand); desc = ((P $L.studio 'lead') + ' ' + (P $L.calc 'lead')); body = $body; cls = 'studio-page'; ld = @((CrumbLd $L $crumb)) }
+  Page $L @{ path = 'studio/'; title = ((P $L.studio 'title') + ' - ' + (P $L.calc 'title') + ' | ' + (BrandOf $L)); desc = ((P $L.studio 'lead') + ' ' + (P $L.calc 'lead')); body = $body; cls = 'studio-page'; ld = @((CrumbLd $L $crumb)) }
   if ($lang -eq 'he') { AddUrl 'studio/' '0.7' }
 
   # Guide
@@ -622,35 +740,51 @@ foreach ($lang in $Langs) {
   $crumb = @(@((T $L 'home'), ''), @($L.guideTitle, 'guide/'))
   $article = [ordered]@{ '@context' = 'https://schema.org'; '@type' = 'Article'; headline = $L.guideTitle; description = $L.guideDesc; inLanguage = $L.lang; datePublished = $Today; dateModified = $Today; author = @{ '@id' = ($Base + '/#org') }; publisher = @{ '@id' = ($Base + '/#org') }; mainEntityOfPage = (Abs $L 'guide/') }
   $body = (CrumbHtml $L $crumb) + (Band (P $L.nav 'guide') $L.guideTitle $L.guideDesc -1 $L) + '<div class="wrap guide"><nav class="toc" aria-label="TOC"><ol>' + $toc + '</ol></nav><article class="prose">' + $g + '</article></div>' + (CalcHtml $L $null) + (FaqHtml $L)
-  Page $L @{ path = 'guide/'; title = ($L.guideTitle + ' | ' + $Brand); desc = $L.guideDesc; body = $body; cls = 'guide-page'; ogType = 'article'; ld = @((CrumbLd $L $crumb), $article, (FaqLd $L)) }
+  Page $L @{ path = 'guide/'; title = ($L.guideTitle + ' | ' + (BrandOf $L)); desc = $L.guideDesc; body = $body; cls = 'guide-page'; ogType = 'article'; ld = @((CrumbLd $L $crumb), $article, (FaqLd $L)) }
   if ($lang -eq 'he') { AddUrl 'guide/' '0.7' }
 
-  # Contact
-  $lines = ''
-  if ($Wa) { $lines += '<a class="contact-card" href="https://wa.me/' + $Wa + '" rel="noopener">' + $Icons.wa + '<strong>WhatsApp</strong><bdi>+' + $Wa + '</bdi></a>' }
-  if ($Site.phone) { $lines += '<a class="contact-card" href="tel:' + (Enc $Site.phone) + '"><strong>Tel</strong><bdi>' + (Enc $Site.phone) + '</bdi></a>' }
-  if ($Site.email) { $lines += '<a class="contact-card" href="mailto:' + (Enc $Site.email) + '"><strong>Email</strong><span>' + (Enc $Site.email) + '</span></a>' }
-  if ($Site.address) { $lines += '<div class="contact-card"><strong>' + (Enc $Site.city) + '</strong><span>' + (Enc $Site.address) + '</span>' + $(if ($Site.openingHours) { '<small>' + (Enc $Site.openingHours) + '</small>' } else { '' }) + '</div>' }
-  if (-not $lines) { $lines = '<p class="pending">' + (Enc $L.contactPending) + '</p>' }
+  # Contact + showroom map
+  $body = (CrumbHtml $L @(@((T $L 'home'), ''), @($L.contactTitle, 'contact/'))) + (Band (P $L.nav 'contact') $L.contactTitle $L.contactDesc -1 $L) + (ContactCards $L) + (VisitHtml $L $true) + (FaqHtml $L)
   $crumb = @(@((T $L 'home'), ''), @($L.contactTitle, 'contact/'))
-  $body = (CrumbHtml $L $crumb) + (Band (P $L.nav 'contact') $L.contactTitle $L.contactDesc -1 $L) + '<section class="contact"><div class="wrap contact-grid">' + $lines + '</div></section>' + (FaqHtml $L)
-  Page $L @{ path = 'contact/'; title = ($L.contactTitle + ' | ' + $Brand); desc = $L.contactDesc; body = $body; cls = 'contact-page'; ld = @((CrumbLd $L $crumb), (OrgLd $L)) }
-  if ($lang -eq 'he') { AddUrl 'contact/' '0.6' }
+  Page $L @{ path = 'contact/'; title = ($L.contactTitle + ' | ' + (BrandOf $L)); desc = $L.contactDesc; body = $body; cls = 'contact-page'; ld = @((CrumbLd $L $crumb), (OrgLd $L)) }
+  if ($lang -eq 'he') { AddUrl 'contact/' '0.7' }
 
-  # Quote list (not indexed)
-  $body = (Band (P $L.nav 'list') (T $L 'listTitle') $L.listDesc -1 $L) + '<section class="quote"><div class="wrap narrow"><div data-list><noscript><p>JavaScript</p></noscript></div></div></section>'
-  Page $L @{ path = 'list/'; title = ((T $L 'listTitle') + ' | ' + $Brand); desc = $L.listDesc; body = $body; cls = 'list-page'; noindex = $true }
+  # Shop pages (not indexed)
+  $SP = P (P $Shop $lang) 'pages'
+  $body = (Band (T $L 'cart') $SP.cartTitle $SP.cartDesc -1 $L) + '<section class="cart-sec"><div class="wrap cart-grid"><div class="cart-items" data-cart><noscript><p>JavaScript</p></noscript></div><aside class="cart-summary" data-cart-summary aria-live="polite"></aside></div></section>'
+  Page $L @{ path = 'cart/'; title = ($SP.cartTitle + ' | ' + (BrandOf $L)); desc = $SP.cartDesc; body = $body; cls = 'cart-page'; noindex = $true }
+  $body = (Band (T $L 'checkout') $SP.checkoutTitle $SP.checkoutDesc -1 $L) + (CheckoutForm $L)
+  Page $L @{ path = 'checkout/'; title = ($SP.checkoutTitle + ' | ' + (BrandOf $L)); desc = $SP.checkoutDesc; body = $body; cls = 'checkout-page'; noindex = $true }
+  $body = '<section class="order-sec"><div class="wrap narrow" data-order><noscript><p>JavaScript</p></noscript></div></section>'
+  Page $L @{ path = 'order/'; title = ($SP.orderTitle + ' | ' + (BrandOf $L)); desc = $SP.orderTitle; body = $body; cls = 'order-page'; noindex = $true }
+  $body = (Band (T $L 'orders') $SP.ordersTitle $SP.ordersDesc -1 $L) + '<section class="orders-sec"><div class="wrap narrow" data-orders></div></section>'
+  Page $L @{ path = 'orders/'; title = ($SP.ordersTitle + ' | ' + (BrandOf $L)); desc = $SP.ordersDesc; body = $body; cls = 'orders-page'; noindex = $true }
+  # former quote-list address -> cart
+  $redir = '<!doctype html><html lang="' + $L.lang + '"><head><meta charset="utf-8"><meta name="robots" content="noindex"><link rel="canonical" href="' + (Abs $L 'cart/') + '"><meta http-equiv="refresh" content="0; url=' + (Href $L 'cart/') + '"></head><body><a href="' + (Href $L 'cart/') + '">' + (Enc (T $L 'cart')) + '</a></body></html>'
+  Write-Out ((Rel $L 'list/') + 'index.html') $redir
+
+  # Legal pages
+  foreach ($lk in @('terms', 'privacy', 'shipping', 'accessibility')) {
+    $pgD = P $SP $lk
+    $html = Fill ([string]$pgD[1]) @{ brand = (BrandOf $L); phone = [string]$Site.phoneDisplay; address = (SiteBy 'addressByLang' $L); shipping = (Href $L 'shipping/'); date = $Today }
+    $crumb = @(@((T $L 'home'), ''), @([string]$pgD[0], ($lk + '/')))
+    $body = (CrumbHtml $L $crumb) + (Band (T $L 'legal') ([string]$pgD[0]) '' -1 $L) + '<section class="legal"><div class="wrap narrow prose">' + $html + '</div></section>'
+    Page $L @{ path = ($lk + '/'); title = ([string]$pgD[0] + ' | ' + (BrandOf $L)); desc = ([string]$pgD[0] + ' - ' + (BrandOf $L)); body = $body; cls = 'legal-page'; ld = @((CrumbLd $L $crumb)) }
+    if ($lang -eq 'he') { AddUrl ($lk + '/') '0.3' }
+  }
 }
 
-# 404 (root, bilingual)
-$he = Lc 'he'; $fr = Lc 'fr'
-$nf = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>404 | ' + (Enc $Brand) + '</title><meta name="robots" content="noindex"><link rel="icon" href="' + $BasePath + '/favicon.svg"><link rel="stylesheet" href="' + (AssetUrl ('css/style.css?v=' + $Ver)) + '"></head><body class="nf"><main class="nf-main"><div class="band-flutes" aria-hidden="true"></div><div class="wrap"><p class="kicker">404</p><h1>' + (Enc $he.notFound) + '</h1><p class="lead">' + (Enc $he.notFoundLead) + '</p><p><a class="btn btn-light" href="' + (Href $he 'catalog/') + '">' + (Enc (P $he.nav 'catalog')) + '</a></p><hr><div lang="fr" dir="ltr"><h2>' + (Enc $fr.notFound) + '</h2><p class="lead">' + (Enc $fr.notFoundLead) + '</p><p><a class="btn btn-light" href="' + (Href $fr 'catalog/') + '">' + (Enc (P $fr.nav 'catalog')) + '</a></p></div></div></main></body></html>'
+# 404 (root, trilingual)
+$he = Lc 'he'; $fr = Lc 'fr'; $en = Lc 'en'
+$nfParts = ''
+foreach ($X in @($he, $en, $fr)) { $nfParts += '<div lang="' + $X.lang + '" dir="' + $X.dir + '" class="nf-lang"><h2>' + (Enc $X.notFound) + '</h2><p class="lead">' + (Enc $X.notFoundLead) + '</p><p><a class="btn btn-light" href="' + (Href $X 'catalog/') + '">' + (Enc (P $X.nav 'catalog')) + '</a></p></div>' }
+$nf = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>404 | ' + (Enc $Site.brandHe) + '</title><meta name="robots" content="noindex"><link rel="icon" href="' + $BasePath + '/favicon.svg"><link rel="stylesheet" href="' + (AssetUrl ('css/style.css?v=' + $Ver)) + '"></head><body class="nf"><main class="nf-main"><div class="band-flutes" aria-hidden="true"></div><div class="wrap"><p class="kicker">404</p>' + $nfParts + '</div></main></body></html>'
 Write-Out '404.html' $nf
 
 # Client data (public fields only)
 $pub = New-Object System.Collections.ArrayList
 foreach ($it in $Items) {
-  [void]$pub.Add([ordered]@{ id = $it.slug; f = $FamOf[$it.slug].slug; r = $it.ref; c = $it.c; he = $it.he; fr = $it.fr; s = $it.s; w = $it.w; l = $it.l; p = $it.p; img = $it.img; oos = $it.oos; fl = $it.fl })
+  [void]$pub.Add([ordered]@{ id = $it.slug; f = $FamOf[$it.slug].slug; r = $it.ref; c = $it.c; he = $it.he; fr = $it.fr; en = $it.en; s = $it.s; w = $it.w; l = $it.l; p = $it.p; img = $it.img; oos = $it.oos; fl = $it.fl })
 }
 Write-Out 'assets/data/products.json' (ConvertTo-Json -InputObject @($pub) -Depth 5 -Compress)
 
@@ -661,14 +795,16 @@ foreach ($u in $sitemap) {
   $path = $u[0]; $prio = $u[1]
   $img = ''
   if ($path -like 'p/*') { $sl = $path.Substring(2).TrimEnd('/'); $it = $FamBySlug[$sl]; if ($it) { $img = '<image:image><image:loc>' + (ImgAbs $it.img) + '</image:loc></image:image>' } }
+  $alts = ''; foreach ($lg in $Langs) { $alts += '<xhtml:link rel="alternate" hreflang="' + $lg + '" href="' + (Abs (Lc $lg) $path) + '"/>' }
+  $alts += '<xhtml:link rel="alternate" hreflang="x-default" href="' + (Abs $he $path) + '"/>'
   foreach ($lang in $Langs) {
     $L = Lc $lang
-    [void]$sb.Append('<url><loc>' + (Abs $L $path) + '</loc><lastmod>' + $Today + '</lastmod><priority>' + $prio + '</priority>')
-    [void]$sb.Append('<xhtml:link rel="alternate" hreflang="he" href="' + (Abs $he $path) + '"/><xhtml:link rel="alternate" hreflang="fr" href="' + (Abs $fr $path) + '"/><xhtml:link rel="alternate" hreflang="x-default" href="' + (Abs $he $path) + '"/>' + $img + '</url>' + "`n")
+    [void]$sb.Append('<url><loc>' + (Abs $L $path) + '</loc><lastmod>' + $Today + '</lastmod><priority>' + $prio + '</priority>' + $alts + $img + '</url>' + "`n")
   }
 }
 [void]$sb.Append('</urlset>')
 Write-Out 'sitemap.xml' $sb.ToString()
+
 
 # robots.txt (AI crawlers explicitly allowed)
 $robots = "User-agent: *`nAllow: /`nDisallow: $BasePath/list/`nDisallow: $BasePath/fr/list/`n`n"
@@ -678,7 +814,7 @@ Write-Out 'robots.txt' $robots
 
 # llms.txt
 $llm = "# $BrandFull`n`n> " + $he.metaDescHome + "`n> " + $fr.metaDescHome + "`n`n"
-$llm += "Languages: Hebrew (default, $Base/) and French ($Base/fr/). Prices are in ILS and include Israeli VAT. Products without a listed price are quoted on request.`n`n"
+$llm += "Languages: Hebrew (default, $Base/), English ($Base/en/) and French ($Base/fr/). Prices are in ILS and include Israeli VAT. Products without a listed price are quoted on request.`n`n"
 $llm += "## Catalog`n`n- [Full catalog (he)]($Base/catalog/): " + $Items.Count + " products`n- [Catalogue complet (fr)]($Base/fr/catalog/)`n"
 foreach ($c in $CatOrder) { $ch = CatOf $he $c; $cf = CatOf $fr $c; $llm += "- [" + $ch.name + " / " + $cf.name + "]($Base/c/" + $ch.slug + "/): " + @($Items | Where-Object { $_.c -eq $c }).Count + " products. " + $cf.intro + "`n" }
 $llm += "`n## Looks`n`n"
@@ -687,7 +823,7 @@ $llm += "`n## Guides`n`n- [" + $he.guideTitle + "]($Base/guide/)`n- [" + $fr.gui
 if ($Wa) { $llm += "- WhatsApp: +$Wa`n" }
 if ($Site.phone) { $llm += "- Phone: " + $Site.phone + "`n" }
 if ($Site.email) { $llm += "- Email: " + $Site.email + "`n" }
-if ($Site.city) { $llm += "- Location: " + $Site.city + ", Israel`n" }
+if ($Site.address) { $llm += "- Showroom: " + (SiteBy 'addressByLang' $en) + ", Israel`n- Opening hours: " + (SiteBy 'hoursByLang' $en) + "`n- Map: " + (MapUrl) + "`n" }
 $llm += "- [Contact page]($Base/contact/)`n`n## Machine-readable data`n`n- [Products JSON]($Base/assets/data/products.json) (fields: id, r=reference, c=category, he/fr=name, s=size width-cm/length-m, p=price ILS incl. VAT or null)`n- [Sitemap]($Base/sitemap.xml)`n"
 Write-Out 'llms.txt' $llm
 

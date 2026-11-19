@@ -1,55 +1,64 @@
-# KIR · Wall Studio — site catalogue de revêtements muraux
+# חיפוי ישראל · Hipui Israel — site de revêtements muraux
 
-Site statique bilingue (hébreu par défaut, français sur `/fr/`) généré à partir du catalogue Google Sheets
-« קטלוג פלטות וסרגלים — מחירים ». 231 produits, 520 pages, aucun serveur ni abonnement : hébergement gratuit sur GitHub Pages.
+Site statique trilingue (hébreu par défaut, anglais sur `/en/`, français sur `/fr/`) généré à partir du catalogue Google Sheets
+« קטלוג פלטות וסרגלים — מחירים ». 231 produits, ~500 pages, aucun serveur ni abonnement : hébergement gratuit sur GitHub Pages.
+
+Showroom : צבי שכטרמן 2, נתניה · WhatsApp / téléphone : 055-294-2609 (`data/site.json`).
 
 ## Ce que contient le site
 
 | Page | Rôle |
 |---|---|
-| Accueil | Mur rainuré « éclairé à la souris », matières, studio 3D, sélection, FAQ |
-| Catalogue | Tous les produits, filtres type / aspect / couleur, recherche, tri par prix |
-| 14 pages catégories | Lames, panneaux PVC/SPC, pierre flexible, panneaux 3D, miroirs LED… (une page = un mot-clé) |
-| 8 pages « aspects » | Effet bois, travertin, marbre, tissu, béton, pierre, noir, blanc |
-| 231 fiches produit | Photo zoomable, dimensions, prix TTC, prix au m² estimé, studio, calculateur |
-| Studio | Pièce en perspective : on applique une texture au mur, jour/soir |
-| Calculateur | Nombre de lames/panneaux + coût estimé selon les dimensions du mur |
-| Guide | Contenu SEO : lames ou panneaux, PVC vs SPC, mesures, finitions |
-| Liste de devis | Panier sans paiement, envoyé en un clic sur WhatsApp |
+| Accueil | Mur rainuré « éclairé à la souris », matières, studio, sélection, FAQ, bloc « venez au showroom » + carte |
+| Catalogue | Tous les produits regroupés par famille (variantes), filtres type / aspect / couleur, recherche, tri par prix |
+| 14 pages catégories / 8 pages « aspects » | Une page = un mot-clé (lames acoustiques, effet bois, marbre, travertin…) |
+| Fiches produit | Plaque entière en perspective + loupe, photo réelle, variantes, prix TTC live, stock live, quantité, ajout au panier |
+| Panier `/cart/` | Quantités, total TTC, articles sur commande signalés |
+| Commande `/checkout/` | Coordonnées, livraison ou retrait au showroom, envoi de la commande sur WhatsApp |
+| Confirmation `/order/` + Mes commandes `/orders/` | Numéro HI-AAMMJJ-XXXX, récapitulatif, impression, renvoi WhatsApp (historique gardé dans le navigateur du client) |
+| Contact | WhatsApp, téléphone, adresse, horaires, Google Maps intégré, boutons Maps / Waze |
+| Pages légales | Conditions générales, confidentialité, livraison/retours (loi israélienne 14 jours), déclaration d'accessibilité (IS 5568) |
+| Studio, calculateur, guide | Simulation de mur, calcul du nombre de lames (+ ajout direct au panier), contenu SEO |
 
-Fichiers SEO générés automatiquement : `sitemap.xml` (avec hreflang et images), `robots.txt` (robots IA autorisés),
-`llms.txt`, `merchant-feed.xml` (Google Merchant Center), données structurées schema.org sur chaque page.
+Sur toutes les pages : sélecteur de langue עב / EN / FR dans l'en-tête (et suggestion automatique selon la langue du navigateur),
+bouton WhatsApp flottant (message pré-rempli avec le produit consulté), menu d'accessibilité, « vus récemment ».
 
-**Jamais publié** : prix d'achat, TVA d'achat, prix des concurrents. Seule la colonne « המחיר שלנו כולל מע״מ » apparaît.
+SEO : `sitemap.xml` (hreflang he/en/fr + images), `robots.txt` (robots IA autorisés), `llms.txt`, `merchant-feed.xml`,
+schema.org (entreprise locale avec adresse/horaires/carte, ProductGroup/Product/Offer, FAQ, fil d'Ariane).
 
-## À faire en premier (5 minutes)
+**Jamais publié** : prix d'achat, TVA d'achat, prix des fournisseurs/concurrents. Seule la colonne « המחיר שלנו כולל מע״מ » apparaît.
 
-Ouvrez `data/site.json` et remplissez :
+## Gérer le site depuis le Google Sheet (en direct)
 
-- `whatsapp` : numéro au format international sans `+` (ex. `972501234567`). **Indispensable** pour que la liste de devis soit envoyable.
-- `phone`, `email`, `instagram`, `city`, `address`, `openingHours` si vous en avez.
-- `brand` / `brandHe` / `brandFull` : « KIR » est un nom provisoire, remplacez-le par votre vraie marque.
-- `googleSiteVerification` : le code fourni par Google Search Console (balise meta).
+Dans l'onglet du catalogue, chaque ligne a deux cases :
 
-Poussez sur GitHub : le site se reconstruit et se redéploie tout seul (onglet *Actions*).
+- **« במלאי (אתר) »** (colonne Q) : cochée = en stock ; décochée = « sur commande » sur le site.
+- **« להסיר מהאתר »** (colonne R) : cochée = le produit disparaît du site (plus de stock et plus de réassort).
 
-## Mettre à jour le catalogue
+Prix (colonne « המחיר שלנו כולל מע״מ »), références, descriptions, dimensions : toute modification d'une ligne est reprise
+automatiquement. Un prix vide s'affiche « prix sur demande ».
 
-Les produits sont dans `data/products.json` (une ligne par produit) :
+Comment ça s'actualise :
 
-```json
-{"sku":"082 20325","c":"slat","he":"…","fr":"…","s":"20/2.90","f":"","p":44,"oos":false,"img":"<id Google Drive>"}
-```
+1. **En direct dans le navigateur** : chaque visiteur lit l'onglet publié « לאתר » (CSV). Prix, stock et produits retirés
+   sont mis à jour dans la page sous ~5 minutes (délai du cache Google), sans republier.
+2. **Toutes les 10 minutes sur GitHub** (*Actions → Sync catalogue*) : l'onglet est relu, les nouveaux produits et leurs photos
+   sont ajoutés (traduction automatique marquée `frAuto`), puis le site est reconstruit pour Google.
 
-- `c` : catégorie (`slat`, `panel`, `flex`, `deco`, `stone`, `outdoor`, `deck`, `mirror`, `cornice`, `skirting`, `molding`, `column`, `ornament`, `adhesive`)
-- `s` : `largeur cm/longueur m` · `f` : `m` mat, `g` brillant · `p` : prix TTC ou `null` (= « prix sur demande ») · `oos` : `true` = sur commande
-- `img` : l'identifiant Drive de la photo (celui de la formule `IMAGE` de la colonne « תמונה »)
+L'onglet « לאתר » se remplit tout seul par formules : ne pas le modifier à la main. Seul cet onglet est publié sur le Web.
 
-Après avoir ajouté des produits : `scripts/fetch-images.ps1` télécharge les nouvelles photos. Le plus simple est de demander
-à Claude : « synchronise le site avec le Google Sheet ».
+## Commandes et paiement
 
-Aspects et couleurs sont déduits automatiquement de la description hébraïque (règles dans `data/taxonomy.json`).
-Tous les textes du site (hébreu et français) sont dans `data/content.json`.
+Pas de paiement en ligne pour l'instant : la commande arrive sur WhatsApp avec le détail (produits, quantités, total TTC,
+coordonnées, livraison ou retrait). Vous confirmez disponibilité, livraison et paiement avec le client.
+Pour ajouter un paiement par carte plus tard (Grow/Meshulam, PayPlus, Tranzila…), il suffira de remplacer l'étape WhatsApp
+de `/checkout/` par le lien de paiement du prestataire.
+
+## Textes et traductions
+
+- `data/content.json` (hébreu + français), `data/content-en.json` (anglais), `data/content-shop.json` (panier, commande, pages légales, accessibilité).
+- Noms de produits : français dans `products.json` (`fr`), anglais généré par règles depuis l'hébreu (`data/he-en.json`) — on peut forcer un nom avec `"en"` dans `products.json`.
+- Les pages légales sont des modèles : à faire relire (nom légal, numéro d'entreprise ע.מ/ח.פ, délais).
 
 ## Construire et prévisualiser en local (Windows)
 
@@ -58,7 +67,7 @@ powershell -ExecutionPolicy Bypass -File build.ps1 -SiteUrl http://localhost:876
 powershell -ExecutionPolicy Bypass -File scripts/serve.ps1
 ```
 
-Puis ouvrez http://localhost:8765. Aucun Node/Python requis.
+Puis ouvrez http://localhost:8765. Aucun Node/Python requis. `scripts/make-assets.ps1` régénère le logo et l'image de partage.
 
 ## Nom de domaine
 
@@ -66,29 +75,19 @@ Puis ouvrez http://localhost:8765. Aucun Node/Python requis.
 2. Chez le registraire, ajoutez l'enregistrement DNS indiqué par GitHub.
 3. Mettez la nouvelle adresse dans `baseUrl` de `data/site.json`.
 
-Tant que le site est sur `utilisateur.github.io/kir-site`, le `robots.txt` n'est pas à la racine du domaine : soumettez le sitemap directement dans Search Console.
-
 ## Structure
 
 ```
 build.ps1               générateur (PowerShell 5.1 / 7, ASCII uniquement)
-data/                   products.json, content.json (textes), taxonomy.json, site.json, images.json
-src/assets/             css/style.css, js/app.js, img/ (photos produits, logo, image de partage)
-scripts/                fetch-images.ps1, make-assets.ps1, serve.ps1
+data/                   products.json, content*.json, he-en.json, taxonomy.json, site.json
+src/assets/             css/style.css, js/app.js (panier, commandes, données live), img/
+scripts/                sync-sheet.ps1, process-images.ps1, ai-upscale.ps1, make-assets.ps1, serve.ps1
 docs/SEO-strategie.md   mots-clés, plan de contenu, actions de référencement
-.github/workflows/      déploiement automatique GitHub Pages
+.github/workflows/      deploy.yml (GitHub Pages), sync.yml (Sheet toutes les 10 min)
 ```
-
-## Synchronisation automatique avec le Google Sheet
-
-1. L'onglet **« לאתר »** du Sheet recopie automatiquement les colonnes publiques du catalogue (photo, réf., catégorie, description, dimensions, finition, prix de vente, « épuisé »). Aucun prix d'achat, aucune remarque interne. Ne pas le modifier à la main.
-2. Publiez **uniquement cet onglet** : Fichier → Partager → Publier sur le Web → « לאתר » + « Valeurs séparées par des virgules (.csv) » → dans « Contenu publié et paramètres », ne cochez que « לאתר » → Démarrer la publication.
-3. Collez l'adresse obtenue dans `sheetCsvUrl` de `data/site.json` (ou en variable de dépôt GitHub `SHEET_CSV_URL`).
-
-Ensuite, toutes les 3 heures (ou via *Actions → Sync catalogue → Run workflow*), GitHub lit l'onglet : nouveaux produits ajoutés, prix/dimensions/stock mis à jour, lignes supprimées retirées, puis le site est republié. Les nouveaux produits apparaissent avec leur photo du Sheet et une traduction française automatique (marquée `frAuto` pour relecture).
 
 ## Photos HD (sur le PC)
 
 - `scripts/process-images.ps1` : repère les cadres rouges des photos sources, recadre le produit redressé en pleine résolution, corrige la lumière et génère : la photo réelle (`tex/`), le rendu « plaque entière + loupe » (`pack/`) et la vignette (`thumb/`).
-- `scripts/ai-upscale.ps1` : rend nettes les photos trop petites avec l'IA Real-ESRGAN (lent sur carte graphique intégrée, reprend où il s'est arrêté). Relancer ensuite `process-images.ps1` puis `build.ps1`.
+- `scripts/ai-upscale.ps1` : rend nettes les photos trop petites avec l'IA Real-ESRGAN. Relancer ensuite `process-images.ps1` puis `build.ps1`.
 - Les photos sources et l'outil IA sont dans `../tools-ext/` (non publiés).

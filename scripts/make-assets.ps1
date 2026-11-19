@@ -42,13 +42,17 @@ $ov = New-Object Drawing.Drawing2D.LinearGradientBrush((New-Object Drawing.Point
 $g.FillRectangle($ov, 0, 0, $W, $H)
 $xs = @(80, 104, 128, 152); $k = 0
 foreach ($x in $xs) { $y = if ($k % 2) { 392 } else { 380 }; RoundRect $g (Brass $x 16) $x $y 16 92 8; $k++ }
-$fontBig = New-Object Drawing.Font('Georgia', 84, [Drawing.FontStyle]::Bold)
-$fontSm = New-Object Drawing.Font('Segoe UI', 26, [Drawing.FontStyle]::Regular)
+$fontBig = New-Object Drawing.Font('Segoe UI', 80, [Drawing.FontStyle]::Bold)
+$fontMid = New-Object Drawing.Font('Georgia', 32, [Drawing.FontStyle]::Bold)
+$fontSm = New-Object Drawing.Font('Segoe UI', 24, [Drawing.FontStyle]::Regular)
 $cream = New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(241, 234, 223))
 $gold = New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(217, 185, 143))
-$g.DrawString([string]$site.brand, $fontBig, $cream, 186, 360)
-$g.DrawString('WALL STUDIO', $fontSm, $gold, 192, 470)
-$g.DrawString(('Wall panels  ' + [char]0xB7 + '  Rev' + [char]0xEA + 'tements muraux'), $fontSm, $cream, 80, 540)
+$rtl = New-Object Drawing.StringFormat([Drawing.StringFormatFlags]::DirectionRightToLeft)
+$heName = [string]$site.brandHe
+$sz = $g.MeasureString($heName, $fontBig, 2000, $rtl)
+$g.DrawString($heName, $fontBig, $cream, (New-Object Drawing.RectangleF(186, 334, ($sz.Width + 6), ($sz.Height + 6))), $rtl)
+$g.DrawString((([string]$site.brand).ToUpper() + '   ' + [char]0xB7 + '   WALL CLADDING'), $fontMid, $gold, 192, 462)
+$g.DrawString(('Wall panels  ' + [char]0xB7 + '  Rev' + [char]0xEA + 'tements muraux  ' + [char]0xB7 + '  Netanya  ' + [char]0xB7 + '  ' + [string]$site.phoneDisplay), $fontSm, $cream, 80, 550)
 $g.Dispose()
 $enc = [Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.MimeType -eq 'image/jpeg' }
 $ep = New-Object Drawing.Imaging.EncoderParameters 1

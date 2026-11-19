@@ -51,7 +51,7 @@ function NormSize([string]$s) {
 }
 function NormFinish([string]$s) { $s = $s.Trim(); if ($s -eq $MATTE) { 'm' } elseif ($s -eq $GLOSS) { 'g' } else { '' } }
 function NormPrice([string]$s) { $s = ($s -replace '[^0-9.]', ''); if (-not $s) { return $null }; $v = [double]::Parse($s, $Inv); if ($v -le 0) { return $null }; if ($v -eq [Math]::Floor($v)) { [int]$v } else { $v } }
-function CatOf([string]$cat, [string]$desc) {
+function StockOos($sig) { if ($sig.stock -eq 'FALSE') { return $true }; if ($sig.stock -eq 'TRUE') { return $false }; return ($sig.notes -match $OOS) }
   $c = [string](P $tax.sheetCats $cat.Trim()); if (-not $c) { $c = 'panel' }
   if ($c -eq 'panel' -and $desc -match $FLEX) { $c = 'flex' }
   elseif ($c -eq 'panel' -and $desc -match $DECO) { $c = 'deco' }
@@ -69,11 +69,11 @@ $out = New-Object System.Collections.ArrayList; $srcmap = New-Object System.Coll
 $newSnap = [ordered]@{}; $added = 0; $updated = 0
 foreach ($r in $rows) {
   $id = $r.img.Trim()
-  $sig = [ordered]@{ sku = [string]$r.sku; cat = [string]$r.cat; desc = [string]$r.desc; size = [string]$r.size; finish = [string]$r.finish; price = [string]$r.price; notes = [string]$r.notes }
+  $sig = [ordered]@{ sku = [string]$r.sku; cat = [string]$r.cat; desc = [string]$r.desc; size = [string]$r.size; finish = [string]$r.finish; price = [string]$r.price; notes = [string]$r.notes; stock = [string]$r.stock; hide = [string]$r.hide }
   $newSnap[$id] = $sig
   $old = $byImg[$id]
   if ($old) {
-    $o = [ordered]@{ sku = $old.sku; c = $old.c; he = $old.he; fr = $old.fr; s = $old.s; f = $old.f; p = $old.p; oos = [bool]$old.oos; img = $id }
+    $o = [ordered]@{ sku = $old.sku; c = $old.c; he = $old.he; fr = $old.fr; s = $old.s; f = $old.f; p = $old.p; oos = [bool]$old.oos; img = $id; hide = [bool](P $old 'hide') }
     if (P $old 'frAuto') { $o.frAuto = $true }
     $prev = if ($first) { $null } else { P $snap $id }
     $changed = $false
@@ -82,14 +82,15 @@ foreach ($r in $rows) {
     if (FieldChanged 'size') { $v = NormSize $sig.size; if ($v -ne $o.s) { $o.s = $v; $changed = $true } }
     if (FieldChanged 'finish') { $v = NormFinish $sig.finish; if ($v -ne $o.f) { $o.f = $v; $changed = $true } }
     if (FieldChanged 'price') { $v = NormPrice $sig.price; if ([string]$v -ne [string]$o.p) { $o.p = $v; $changed = $true } }
-    if (FieldChanged 'notes') { $v = ($sig.notes -match $OOS); if ($v -ne $o.oos) { $o.oos = $v; $changed = $true } }
+    if ((FieldChanged 'notes') -or (FieldChanged 'stock')) { $v = StockOos $sig; if ($v -ne $o.oos) { $o.oos = $v; $changed = $true } }
+    if (FieldChanged 'hide') { $v = ($sig.hide -eq 'TRUE'); if ($v -ne $o.hide) { $o.hide = $v; $changed = $true } }
     if (FieldChanged 'cat') { $v = CatOf $sig.cat $sig.desc; if ($v -ne $o.c) { $o.c = $v; $changed = $true } }
     if (FieldChanged 'desc') { if ($sig.desc.Trim() -ne $o.he) { $o.he = $sig.desc.Trim(); $o.fr = Translate $o.he; $o.frAuto = $true; $changed = $true } }
     if ($changed) { $updated++ }
     [void]$out.Add($o)
   } else {
     $he = $sig.desc.Trim()
-    [void]$out.Add([ordered]@{ sku = (NormSku $sig.sku); c = (CatOf $sig.cat $he); he = $he; fr = (Translate $he); s = (NormSize $sig.size); f = (NormFinish $sig.finish); p = (NormPrice $sig.price); oos = ($sig.notes -match $OOS); img = $id; frAuto = $true })
+    [void]$out.Add([ordered]@{ sku = (NormSku $sig.sku); c = (CatOf $sig.cat $he); he = $he; fr = (Translate $he); s = (NormSize $sig.size); f = (NormFinish $sig.finish); p = (NormPrice $sig.price); oos = (StockOos $sig); img = $id; frAuto = $true; hide = ($sig.hide -eq 'TRUE') })
     $added++
   }
   [void]$srcmap.Add([string]$r.src)
@@ -101,6 +102,7 @@ $lines = foreach ($o in $out) {
   $pv = if ($null -eq $o.p) { 'null' } else { ([double]$o.p).ToString('0.##', $Inv) }
   $l = '{"sku":' + (J $o.sku) + ',"c":' + (J $o.c) + ',"he":' + (J $o.he) + ',"fr":' + (J $o.fr) + ',"s":' + (J $o.s) + ',"f":' + (J $o.f) + ',"p":' + $pv + ',"oos":' + ([string]$o.oos).ToLower() + ',"img":' + (J $o.img)
   if ($o.Contains('frAuto') -and $o.frAuto) { $l += ',"frAuto":true' }
+  if ($o.Contains('hide') -and $o.hide) { $l += ',"hide":true' }
   $l + '}'
 }
 $newText = "[`n" + ($lines -join ",`n") + "`n]`n"

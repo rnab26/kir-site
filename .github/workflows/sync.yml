@@ -2,7 +2,7 @@ name: Sync catalogue from Google Sheet
 
 on:
   schedule:
-    - cron: '17 */3 * * *'   # every 3 hours
+    - cron: '*/10 * * * *'   # every 10 minutes (live data also read directly by the site)
   workflow_dispatch:
 
 permissions:
