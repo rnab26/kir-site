@@ -52,7 +52,8 @@
     "edTry": "לנסות עם תמונה שלי", "edRoomsBtn": "חדרים", "edStudio": "סטודיו", "edRoomN": "חדר {n}", "edUpload": "התמונה שלי",
     "edPrivacy": "התמונה מנותחת במכשיר שלכם ולא נשלחת לשום מקום.", "edLoadAI": "מכינים את הניתוח… {p}%", "edAnalyze": "מאתרים את הקירות…",
     "edNoWall": "לא נמצאו קירות. נסו תמונה מרחוק יותר, עם הקירות גלויים.", "edFail": "הניתוח לא הצליח לרוץ במכשיר הזה.",
-    "edFix": "כיוון הפינות", "edFixHint": "גררו את 4 הנקודות לפינות הקיר", "edDone": "סיום", "edHeight": "גובה הקירות", "edDims": "{w} × {h} מ׳"
+    "edFix": "כיוון הפינות", "edFixHint": "גררו את 4 הנקודות לפינות הקיר", "edDone": "סיום", "edHeight": "גובה הקירות", "edDims": "{w} × {h} מ׳",
+    "edFloor": "רצפה", "edFloorPick": "{w}: בחרו פרקט", "edFloorDims": "≈ {w} × {d} מ׳ (האזור הנראה)", "edFloorNone": "הרצפה המקורית", "edFloorUnit": "מ״ר", "edDemo": "דמו"
   },
   "fr": {
     "path": "experience/",
@@ -107,7 +108,8 @@
     "edTry": "Essayer avec ma photo", "edRoomsBtn": "Pièces", "edStudio": "Studio", "edRoomN": "Pièce {n}", "edUpload": "Ma photo",
     "edPrivacy": "Votre photo est analysée sur votre appareil, elle n’est envoyée nulle part.", "edLoadAI": "Préparation de l’analyse… {p} %", "edAnalyze": "Recherche des murs…",
     "edNoWall": "Aucun mur trouvé. Essayez une photo prise de plus loin, avec les murs bien visibles.", "edFail": "L’analyse n’a pas pu tourner sur cet appareil.",
-    "edFix": "Ajuster les coins", "edFixHint": "Glissez les 4 points sur les angles du mur", "edDone": "Terminé", "edHeight": "Hauteur des murs", "edDims": "{w} × {h} m"
+    "edFix": "Ajuster les coins", "edFixHint": "Glissez les 4 points sur les angles du mur", "edDone": "Terminé", "edHeight": "Hauteur des murs", "edDims": "{w} × {h} m",
+    "edFloor": "Sol", "edFloorPick": "{w} : choisissez un parquet", "edFloorDims": "≈ {w} × {d} m (zone visible)", "edFloorNone": "Sol d’origine", "edFloorUnit": "m²", "edDemo": "Démo"
   },
   "en": {
     "path": "experience/",
@@ -162,6 +164,7 @@
     "edTry": "Try it with my photo", "edRoomsBtn": "Rooms", "edStudio": "Studio", "edRoomN": "Room {n}", "edUpload": "My photo",
     "edPrivacy": "Your photo is analysed on your device and never uploaded.", "edLoadAI": "Getting the analysis ready… {p}%", "edAnalyze": "Finding the walls…",
     "edNoWall": "No wall found. Try a photo taken from further back, with the walls in view.", "edFail": "The analysis could not run on this device.",
-    "edFix": "Adjust corners", "edFixHint": "Drag the 4 points onto the wall corners", "edDone": "Done", "edHeight": "Wall height", "edDims": "{w} × {h} m"
+    "edFix": "Adjust corners", "edFixHint": "Drag the 4 points onto the wall corners", "edDone": "Done", "edHeight": "Wall height", "edDims": "{w} × {h} m",
+    "edFloor": "Floor", "edFloorPick": "{w}: pick a floor", "edFloorDims": "≈ {w} × {d} m (visible area)", "edFloorNone": "Original floor", "edFloorUnit": "m²", "edDemo": "Demo"
   }
 }

@@ -348,8 +348,165 @@ export async function analyze(source, onProgress = () => {}, opt = {}) {
     const useObj = n > 0 && o / n < 0.12;
     for (let i = 0; i < MW * MH; i++) mask[i * 4 + k] = Math.round(sm(0.3, 0.62, q[i]) * (useObj ? sm(0.65, 0.35, objS[i]) : 1) * 255);   // steep but anti-aliased edge
   });
-  T.mask = performance.now() - tt;
-  return { W: W0, H: H0, MW, MH, mask, AW, AH, light, ref: [mr / 0.85, mg / 0.85, mb / 0.85], walls: out2, f, fpx: fp, yh, rho, debug: { cls, pwall, disp, lab, planes, floorP, ceilP, AW, AH, sse: B.sse, cuts: B.cuts } };
+  T.mask = performance.now() - tt; tt = performance.now();
+  // opt.room = {fpx, walls: [{q, w}]} (a prepared room.json): the floor follows that stored geometry instead of this run's walls
+  let fFp = fp, fWalls = out2, fYh = yh;
+  if (opt.room) {
+    fFp = opt.room.fpx; fWalls = opt.room.walls.map((w) => ({ q: w.q, w: w.w, floorFrom: 'room' }));
+    const ys = []; for (const w of opt.room.walls) { const v = meet(lineThrough(w.q[0], w.q[1]), lineThrough(w.q[3], w.q[2])); if (v && isFinite(v[1]) && Math.abs(v[0] - W0 / 2) < W0 * 8) ys.push(v[1]); }
+    ys.sort((a, b) => a - b); if (ys.length) fYh = ys[(ys.length / 2) | 0] / W0;
+  }
+  const fl = opt.floor === false ? null : floorOf({ cls, N, AW, AH, W0, H0, MW, MH, fp: fFp, cxp, cyp, yh: fYh, rho, HM, walls: fWalls, sd, g, lum, lin, LUT, sm });
+  T.floor = performance.now() - tt;
+  return { W: W0, H: H0, MW, MH, mask, AW, AH, light, ref: [mr / 0.85, mg / 0.85, mb / 0.85], walls: out2, f, fpx: fp, yh, rho,
+    floor: fl && fl.floor, floorMask: fl && fl.mask, floorLight: fl && fl.light, floorRef: fl && fl.ref,
+    debug: { cls, pwall, disp, lab, planes, floorP, ceilP, AW, AH, sse: B.sse, cuts: B.cuts } };
+}
+
+// ---------------------------------------------------------------- floor: a homography photo px -> metres on the floor, a soft mask, a light map
+// Camera: focal fp, principal point at the centre, no roll, horizon y = yh. The floor normal is then K^T l (l = horizon line),
+// so every floor pixel has a position on the floor plane (camera height 1, rescaled with the measured wall widths).
+// The first floor direction follows the main wall's floor line, so planks run square to the room.
+// A rug stays in front of the new floor (only ADE20K "floor" is replaced).
+function floorOf(c) {
+  const { cls, N, AW, AH, W0, MW, MH, fp, cxp, cyp, yh, rho, HM, walls, sd, g, lum, lin, LUT, sm } = c;
+  // floor pixels; small islands of "floor" inside a rug are segmentation slips (shaggy rugs), they stay rug
+  const fF = new Uint8Array(N); for (let i = 0; i < N; i++) fF[i] = cls[i] === C_FLOOR ? 1 : 0;
+  {
+    const seen = new Int32Array(N).fill(-1), stack = [];
+    for (let s0 = 0; s0 < N; s0++) {
+      if (!fF[s0] || seen[s0] >= 0) continue;
+      const comp = []; let rug = 0, edge = 0; stack.push(s0); seen[s0] = s0;
+      while (stack.length) {
+        const i = stack.pop(), x = i % AW, y = (i / AW) | 0; comp.push(i);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const X = x + dx, Y = y + dy; if (X < 0 || Y < 0 || X >= AW || Y >= AH) continue;
+          const j = Y * AW + X;
+          if (fF[j]) { if (seen[j] < 0) { seen[j] = s0; stack.push(j); } } else { edge++; if (cls[j] === C_RUG) rug++; }
+        }
+      }
+      if (comp.length < N * 0.03 && edge && rug / edge > 0.5) for (const i of comp) fF[i] = 0;
+    }
+    // along a rug, a "floor" pixel whose colour is closer to the rug than to the floor joins the rug (grown a few steps)
+    const mean = (pick) => { const m = [0, 0, 0]; let n = 0; for (let i = 0; i < N; i++) if (pick(i)) { for (let k = 0; k < 3; k++) m[k] += sd[i * 4 + k]; n++; } return n > 30 ? m.map((v) => v / n) : null; };
+    const mF = mean((i) => fF[i] === 1), mR = mean((i) => cls[i] === C_RUG);
+    if (mF && mR) {
+      const isR = new Uint8Array(N); for (let i = 0; i < N; i++) isR[i] = cls[i] === C_RUG ? 1 : 0;
+      const d2 = (i, m) => (sd[i * 4] - m[0]) ** 2 + (sd[i * 4 + 1] - m[1]) ** 2 + (sd[i * 4 + 2] - m[2]) ** 2;
+      const d2s = (a, b) => (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
+      for (let step = 0; step < 6; step++) {
+        const add = [];
+        for (let i = 0; i < N; i++) {
+          if (!fF[i]) continue;
+          const x = i % AW, y = (i / AW) | 0;
+          if (!((x > 0 && isR[i - 1]) || (x < AW - 1 && isR[i + 1]) || (y > 0 && isR[i - AW]) || (y < AH - 1 && isR[i + AW]))) continue;
+          if (d2(i, mR) * 1.5 < d2(i, mF)) add.push(i);
+        }
+        if (!add.length) break;
+        for (const i of add) { fF[i] = 0; isR[i] = 1; }
+      }
+      // and anywhere, a "floor" pixel clearly closer to the rug colour (rug parts the segmentation missed)
+      const far = d2s(mR, mF);
+      if (far > 900) for (let i = 0; i < N; i++) if (fF[i] && d2(i, mR) * 3 < d2(i, mF)) fF[i] = 0;
+    }
+  }
+  const isF = (i) => fF[i] === 1;
+  let nF = 0; for (let i = 0; i < N; i++) if (isF(i)) nF++;
+  if (nF < N * 0.02) return null;
+  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+  const norm = (a) => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; };
+  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+  const yhp = yh * W0, n = norm([0, fp, cyp - yhp]);   // camera axes: x right, y down, z forward; n points down to the floor
+  const ray = (px, py) => [(px - cxp) / fp, (py - cyp) / fp, 1];
+  const onFloor = (px, py) => { const r = ray(px, py), k = dot(n, r); return k > 1e-4 ? [r[0] / k, r[1] / k, r[2] / k] : null; };   // n.X = 1
+  // main wall: the one with a measured floor line closest to the middle of the photo
+  let main = null, bd = Infinity;
+  for (const w of walls) { if (w.floorFrom === 'guess') continue; const d = Math.abs((w.q[0][0] + w.q[1][0]) / 2 / W0 - 0.5); if (d < bd) { bd = d; main = w; } }
+  let e1 = null;
+  if (main) { const A = onFloor(...main.q[0]), B = onFloor(...main.q[1]); if (A && B) e1 = [B[0] - A[0], B[1] - A[1], B[2] - A[2]]; }
+  if (!e1) e1 = [1, 0, 0];
+  e1 = norm([e1[0] - n[0] * dot(n, e1), e1[1] - n[1] * dot(n, e1), e1[2] - n[2] * dot(n, e1)]);
+  if (e1[0] < 0) e1 = e1.map((v) => -v);
+  let e2 = norm(cross(n, e1)); if (e2[2] < 0) e2 = e2.map((v) => -v);   // away from the camera
+  const O = n;   // the floor point under the camera
+  const uvOf = (X) => { const d = [X[0] - O[0], X[1] - O[1], X[2] - O[2]]; return [dot(d, e1), dot(d, e2)]; };
+  // scale: the floor line of every measured wall must be as long as the wall is wide
+  const ks = [];
+  for (const w of walls) {
+    if (w.floorFrom === 'guess') continue;
+    const A = onFloor(...w.q[0]), B = onFloor(...w.q[1]); if (!A || !B) continue;
+    const a = uvOf(A), b = uvOf(B), D = Math.hypot(a[0] - b[0], a[1] - b[1]);
+    if (D > 1e-6) ks.push(w.w / D);
+  }
+  ks.sort((a, b) => a - b);
+  const s = ks.length ? ks[(ks.length / 2) | 0] : rho * HM;   // metres per unit = camera height in metres
+  // extent of the visible floor (robust percentiles), in metres
+  const us = [], vs = [];
+  for (let i = 0; i < N; i++) {
+    if (!isF(i)) continue;
+    const X = onFloor((i % AW + 0.5) / AW * W0, (Math.floor(i / AW) + 0.5) / AW * W0); if (!X) continue;
+    const uv = uvOf(X); us.push(uv[0] * s); vs.push(uv[1] * s);
+  }
+  if (us.length < 50) return null;
+  us.sort((a, b) => a - b); vs.sort((a, b) => a - b);
+  const pc = (a, p) => a[clamp(Math.round(p * (a.length - 1)), 0, a.length - 1)];
+  const u0 = pc(us, 0.01), u1 = pc(us, 0.99), v1 = Math.min(pc(vs, 0.99), 25);
+  let v0 = pc(vs, 0.01);
+  const zAt = (U, V) => n[2] + (U * e1[2] + V * e2[2]) / s;   // camera depth of a floor point: the quad corners stay in front
+  if (e2[2] > 1e-6) for (const U of [u0, u1]) v0 = Math.max(v0, (0.05 - n[2] - U * e1[2] / s) * s / e2[2]);
+  if (!(v1 > v0 + 0.3) || !(u1 > u0 + 0.3) || zAt(u0, v1) <= 0 || zAt(u1, v1) <= 0) return null;
+  const K = (v) => [fp * v[0] + cxp * v[2], fp * v[1] + cyp * v[2], v[2]];
+  const toPx = (U, V) => { const P = K([O[0] + (U * e1[0] + V * e2[0]) / s, O[1] + (U * e1[1] + V * e2[1]) / s, O[2] + (U * e1[2] + V * e2[2]) / s]); return [P[0] / P[2], P[1] / P[2]]; };
+  const q = [toPx(u0, v0), toPx(u1, v0), toPx(u1, v1), toPx(u0, v1)];
+  if (q.some((p) => !isFinite(p[0]) || !isFinite(p[1]))) return null;
+  // light: normalised convolution of the floor colour (the old floor's pattern vanishes), times a finer layer for soft shadows
+  // (under a sofa, around legs) and reflections, as a ratio clamped so that the old pattern does not come back
+  const blur3 = (src, r) => { let o = src; for (let k = 0; k < 3; k++) o = boxBlur(o, AW, AH, r); return o; };
+  const fw = new Float32Array(N), ch = [new Float32Array(N), new Float32Array(N), new Float32Array(N)];
+  let mr = 0, mg = 0, mb = 0;
+  for (let i = 0; i < N; i++) if (isF(i)) { fw[i] = 1; for (let k = 0; k < 3; k++) ch[k][i] = lin(sd[i * 4 + k]); mr += ch[0][i]; mg += ch[1][i]; mb += ch[2][i]; }
+  mr /= nF; mg /= nF; mb /= nF;
+  const R = Math.max(3, Math.round(AW * 0.05)), r = Math.max(3, Math.round(AW * 0.035));
+  const bW = blur3(fw, R), bC = ch.map((x) => blur3(x, R)), sW = blur3(fw, r), sC = ch.map((x) => blur3(x, r));
+  const FL = [new Float32Array(N), new Float32Array(N), new Float32Array(N)], light = new Uint8Array(N * 4);
+  const enc = (v) => clamp(Math.round(Math.pow(Math.max(0, v), 1 / 2.2) * 255), 0, 255);
+  for (let i = 0; i < N; i++) {
+    const big = bW[i] > 0.02 ? [bC[0][i] / bW[i], bC[1][i] / bW[i], bC[2][i] / bW[i]] : [mr, mg, mb];
+    const fine = sW[i] > 0.08 ? [sC[0][i] / sW[i], sC[1][i] / sW[i], sC[2][i] / sW[i]] : big;
+    const lb = 0.2126 * big[0] + 0.7152 * big[1] + 0.0722 * big[2] + 1e-4, lf = 0.2126 * fine[0] + 0.7152 * fine[1] + 0.0722 * fine[2] + 1e-4;
+    const k = clamp(lf / lb, 0.65, 1.3);
+    for (let j = 0; j < 3; j++) { FL[j][i] = big[j] * k; light[i * 4 + j] = enc(FL[j][i]); }
+    light[i * 4 + 3] = 255;
+  }
+  // mask at full resolution: the coarse floor class refined on the photo edges; below the horizon only; on a plain floor,
+  // a pixel must also look like the floor light (thin chair and table legs stay in front)
+  const p = new Float32Array(MW * MH), obj = new Float32Array(MW * MH);
+  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+    const i = y * MW + x, gx = Math.min(AW - 1, (x / MW * AW) | 0), gy = Math.min(AH - 1, (y / MH * AH) | 0);
+    p[i] = isF(gy * AW + gx) ? 1 : 0;
+    const fx = clamp((x + 0.5) / MW * AW - 0.5, 0, AW - 1), fy = clamp((y + 0.5) / MH * AH - 0.5, 0, AH - 1), x0 = fx | 0, y0 = fy | 0, x1 = Math.min(AW - 1, x0 + 1), y1 = Math.min(AH - 1, y0 + 1), tx = fx - x0, ty = fy - y0;
+    const at = (k) => (FL[k][y0 * AW + x0] * (1 - tx) + FL[k][y0 * AW + x1] * tx) * (1 - ty) + (FL[k][y1 * AW + x0] * (1 - tx) + FL[k][y1 * AW + x1] * tx) * ty;
+    const rr = LUT[g[i * 4]], gg = LUT[g[i * 4 + 1]], bb = LUT[g[i * 4 + 2]], er = at(0), eg = at(1), eb = at(2);
+    const lp = 0.2126 * rr + 0.7152 * gg + 0.0722 * bb + 0.004, le = 0.2126 * er + 0.7152 * eg + 0.0722 * eb + 0.004;
+    const ratio = lp / le, chroma = Math.abs(rr / lp - er / le) + Math.abs(gg / lp - eg / le) + Math.abs(bb / lp - eb / le);
+    obj[i] = Math.max(sm(0.45, 0.25, ratio), sm(2.2, 2.9, ratio), sm(0.16, 0.34, chroma));
+  }
+  const qf = guided(lum, boxBlur(p, MW, MH, 1), MW, MH, Math.max(4, Math.round(MW / 128)), 2e-3), objS = boxBlur(obj, MW, MH, 1);
+  // deep inside the floor the mask is solid: dark marks of the old floor must not dip it (the guided filter only shapes the edges)
+  const pB = boxBlur(p, MW, MH, Math.max(3, Math.round(MW / 90)));
+  for (let i = 0; i < MW * MH; i++) { const deep = sm(0.9, 0.995, pB[i]); qf[i] = Math.max(qf[i], 1.2 * deep); objS[i] *= 1 - deep; }
+  let cnt = 0, o = 0; for (let i = 0; i < MW * MH; i += 7) if (p[i] > 0.5) { cnt++; if (obj[i] > 0.5) o++; }
+  const useObj = cnt > 0 && o / cnt < 0.12, yLim = yhp * MW / W0;
+  const mask = new Uint8Array(MW * MH * 4);
+  for (let y = 0; y < MH; y++) {
+    const hz = clamp((y - yLim) / (MH * 0.01), 0, 1);
+    for (let x = 0; x < MW; x++) {
+      const i = y * MW + x, v = clamp(Math.round((qf[i] - 0.06) / 0.5 * (useObj ? 1 - objS[i] : 1) * hz * 255), 0, 255);
+      mask[i * 4] = mask[i * 4 + 1] = mask[i * 4 + 2] = v; mask[i * 4 + 3] = 255;
+    }
+  }
+  const r2 = (v) => Math.round(v * 100) / 100;
+  return { floor: { q: q.map((pt) => [Math.round(pt[0] * 10) / 10, Math.round(pt[1] * 10) / 10]), w: r2(u1 - u0), d: r2(v1 - v0), from: ks.length ? 'walls' : 'guess' }, mask, light, ref: [mr / 0.85, mg / 0.85, mb / 0.85] };
 }
 
 export function homography(q) {   // unit square -> quad, row-major 3x3

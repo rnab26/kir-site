@@ -59,6 +59,23 @@ dans le même détecteur, copier les fichiers dans `rooms/<id>/` et ajouter l'id
 choisir le modèle : `experience/?ref=108`. Le visiteur peut essayer sa propre photo : bouton « Essayer avec ma photo »
 (accueil, barre du studio, fin de page) ou lien `experience/#photo`.
 
+**Mode démo (fonctions cachées du site public)** : ouvrir une page du studio avec `?demo=1` (ex. `experience/?demo=1#walls`)
+active le mode démo **sur cet appareil** (mémorisé dans le navigateur, `localStorage['hipui-demo']`) ; `?demo=0` le retire. Une
+pastille « Démo » s'affiche alors dans l'éditeur. `data/experience.json` > `features` dit ce que le site public montre
+(`"floor": false` = caché) ; le mode démo montre tout. Pour cacher une nouvelle fonction : l'ajouter dans `features`, puis dans le
+code tester `feat('nom')` (JS) ou mettre `data-feature="nom"` sur un élément HTML (masqué si la fonction est cachée).
+
+**Sol (démo)** : dans « Mur par mur », une pastille et une puce « Sol / רצפה / Floor » de plus ; on choisit un parquet, posé en
+perspective (lattes à l'échelle, rangées décalées, teinte variable par latte, joints) avec la lumière et les ombres du sol de la photo
+(un tapis reste devant). Le détecteur renvoie aussi le sol (`floor: {q, w, d}` + masque + lumière) pour « Ma photo » ; les pièces
+préparées ont `floor-mask.png`, `floor-light.png` et une clé `floor` dans `room.json` (pièces sans ces fichiers : pas de sol).
+Les parquets de démonstration sont dans `data/experience.json` > `floors` (textures procédurales `src/assets/exp/floor/*.jpg`).
+Format d'un sol, prêt pour de vrais produits du Sheet : `id`, `n` (nom he/fr/en), `r` (référence), `c` (couleur de la pastille),
+`pw` / `pl` (largeur / longueur de latte en cm), `stag` (décalage des rangées : 0.5 quinconce, 0.33 au tiers, -1 au hasard),
+`tex` (image, fil du bois dans la hauteur, fichier de `exp/floor/` ou URL complète), `tw` / `th` (cm couverts par l'image),
+`p` (prix au m², ou null = sur demande), `dir` (facultatif, 1 = lattes parallèles au mur du fond au lieu de fuir vers le fond).
+La surface du sol est estimée (zone visible), à confirmer sur place.
+
 Sur toutes les pages : sélecteur de langue עב / EN / FR dans l'en-tête (et suggestion automatique selon la langue du navigateur),
 bouton WhatsApp flottant (message pré-rempli avec le produit consulté), menu d'accessibilité, « vus récemment ».
 

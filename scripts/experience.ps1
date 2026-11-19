@@ -70,7 +70,11 @@ function ExperiencePage($L) {
   foreach ($q in $ExpQuick) { $quick += [ordered]@{ id = $q[0]; c = $q[1]; n = [string](P $x $q[2]) }; $alb[$q[0]] = $(if ($q[3]) { $q[3] } else { $null }) }
   $cats = @(); foreach ($c in $ExpCats) { if (@($items | Where-Object { $_.c -eq $c }).Count) { $cats += [ordered]@{ c = $c; n = [string](P (CatOf $L $c) 'name') } } }
   $rooms = $ExpRooms
-  $cfg = [ordered]@{ rooms = $rooms; storyRoom = $ExpRoom; start = $ExpStart.img; detect = (AssetUrl ('js/experience-detect.js?v=' + $Ver)); lang = $L.lang; rtl = ($L.dir -eq 'rtl'); assets = (AssetUrl 'exp/'); img = (AssetUrl 'img/'); wa = $Wa; story = $ExpStory; quick = $quick; alb = $alb; plain = $ExpPlain; cats = $cats; items = $items; t = $t }
+  # features shown on the public site (data/experience.json > features); the others only in demo mode (?demo=1).
+  # Demo floors: same shape as a future Sheet floor product (plank width/length in cm, texture covering tw x th cm)
+  $feat = [ordered]@{}; if ($ExpCfg.features) { foreach ($pp in $ExpCfg.features.PSObject.Properties) { $feat[$pp.Name] = [bool]$pp.Value } }
+  $floors = @(); foreach ($f in @($ExpCfg.floors)) { if ($f) { $floors += [ordered]@{ id = [string]$f.id; n = [string](P $f.n $L.lang); r = [string]$f.r; c = [string]$f.c; pw = [double]$f.pw; pl = [double]$f.pl; stag = [double]$f.stag; tex = [string]$f.tex; tw = [double]$f.tw; th = [double]$f.th; p = $f.p } } }
+  $cfg = [ordered]@{ rooms = $rooms; features = $feat; floors = $floors; storyRoom = $ExpRoom; start = $ExpStart.img; detect = (AssetUrl ('js/experience-detect.js?v=' + $Ver)); lang = $L.lang; rtl = ($L.dir -eq 'rtl'); assets = (AssetUrl 'exp/'); img = (AssetUrl 'img/'); wa = $Wa; story = $ExpStory; quick = $quick; alb = $alb; plain = $ExpPlain; cats = $cats; items = $items; t = $t }
   $html = $ExpTpl
   $vars = @{ roomPhoto = (AssetUrl ('exp/rooms/' + $ExpRoom + '/photo.jpg')); lang = $L.lang; dir = $L.dir; head = $head; assets = (AssetUrl 'exp/'); home = (Href $L ''); brand = (Enc (BrandOf $L)); waNum = $Wa; phone = (Enc ([string]$Site.phoneDisplay)); js = (AssetUrl ('js/experience.js?v=' + $Ver)); p035 = $(if ($story -and $null -ne $story.p) { [string]$story.p } else { '44' }); config = ((To-Json $cfg) -replace '</', '<\/') }
   foreach ($k in $vars.Keys) { $html = $html.Replace('{{' + $k + '}}', [string]$vars[$k]) }

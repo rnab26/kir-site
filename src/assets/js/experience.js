@@ -545,8 +545,23 @@ function makeRoom(o) {
   const mk = o.mk || maskSmall(o.mask.image), an = anchorsOf(mk, o.walls.length);
   o.walls.forEach((wl, i) => { wl.Hinv = homInv(wl.q); wl.item = wl.item || null; wl.anchor = an[i] ? [an[i][0] * o.W, an[i][1] * o.H] : null; if (wl.ord == null) wl.ord = i; });
   o.mk = mk;
+  if (o.floor) {   // the floor: one more target, its quad maps (s across the room, t away from the camera) to w x d metres
+    const fl = o.floor, fk = fl.mk || maskSmall(fl.mask.image), fa = anchorsOf(fk, 1)[0];
+    Object.assign(fl, { mk: fk, Hinv: homInv(fl.q), item: fl.item || null, name: T.edFloor, anchor: fa ? [fa[0] * o.W, fa[1] * o.H] : null });
+  }
   return o;
 }
+// demo mode: ?demo=1 keeps the showroom mode on this device (localStorage 'hipui-demo'), ?demo=0 leaves it.
+// data/experience.json > features lists what the public site shows; demo mode shows everything. HTML can use data-feature="name".
+const DEMO = (() => {
+  const d = new URLSearchParams(location.search).get('demo');
+  try { if (d === '1') localStorage.setItem('hipui-demo', '1'); else if (d === '0') localStorage.removeItem('hipui-demo'); return localStorage.getItem('hipui-demo') === '1'; } catch (e) { return d === '1'; }
+})();
+const feat = (k) => DEMO || !!(E.features && E.features[k]);
+for (const el of document.querySelectorAll('[data-feature]')) el.hidden = !feat(el.dataset.feature);
+if (DEMO) document.documentElement.classList.add('demo');
+const FLOORS = feat('floor') ? E.floors || [] : [], FBYID = {}; for (const f of FLOORS) FBYID[f.id] = f;
+const FL = 9;   // selection index of the floor (walls are 0..3)
 const wallNames = (n) => (n === 1 ? [T.wallBack] : n === 2 ? [T.wallLeft, T.wallRight] : n === 3 ? [T.wallLeft, T.wallBack, T.wallRight] : [...Array(n)].map((_, i) => fill(T.wallN, { n: i + 1 })));
 // real rooms prepared offline with the same detector (assets/exp/rooms/<id>/): photo.jpg, mask.png (walls in R, G, B), light.png, room.json
 async function preparedRoom(id) {
@@ -554,7 +569,15 @@ async function preparedRoom(id) {
   const [meta, photo, mask, clean] = await Promise.all([fetch(base + 'room.json').then((r) => r.json()), load(base + 'photo.jpg'), load(base + 'mask.png', false), load(base + 'light.png')]);
   for (const t of [photo, mask, clean]) { t.anisotropy = 1; t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; }
   const names = wallNames(meta.walls.length);
-  return makeRoom({ id, photo, mask, clean, ref: new THREE.Vector3(...meta.ref), W: meta.W, H: meta.H, fpx: meta.fpx, walls: meta.walls.map((w, i) => ({ name: names[i], w: w.w, h: w.h, q: w.q })) });
+  let floor = null;   // floor-mask.png (R) + floor-light.png + room.json > floor, only when the floor feature is on
+  if (meta.floor && feat('floor')) {
+    try {
+      const [fm, fc] = await Promise.all([load(base + 'floor-mask.png', false), load(base + 'floor-light.png')]);
+      for (const t of [fm, fc]) { t.anisotropy = 1; t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; }
+      floor = { q: meta.floor.q, w: meta.floor.w, d: meta.floor.d, mask: fm, clean: fc, ref: new THREE.Vector3(...meta.floor.ref) };
+    } catch (e) { floor = null; }
+  }
+  return makeRoom({ id, photo, mask, clean, ref: new THREE.Vector3(...meta.ref), W: meta.W, H: meta.H, fpx: meta.fpx, walls: meta.walls.map((w, i) => ({ name: names[i], w: w.w, h: w.h, q: w.q })), floor });
 }
 // a visitor's photo: analysed in the browser by experience-detect.js
 function flipRows(src, w, h) { const out = new Uint8Array(w * h * 4), row = w * 4; for (let y = 0; y < h; y++) out.set(src.subarray((h - 1 - y) * row, (h - y) * row), y * row); return out; }
@@ -570,7 +593,8 @@ function photoRoom(img, r) {
   return makeRoom({
     id: 'mine', photo, mask: dataTex(r.mask, r.MW, r.MH, false), clean: dataTex(r.light, r.AW, r.AH, true), ref: new THREE.Vector3(...r.ref), W: r.W, H: r.H, fpx: r.fpx,
     mk: maskSmall({ data: r.mask, width: r.MW, height: r.MH }), thumb: cv.toDataURL('image/jpeg', 0.6),
-    walls: r.walls.map((w, i) => ({ name: names[i], w: w.w, h: w.h, q: w.q }))
+    walls: r.walls.map((w, i) => ({ name: names[i], w: w.w, h: w.h, q: w.q })),
+    floor: r.floor && feat('floor') ? { q: r.floor.q, w: r.floor.w, d: r.floor.d, mask: dataTex(r.floorMask, r.MW, r.MH, false), clean: dataTex(r.floorLight, r.AW, r.AH, true), ref: new THREE.Vector3(...r.floorRef), mk: maskSmall({ data: r.floorMask, width: r.MW, height: r.MH }) } : null
   });
 }
 
@@ -583,16 +607,45 @@ const EditShader = {
     uWin: { value: new THREE.Vector4(0, 0, 1, 1) }, uRef: { value: new THREE.Vector3(1, 1, 1) }, uImg: { value: new THREE.Vector2(1, 1) }, uPx: { value: new THREE.Vector2(0.001, 0.001) },
     uH: { value: [0, 1, 2, 3].map(() => new THREE.Matrix3()) }, uSz: { value: [0, 1, 2, 3].map(() => new THREE.Vector2(1, 1)) }, uPc: { value: [0, 1, 2, 3].map(() => new THREE.Vector4(0.2, 2.9, 1, 0)) },
     uHas: { value: new THREE.Vector4() }, uSel: { value: new THREE.Vector4() }, uN: { value: 3 }, uTime: { value: 0 }, uScan: { value: -1 }, uFocus: { value: 0 },
-    uGold: { value: new THREE.Vector3(gold.r, gold.g, gold.b) }
+    uGold: { value: new THREE.Vector3(gold.r, gold.g, gold.b) },
+    // floor: mask (R), its own light, homography photo px -> (s, t), size in metres, plank texture, planks (width, length, stagger, direction)
+    uFOn: { value: 0 }, uFHas: { value: 0 }, uFSel: { value: 0 }, uFM: { value: blank }, uFL: { value: blank }, uFT: { value: blank },
+    uFH: { value: new THREE.Matrix3() }, uFSz: { value: new THREE.Vector2(1, 1) }, uFRef: { value: new THREE.Vector3(1, 1, 1) },
+    uFP: { value: new THREE.Vector4(0.19, 1.5, -1, 0) }, uFTs: { value: new THREE.Vector2(0.6, 2.4) }
   },
   vertexShader: VS,
   fragmentShader: `
-    uniform sampler2D uPhoto, uMask, uClean, uF0, uF1, uF2, uF3;
-    uniform vec4 uWin, uHas, uSel; uniform vec3 uRef, uGold; uniform vec2 uImg, uPx;
-    uniform mat3 uH[4]; uniform vec2 uSz[4]; uniform vec4 uPc[4];
-    uniform float uN, uTime, uScan, uFocus;
+    uniform sampler2D uPhoto, uMask, uClean, uF0, uF1, uF2, uF3, uFM, uFL, uFT;
+    uniform vec4 uWin, uHas, uSel, uFP; uniform vec3 uRef, uGold, uFRef; uniform vec2 uImg, uPx, uFSz, uFTs;
+    uniform mat3 uH[4], uFH; uniform vec2 uSz[4]; uniform vec4 uPc[4];
+    uniform float uN, uTime, uScan, uFocus, uFOn, uFHas, uFSel;
     varying vec2 vUv;
     float hash(float n){ return fract(sin(n * 12.9898 + 4.1) * 43758.5453); }
+    float fmAt(vec2 p){ return texture2D(uFM, p).r * uFOn; }
+    // planks in perspective: rows across, staggered ends, one random window of the wood texture and one tint per plank, joints
+    vec3 planks(vec2 P){
+      vec3 q = uFH * vec3(P, 1.0); vec2 uv = q.xy / q.z * uFSz;
+      vec2 a = uFP.w > 0.5 ? uv.yx : uv;   // a.x across the planks, a.y along them (default: away from the camera)
+      float pw = uFP.x, pl = uFP.y;
+      float row = floor(a.x / pw);
+      float sh = uFP.z < 0.0 ? hash(row * 7.31 + 2.0) * pl : fract(row * uFP.z) * pl;
+      float al = a.y + sh, k = floor(al / pl), id = hash(row * 131.7 + k * 17.31 + 0.5);
+      vec2 loc = vec2(a.x - row * pw, al - k * pl);
+      float fl = step(0.5, hash(id * 5.1 + 0.3));
+      vec2 tl = vec2(loc.x, mix(loc.y, pl - loc.y, fl));
+      vec2 off = vec2(hash(id * 3.7 + 1.0), hash(id * 9.3 + 2.0)) * uFTs;
+      vec2 tuv = (tl + off) / uFTs, cg = vec2(a.x, a.y) / uFTs;
+      vec3 tex = textureGrad(uFT, tuv, dFdx(cg), dFdy(cg)).rgb;
+      float v = hash(id * 2.3 + 7.0) - 0.5;
+      tex *= (1.0 + v * 0.18) * vec3(1.0 + v * 0.05, 1.0, 1.0 - v * 0.06);
+      // joints: a thin dark line on each side, faded with distance instead of shimmering
+      vec2 fw = fwidth(a) + 1e-5;
+      float dx = min(loc.x, pw - loc.x), dy = min(loc.y, pl - loc.y);
+      float jx = (1.0 - smoothstep(0.0009, 0.0009 + fw.x, dx)) * clamp(0.003 / fw.x, 0.0, 1.0);
+      float jy = (1.0 - smoothstep(0.0007, 0.0007 + fw.y, dy)) * clamp(0.0025 / fw.y, 0.0, 1.0);
+      float bev = (1.0 - smoothstep(0.0, 0.004 + fw.x, dx)) * 0.08;
+      return tex * (1.0 - bev) * (1.0 - 0.55 * max(jx, jy));
+    }
     vec3 toSRGB(vec3 c){ c = max(c, 0.0); return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c)); }
     vec4 maskAt(vec2 p){ return texture2D(uMask, p) * vec4(1.0, step(1.5, uN), step(2.5, uN), step(3.5, uN)); }
     void main(){
@@ -622,18 +675,21 @@ const EditShader = {
         if (w == 0) tex = texture2D(uF0, st).rgb; else if (w == 1) tex = texture2D(uF1, st).rgb; else if (w == 2) tex = texture2D(uF2, st).rgb; else tex = texture2D(uF3, st).rgb;
         col = mix(photo, tex * texture2D(uClean, puv).rgb / uRef, cov);
       }
+      float fm = fmAt(puv);
+      if (fm > 0.002 && uFHas > 0.5) col = mix(col, planks(P) * texture2D(uFL, puv).rgb / uFRef, fm);
       // focus: what is not selected steps back, the selected walls breathe and get a gold edge traced from the mask
       vec4 ax = maskAt(puv + vec2(uPx.x, 0.0)) - maskAt(puv - vec2(uPx.x, 0.0)), ay = maskAt(puv + vec2(0.0, uPx.y)) - maskAt(puv - vec2(0.0, uPx.y));
-      float sc = dot(m, uSel), anySel = step(0.5, dot(uSel, vec4(1.0))) * uFocus;
+      float fx = fmAt(puv + vec2(uPx.x, 0.0)) - fmAt(puv - vec2(uPx.x, 0.0)), fy = fmAt(puv + vec2(0.0, uPx.y)) - fmAt(puv - vec2(0.0, uPx.y));
+      float sc = dot(m, uSel) + fm * uFSel, anySel = step(0.5, dot(uSel, vec4(1.0)) + uFSel) * uFocus;
       col *= mix(1.0, mix(0.58, 1.0, sc), anySel);
       col += uGold * 0.06 * sc * anySel * (0.55 + 0.45 * sin(uTime * 2.8));
-      float es = length(vec2(dot(ax, uSel), dot(ay, uSel)));
+      float es = length(vec2(dot(ax, uSel) + fx * uFSel, dot(ay, uSel) + fy * uFSel));
       col = mix(col, uGold * 1.2, smoothstep(0.15, 0.55, es) * anySel);
       // detection sweep when the editor opens: every wall edge lights up as the line passes
       float band = exp(-pow((puv.x - uScan) * 7.0, 2.0));
-      float ea = max(max(length(vec2(ax.r, ay.r)), length(vec2(ax.g, ay.g))), max(length(vec2(ax.b, ay.b)), length(vec2(ax.a, ay.a))));
+      float ea = max(max(max(length(vec2(ax.r, ay.r)), length(vec2(ax.g, ay.g))), max(length(vec2(ax.b, ay.b)), length(vec2(ax.a, ay.a)))), length(vec2(fx, fy)));
       col = mix(col, uGold * 1.3, smoothstep(0.15, 0.55, ea) * band);
-      col += uGold * 0.16 * cov * band;
+      col += uGold * 0.16 * max(cov, fm) * band;
       gl_FragColor = vec4(toSRGB(col), 1.0);
     }`
 };
@@ -644,12 +700,25 @@ const EU = editPass.uniforms;
 const ED = { open: false, room: null, def: null, fix: -1, zoom: 1, zoomGoal: 1, rooms: {}, sel: new Set(), applied: false, dirty: false, c: [0, 0], sc: 1, win: new THREE.Vector4(), goal: new THREE.Vector4(), scan: 2, recent: [], dragging: false, boot: false };
 const edEl = $('#ed'), edStage = $('#edStage'), edPinsEl = $('#edPins'), edPanel = $('#edPanel');
 const piecesOf = (wl, it) => Math.ceil(wl.w / (it.w / 100) - 1e-6) * Math.max(1, Math.ceil(wl.h / (it.h / 100) - 1e-6));
+const tOf = (r, i) => (i === FL ? r.floor : r.walls[i]);   // a selection index -> wall or floor
+const hasFloor = (r) => !!(r && r.floor && FLOORS.length);
+const wallSel = () => [...ED.sel].filter((i) => i !== FL);
+if (DEMO) { const b = document.createElement('span'); b.textContent = T.edDemo; b.style.cssText = 'position:absolute;top:8px;inset-inline-end:10px;font:700 .62rem/1 system-ui;letter-spacing:.12em;text-transform:uppercase;padding:4px 7px;border-radius:99px;background:#cda56b;color:#100e0b;pointer-events:none;z-index:2'; edPanel.appendChild(b); }
+// floor textures: tex is a file in assets/exp/floor/ (or a full URL later, for floors from the Sheet), repeated, with mipmaps
+const floorTexCache = {}, floorTex = {};
+function floorTexOf(f) {
+  if (!floorTexCache[f.id]) floorTexCache[f.id] = load(/^(https?:)?\//.test(f.tex) ? f.tex : E.assets + 'floor/' + f.tex).then((t) => { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = Math.min(16, maxAniso); t.needsUpdate = true; return (floorTex[f.id] = t); });
+  return floorTexCache[f.id];
+}
 function edPressedItem() {
-  const r = ED.room; if (!r || !ED.sel.size) return null;
+  const r = ED.room; if (!r || !ED.sel.size || ED.sel.has(FL)) return null;
   const ids = [...ED.sel].map((i) => (r.walls[i].item ? r.walls[i].item.id : ''));
   return ids.every((x) => x && x === ids[0]) ? BYID[ids[0]] : null;
 }
-function edPressedId() { const it = edPressedItem(); return it ? it.id : ''; }
+function edPressedId() {
+  if (ED.room && ED.sel.has(FL)) return ED.room.floor && ED.room.floor.item ? ED.room.floor.item.id : '';
+  const it = edPressedItem(); return it ? it.id : '';
+}
 function edUniforms() {
   const r = ED.room, order = r.walls.map((_, i) => i).sort((a, b) => r.walls[a].ord - r.walls[b].ord), offs = [];
   let off = 0;
@@ -663,28 +732,40 @@ function edUniforms() {
     EU['uF' + i].value = tx || blank; has[i] = tx ? 1 : 0; sel[i] = ED.sel.has(i) ? 1 : 0;
   });
   EU.uHas.value.set(...has); EU.uSel.value.set(...sel); EU.uN.value = r.walls.length;
+  const fl = hasFloor(r) ? r.floor : null, f = fl && fl.item, ftx = f && floorTex[f.id];
+  EU.uFOn.value = fl ? 1 : 0; EU.uFHas.value = ftx ? 1 : 0; EU.uFSel.value = fl && ED.sel.has(FL) ? 1 : 0;
+  if (fl) { EU.uFM.value = fl.mask; EU.uFL.value = fl.clean; EU.uFRef.value.copy(fl.ref); EU.uFH.value.copy(fl.Hinv); EU.uFSz.value.set(fl.w, fl.d); }
+  if (ftx) { EU.uFT.value = ftx; EU.uFP.value.set(f.pw / 100, f.pl / 100, f.stag, f.dir ? 1 : 0); EU.uFTs.value.set(f.tw / 100, f.th / 100); }
   EU.uPhoto.value = r.photo; EU.uMask.value = r.mask; EU.uClean.value = r.clean; EU.uRef.value.copy(r.ref); EU.uImg.value.set(r.W, r.H);
 }
-const thumb = (it) => (it ? ` style="--c:url('${it.th}')"` : '');
+const thumb = (it) => (it ? (it.th ? ` style="--c:url('${it.th}')"` : ` style="--c:${it.c}"`) : '');   // a wall product shows its photo, a floor its colour
 function edUI() {
-  const r = ED.room, all = ED.sel.size === r.walls.length;
-  edPinsEl.innerHTML = r.walls.map((wl, i) => (wl.anchor ? `<button type="button" class="pin${ED.touched ? '' : ' ping'}" data-wall="${i}" aria-pressed="${ED.sel.has(i)}"><i${thumb(wl.item)}>${wl.item ? '' : '+'}</i>${wl.name}</button>` : '')).join('');
-  $('#edWalls').innerHTML = `<button type="button" class="chip plain" data-wall="all" aria-pressed="${all}">${T.edAll}</button>` +
-    r.walls.map((wl, i) => `<button type="button" class="chip" data-wall="${i}" aria-pressed="${ED.sel.has(i)}"><i${thumb(wl.item)}>${wl.item ? '' : '+'}</i>${wl.name}</button>`).join('');
-  const pid = edPressedId(), quick = E.quick.map((q) => BYID[q.id]).filter(Boolean), list = [...quick, ...ED.recent.filter((it) => !quick.includes(it))];
-  $('#edMats').innerHTML = list.map((it) => {
-    const q = E.quick.find((x) => x.id === it.id);
-    return `<button type="button" class="sw" data-id="${it.id}" aria-pressed="${it.id === pid}"><i style="${q ? '--c:' + q.c : `background:url('${it.th}') center/cover`}"></i>${q ? q.n : it.n.split(',')[0]}</button>`;
-  }).join('') + `<button type="button" class="chip plain" data-ed-more>${T.allModels}</button><button type="button" class="chip plain" data-ed-none aria-pressed="${ED.sel.size > 0 && [...ED.sel].every((i) => !r.walls[i].item)}">${T.edNone}</button>`;
+  const r = ED.room, fl = hasFloor(r) ? r.floor : null, ws = wallSel(), all = ws.length === r.walls.length, onFloor = ED.sel.has(FL);
+  const pin = (t, i) => (t.anchor ? `<button type="button" class="pin${ED.touched ? '' : ' ping'}" data-wall="${i}" aria-pressed="${ED.sel.has(i)}"><i${thumb(t.item)}>${t.item ? '' : '+'}</i>${t.name}</button>` : '');
+  const chip = (t, i) => `<button type="button" class="chip" data-wall="${i}" aria-pressed="${ED.sel.has(i)}"><i${thumb(t.item)}>${t.item ? '' : '+'}</i>${t.name}</button>`;
+  edPinsEl.innerHTML = r.walls.map(pin).join('') + (fl ? pin(fl, FL) : '');
+  $('#edWalls').innerHTML = `<button type="button" class="chip plain" data-wall="all" aria-pressed="${all}">${T.edAll}</button>` + r.walls.map(chip).join('') + (fl ? chip(fl, FL) : '');
+  const pid = edPressedId();
+  if (onFloor) {   // the floor gets floors: the demo floors now, floor products of the Sheet later
+    $('#edMats').innerHTML = FLOORS.map((f) => `<button type="button" class="sw" data-floor="${f.id}" aria-pressed="${f.id === pid}"><i style="--c:${f.c}"></i>${f.n}</button>`).join('') +
+      `<button type="button" class="chip plain" data-ed-none aria-pressed="${!fl.item}">${T.edFloorNone}</button>`;
+  } else {
+    const quick = E.quick.map((q) => BYID[q.id]).filter(Boolean), list = [...quick, ...ED.recent.filter((it) => !quick.includes(it))];
+    $('#edMats').innerHTML = list.map((it) => {
+      const q = E.quick.find((x) => x.id === it.id);
+      return `<button type="button" class="sw" data-id="${it.id}" aria-pressed="${it.id === pid}"><i style="${q ? '--c:' + q.c : `background:url('${it.th}') center/cover`}"></i>${q ? q.n : it.n.split(',')[0]}</button>`;
+    }).join('') + `<button type="button" class="chip plain" data-ed-more>${T.allModels}</button><button type="button" class="chip plain" data-ed-none aria-pressed="${ws.length > 0 && ws.every((i) => !r.walls[i].item)}">${T.edNone}</button>`;
+  }
   const hint = $('#edHint');
-  const one = ED.sel.size === 1 ? r.walls[[...ED.sel][0]] : null, dims = one ? ' · ' + fill(T.edDims, { w: fmt(one.w, 1), h: fmt(one.h, 2) }) : '';
-  hint.textContent = ED.fix >= 0 ? T.edFixHint + dims : ED.sel.size ? fill(T.edPick, { w: [...ED.sel].sort().map((i) => r.walls[i].name).join(', ') }) + dims : T.edHint;
+  const one = ED.sel.size === 1 && !onFloor ? r.walls[[...ED.sel][0]] : null;
+  const dims = one ? ' · ' + fill(T.edDims, { w: fmt(one.w, 1), h: fmt(one.h, 2) }) : onFloor ? ' · ' + fill(T.edFloorDims, { w: fmt(fl.w, 1), d: fmt(fl.d, 1) }) : '';
+  hint.textContent = ED.fix >= 0 ? T.edFixHint + dims : onFloor ? fill(T.edFloorPick, { w: T.edFloor }) + dims : ED.sel.size ? fill(T.edPick, { w: [...ED.sel].sort().map((i) => r.walls[i].name).join(', ') }) + dims : T.edHint;
   $('#edFixBtn').hidden = !one || ED.fix >= 0;
   $('#edFixBar').hidden = ED.fix < 0;
   edPanel.classList.toggle('fixing', ED.fix >= 0);
   $('#edH').textContent = fmt(r.walls[0].h, 2) + ' ' + (T.edDims.split('{h}')[1] || 'm').trim();
   hint.classList.toggle('wait', ED.sel.size > 0 && !ED.applied);
-  // total, size and the WhatsApp message with one line per wall
+  // total, size and the WhatsApp message with one line per wall (and one for the floor)
   let total = 0, pieces = 0, area = 0, req = false, slatsOnly = true;
   const lines = [];
   for (const wl of r.walls) {
@@ -694,8 +775,13 @@ function edUI() {
     if (it.p != null) total += n * it.p; else req = true;
     lines.push(fill(T.edLine, { w: wl.name, n: it.n, r: it.r, q: fmt(n), u }));
   }
+  if (fl && fl.item) {   // floor area: the visible floor's extent, an estimate to confirm on site
+    const f = fl.item, a = fl.w * fl.d;
+    area += a; if (f.p != null) total += a * f.p; else req = true;
+    lines.push(fill(T.edLine, { w: T.edFloor, n: f.n, r: f.r, q: fmt(a, 1), u: T.edFloorUnit }));
+  }
   $('#edTotal').textContent = lines.length ? (total ? fmt(total) + ' ₪' : T.onRequest) : '–';
-  $('#edMeta').textContent = lines.length ? fill(T.edMeta, { q: fmt(pieces), u: slatsOnly ? T.unitsSlat : T.units, a: fmt(area, 1) }) + (req && total ? ' ' + T.edReq : '') : '';
+  $('#edMeta').textContent = lines.length ? (pieces ? fill(T.edMeta, { q: fmt(pieces), u: slatsOnly ? T.unitsSlat : T.units, a: fmt(area, 1) }) : fmt(area, 1) + ' ' + T.edFloorUnit) + (req && total ? ' ' + T.edReq : '') : '';
   const msg = [T.edMsg, ...lines, total ? fill(T.edMsgTotal, { t: fmt(total) + ' ₪' }) : ''].filter(Boolean).join('\n');
   $('#edWa').href = 'https://wa.me/' + E.wa + '?text=' + encodeURIComponent(msg);
 }
@@ -724,6 +810,13 @@ function toScreen(px, py) { const r = ED.room, w = ED.win; return [(px / r.W - w
 function wallAt(px, py) {
   const r = ED.room, mk = r.mk, x = Math.floor(px / r.W * mk.w);
   if (x < 0 || x >= mk.w) return -1;
+  if (hasFloor(r)) {   // a tap on the floor itself picks the floor
+    const fk = r.floor.mk, fx = Math.floor(px / r.W * fk.w), fy = Math.floor(py / r.H * fk.h), y0 = Math.floor(py / r.H * mk.h);
+    if (fx >= 0 && fx < fk.w && fy >= 0 && fy < fk.h && y0 >= 0 && y0 < mk.h) {
+      let wv = 0; for (let i = 0; i < r.walls.length; i++) wv = Math.max(wv, mk.d[(y0 * mk.w + x) * 4 + i]);
+      const fv = fk.d[(fy * fk.w + fx) * 4]; if (fv > 110 && fv >= wv) return FL;
+    }
+  }
   // a tap on furniture standing against a wall picks that wall: look straight up for the first wall pixel
   for (let y = Math.floor(py / r.H * mk.h), stop = y - mk.h * 0.35; y >= 0 && y >= stop; y--) {
     if (y >= mk.h) continue;
@@ -734,14 +827,16 @@ function wallAt(px, py) {
   return -1;
 }
 function edFocusWall(i) {
-  const a = ED.room.walls[i].anchor; if (!a) return;
+  const t = tOf(ED.room, i), a = t && t.anchor; if (!a) return;
   const [X] = toScreen(a[0], a[1]), s = ED.stage;
   if (X < s.sx0 + 60 || X > s.sx0 + s.sw - 60) ED.c[0] = a[0];
 }
 function edSelect(i) {
   const r = ED.room;
-  if (i === 'all') { ED.sel = ED.sel.size === r.walls.length ? new Set() : new Set(r.walls.map((_, k) => k)); ED.applied = false; }
+  if (i === FL && !hasFloor(r)) return;
+  if (i === 'all') { ED.sel = wallSel().length === r.walls.length ? new Set() : new Set(r.walls.map((_, k) => k)); ED.applied = false; }
   else if (i < 0) ED.sel.clear();
+  else if (i === FL || ED.sel.has(FL)) { ED.sel = ED.sel.has(i) && !ED.applied ? new Set() : new Set([i]); ED.applied = false; }   // the floor is chosen on its own
   else if (ED.applied) { ED.sel = new Set([i]); ED.applied = false; }
   else if (ED.sel.has(i)) ED.sel.delete(i);
   else ED.sel.add(i);
@@ -750,13 +845,19 @@ function edSelect(i) {
   if (typeof i === 'number' && i >= 0 && ED.sel.has(i)) edFocusWall(i);
 }
 async function edApply(it) {
-  const r = ED.room; let targets = [...ED.sel];
-  if (!targets.length) { targets = r.walls.map((_, i) => i); toast(T.edAllApplied); }
+  const r = ED.room; let targets = wallSel();
+  if (!targets.length) { targets = r.walls.map((_, i) => i); toast(T.edAllApplied); if (ED.sel.has(FL)) ED.sel = new Set(targets); }
   for (const i of targets) r.walls[i].item = it;
   if (it && !E.quick.some((q) => q.id === it.id)) ED.recent = [it, ...ED.recent.filter((x) => x.id !== it.id)].slice(0, 4);
   ED.applied = true; ED.dirty = true; ED.touched = true; tap(0.45);
   edUniforms(); edUI();
   if (it && !faceTex[it.id]) { try { await faceOf(it.id); } catch (e) { /* keep the photo */ } if (ED.open) edUniforms(); }
+}
+async function edApplyFloor(f) {
+  const r = ED.room; if (!hasFloor(r)) return;
+  r.floor.item = f; ED.sel = new Set([FL]); ED.applied = true; ED.dirty = true; ED.touched = true; tap(0.45);
+  edUniforms(); edUI();
+  if (f && !floorTex[f.id]) { try { await floorTexOf(f); } catch (e) { /* keep the photo */ } if (ED.open) edUniforms(); }
 }
 function edOpen(push = true) {
   if (ED.open || !ED.def) return;
@@ -790,7 +891,9 @@ document.addEventListener('click', (e) => {
   if (!ED.open) return;
   const w = e.target.closest('[data-wall]');
   if (w) { edSelect(w.dataset.wall === 'all' ? 'all' : +w.dataset.wall); return; }
-  if (e.target.closest('[data-ed-none]')) { edApply(null); return; }
+  const fb = e.target.closest('[data-floor]');
+  if (fb) { edApplyFloor(FBYID[fb.dataset.floor] || null); return; }
+  if (e.target.closest('[data-ed-none]')) { if (ED.sel.has(FL)) edApplyFloor(null); else edApply(null); return; }
   if (e.target.closest('[data-ed-more]')) openSheet();
 });
 $('#edBack').addEventListener('click', () => edClose());
@@ -816,7 +919,7 @@ function edFrame(dt, time) {
   EU.uFocus.value = lerp(EU.uFocus.value, ED.sel.size ? 1 : 0, 1 - Math.exp(-dt * 9));
   const lim = innerWidth >= 900 ? innerHeight : ED.stage.sh;
   for (const b of edPinsEl.children) {
-    const wl = ED.room.walls[+b.dataset.wall], [X, Y] = toScreen(wl.anchor[0], wl.anchor[1]);
+    const wl = tOf(ED.room, +b.dataset.wall), [X, Y] = toScreen(wl.anchor[0], wl.anchor[1]);
     const vis = ED.fix < 0 && X > 8 && X < innerWidth - 8 && Y > 64 && Y < lim - 24 && ED.scan > (X / innerWidth) * 1.1;
     const bw = b.offsetWidth, bx = clamp(X - bw / 2, 8, innerWidth - bw - 8);
     b.style.transform = `translate(${bx.toFixed(1)}px, ${(Y - b.offsetHeight / 2).toFixed(1)}px)`;
