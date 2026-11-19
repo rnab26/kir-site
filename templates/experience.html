@@ -162,13 +162,13 @@ h2 { font-size: clamp(2.2rem, 4.8vw, 4.2rem); line-height: 1.02; }
 <main class="story">
   <section class="sec" id="hero" data-q="0">
     <div class="panel">
-      <div class="eyebrow">{{heroEyebrow}}</div>
+      <div class="eyebrow" id="heroEye">{{heroEyebrow}}</div>
       <h1>{{h1}}</h1>
       <p>{{heroLead}}</p>
       <ul class="facts">
         <li><b>20</b><span>{{fWl}}</span></li>
         <li><b>2.90</b><span>{{fHl}}</span></li>
-        <li><b>{{p035}} ₪</b><span>{{fPl}}</span></li>
+        <li><b id="heroPrice">{{p035}} ₪</b><span>{{fPl}}</span></li>
       </ul>
       <div class="cue"><i></i>{{scroll}}</div>
     </div>

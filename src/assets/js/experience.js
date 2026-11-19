@@ -32,13 +32,17 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(28, innerWidth / innerHeight, 0.01, 80);
-{
-  const c = document.createElement('canvas'); c.width = 64; c.height = 512;
-  const g = c.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 512);
-  gr.addColorStop(0, '#1d1913'); gr.addColorStop(0.55, '#15120e'); gr.addColorStop(1, '#0c0a08');
+// backdrop gradient; lifted (warmer, lighter) behind a dark slat so the black one never melts into the page
+const bgCanvas = document.createElement('canvas'); bgCanvas.width = 64; bgCanvas.height = 512;
+function paintBg(lift) {
+  const g = bgCanvas.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 512);
+  const stops = lift ? ['#4a4136', '#2c261f', '#141210'] : ['#1d1913', '#15120e', '#0c0a08'];
+  gr.addColorStop(0, stops[0]); gr.addColorStop(0.55, stops[1]); gr.addColorStop(1, stops[2]);
   g.fillStyle = gr; g.fillRect(0, 0, 64, 512);
-  scene.background = new THREE.CanvasTexture(c); scene.background.colorSpace = THREE.SRGBColorSpace;
+  if (scene.background) scene.background.needsUpdate = true;
 }
+paintBg(false);
+scene.background = new THREE.CanvasTexture(bgCanvas); scene.background.colorSpace = THREE.SRGBColorSpace;
 // a small photo studio baked into the environment: one off-axis softbox, two strips, a warm bounce
 {
   const s = new THREE.Scene();
@@ -429,9 +433,23 @@ async function choose(it) {
     const alb = await albedoOf(it.id);
     if (threeId !== it.id) return;
     faceMat.map = alb; faceMat.color.set(E.plain[it.id] || 0xffffff); faceMat.roughness = E.plain[it.id] ? 0.6 : 0.52; faceMat.needsUpdate = true;
+    storyLook(it.id);
   }
   if (params.get('m') !== it.id && (params.has('m') || it.id !== E.story) && history.replaceState) { params.set('m', it.id); history.replaceState(null, '', location.pathname + '?' + params.toString() + location.hash); }
   tap(0.4);
+}
+// the 3D story follows the slat shown in 3D: its reference, colour and price in the hero, and a brighter studio for a dark slat
+const eye = $('#heroEye'), eyeParts = eye ? eye.textContent.split(' · ') : [];
+function storyLook(id) {
+  const q = E.quick.find((m) => m.id === id), it = BYID[id];
+  if (!q) return;
+  if (eye && eyeParts.length === 3 && it) eye.textContent = [eyeParts[0], String(it.r).split(' ')[0], q.n].join(' · ');
+  if (it && it.p != null) $('#heroPrice').textContent = fmt(it.p) + ' ₪';
+  const h = parseInt(q.c.slice(1), 16), lum = (0.299 * (h >> 16) + 0.587 * ((h >> 8) & 255) + 0.114 * (h & 255)) / 255;
+  const dark = lum < 0.3;
+  paintBg(dark);
+  key.intensity = dark ? 3.4 : 2.7; rim.intensity = dark ? 2.6 : 0.85; scene.environmentIntensity = dark ? 1.6 : 0.9;
+  faceMat.clearcoat = dark ? 0.45 : 0.22;
 }
 function updateLinks() {
   const href = 'https://wa.me/' + E.wa + '?text=' + encodeURIComponent(fill(T.msg, { n: cur.n, r: cur.r }));
@@ -536,6 +554,7 @@ async function boot() {
   const lin = (c) => Math.pow(c / 255, 2.2);
   RU.uRef.value.set(lin(180.3), lin(170.4), lin(161.7)).multiplyScalar(1 / 0.8);   // the wall paint under full light
   faceMat.map = alb; faceMat.color.set(E.plain[threeId] || 0xffffff); faceMat.needsUpdate = true;
+  storyLook(threeId);
   await choose(cur);
   try { await renderer.compileAsync(scene, camera); } catch (e) { /* compile on the first frame */ }
   canvas.classList.add('on'); $('#loading').classList.add('done');
