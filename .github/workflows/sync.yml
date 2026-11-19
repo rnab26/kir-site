@@ -1,0 +1,42 @@
+name: Sync catalogue from Google Sheet
+
+on:
+  schedule:
+    - cron: '17 */3 * * *'   # every 3 hours
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.sync.outputs.changed }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: sync
+        name: Pull the public sheet tab
+        shell: pwsh
+        env:
+          SHEET_CSV_URL: ${{ vars.SHEET_CSV_URL }}
+        run: ./scripts/sync-sheet.ps1
+      - name: Commit changes
+        if: steps.sync.outputs.changed == 'true'
+        run: |
+          git config user.name "kir-sync"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data src/assets/img/products
+          git commit -m "Synchro catalogue depuis Google Sheets"
+          git push
+
+  deploy:
+    needs: sync
+    if: needs.sync.outputs.changed == 'true'
+    uses: ./.github/workflows/deploy.yml

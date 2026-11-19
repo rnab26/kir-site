@@ -12,7 +12,7 @@
   var rtl = doc.dir === 'rtl';
   var nf = new Intl.NumberFormat(K.lang === 'fr' ? 'fr-FR' : 'he-IL');
   var money = function (n) { return nf.format(n) + ' ₪'; };
-  var productUrl = function (id) { return K.base + '/' + K.prefix + 'p/' + id + '/'; };
+  var productUrl = function (id, fam) { return K.base + '/' + K.prefix + 'p/' + (fam || id) + '/' + (fam && fam !== id ? '?v=' + id : ''); };
 
   /* Header: scrolled state + mobile menu */
   var header = $('[data-header]');
@@ -255,8 +255,8 @@
         var p = D[id], qn = list[id] || 1, name = p[K.lang] || p.he;
         if (p.p != null) total += p.p * qn;
         lines.push('• ' + name + ' | ' + T.sku + ' ' + p.r + (p.s ? ' | ' + p.s : '') + ' | ' + T.qty + ': ' + qn);
-        return '<li class="qitem"><img src="' + K.base + '/assets/img/products/' + p.img + '.jpg" alt="" width="64" height="80" loading="lazy">' +
-          '<div><a href="' + productUrl(id) + '">' + esc(name) + '</a><small><bdi>' + esc(p.r) + '</bdi>' + (p.p != null ? ' · ' + money(p.p) : ' · ' + esc(T.onRequest)) + '</small></div>' +
+        return '<li class="qitem"><img src="' + K.base + '/assets/img/thumb/' + p.img + '.jpg" alt="" width="64" height="80" loading="lazy">' +
+          '<div><a href="' + productUrl(id, p.f) + '">' + esc(name) + '</a><small><bdi>' + esc(p.r) + '</bdi>' + (p.p != null ? ' · ' + money(p.p) : ' · ' + esc(T.onRequest)) + '</small></div>' +
           '<label class="qty"><span class="sr">' + esc(T.qty) + '</span><input type="number" min="1" max="9999" value="' + qn + '" data-qty="' + id + '"></label>' +
           '<button class="qremove" type="button" data-rm="' + id + '" aria-label="' + esc(T.remove) + '">✕</button></li>';
       }).join('') + '</ul>';
@@ -277,6 +277,46 @@
     });
   }
   renderList();
+
+  /* Product page: variant picker + gallery tabs */
+  var prod = $('[data-product]');
+  if (prod) {
+    var vopts = $$('.vopt', prod);
+    var showVariant = function (id, push) {
+      var ok = false;
+      $$('[data-vg]', prod).forEach(function (g) { var on = g.getAttribute('data-vg') === id; g.hidden = !on; if (on) ok = true; });
+      if (!ok) return;
+      $$('[data-vb]', prod).forEach(function (b) { b.hidden = b.getAttribute('data-vb') !== id; });
+      vopts.forEach(function (o) { o.setAttribute('aria-checked', String(o.getAttribute('data-v') === id)); });
+      if (push && history.replaceState) { var p = new URLSearchParams(location.search); p.set('v', id); history.replaceState(null, '', location.pathname + '?' + p.toString()); }
+    };
+    vopts.forEach(function (o, i) {
+      o.addEventListener('click', function () { showVariant(o.getAttribute('data-v'), true); });
+      o.addEventListener('keydown', function (e) {
+        var d = { ArrowDown: 1, ArrowUp: -1, ArrowRight: rtl ? -1 : 1, ArrowLeft: rtl ? 1 : -1 }[e.key]; if (!d) return;
+        e.preventDefault(); var n = vopts[(i + d + vopts.length) % vopts.length]; n.focus(); showVariant(n.getAttribute('data-v'), true);
+      });
+    });
+    var qv = new URLSearchParams(location.search).get('v'); if (qv) showVariant(qv, false);
+    $$('.gallery', prod).forEach(function (g) {
+      $$('[data-show]', g).forEach(function (t) {
+        t.addEventListener('click', function () {
+          var v = t.getAttribute('data-show');
+          $$('[data-view]', g).forEach(function (f) { f.hidden = f.getAttribute('data-view') !== v; });
+          $$('[data-show]', g).forEach(function (x) { x.setAttribute('aria-selected', String(x === t)); });
+        });
+      });
+    });
+  }
+  /* Plate renders follow the pointer in 3D */
+  if (fine && !reduce) $$('[data-tilt3d]').forEach(function (el) {
+    var box = el.parentNode;
+    box.addEventListener('pointermove', function (e) {
+      var r = box.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, y = (e.clientY - r.top) / r.height - 0.5;
+      el.style.transform = 'rotateY(' + (x * 9).toFixed(2) + 'deg) rotateX(' + (-y * 5).toFixed(2) + 'deg) scale(1.015)';
+    });
+    box.addEventListener('pointerleave', function () { el.style.transform = ''; });
+  });
 
   /* Product image zoom */
   $$('[data-zoom]').forEach(function (z) {

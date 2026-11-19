@@ -18,7 +18,7 @@
       "noContact": "פרטי הקשר יתעדכנו בקרוב. בינתיים אפשר להעתיק את הרשימה.", "ref": "מק״ט פנימי",
       "illustration": "הדמיה להמחשה בלבד. הגוון בפועל עשוי להשתנות — מומלץ לראות דוגמה.",
       "lang": "Français", "langCode": "fr", "priceNote": "המחירים כוללים מע״מ ועשויים להשתנות. המחיר הסופי נקבע בהצעת המחיר.",
-      "breadcrumb": "ניווט", "products": "מוצרים"
+      "breadcrumb": "ניווט", "products": "מוצרים", "viewPlate": "פלטה מלאה", "viewPhoto": "תמונה אמיתית", "plateNote": "הדמיה של פלטה שלמה לפי המידות, מתוך צילום הדגם.", "variants": "דגמים בסדרה", "models": "דגמים", "from": "החל מ־", "choose": "בחירת דגם", "series": "סדרה"
     },
     "hero": {
       "kicker": "סטודיו לחיפוי קירות",
@@ -76,7 +76,7 @@
     "categories": {
       "slat": {"slug": "slats", "name": "סרגלים לקיר", "title": "סרגלים לקיר — חיפוי מחורץ דמוי עץ, בד וטרוורטין", "intro": "סרגלים מחורצים וחלקים באורך 2.90 מ׳ וברוחב 10–40 ס״מ. דמוי עץ אגוז ואלון, בד, טרוורטין, שחור, לבן וטאופ — לקיר טלוויזיה, ראש מיטה, מבואה וחללים מסחריים."},
       "panel": {"slug": "panels", "name": "פלטות PVC ו־SPC", "title": "פלטות לקיר PVC ו־SPC — דמוי שיש, טרוורטין, בטון ואבן", "intro": "פלטות רחבות (96–122 ס״מ) באורך 2.80–2.90 מ׳ במראה שיש מבריק, טרוורטין, בטון, טיח ואבן. חלופה קלה ונקייה לחיפוי אבן אמיתי."},
-      "flex": {"slug": "flexible-panels", "name": "פלטות סרגלים גמישות", "title": "פלטות סרגלים גמישות ואקוסטיות לקיר", "intro": "פלטות סרגלים על גב גמיש, בדמוי עץ ובד, עם פסים כהים — מתאימות גם לקירות מעוגלים ולשיפור האקוסטיקה בחדר."},
+      "flex": {"slug": "flexible-panels", "name": "פלטות סרגלים אקוסטיות", "title": "פאנלים אקוסטיים לקיר — פלטות סרגלים גמישות", "intro": "פלטות סרגלים אקוסטיות על גב לבד גמיש, בדמוי עץ ובד עם פסים כהים: בולעות הדהוד, משפרות את האקוסטיקה בחדר ומתאימות גם לקירות מעוגלים."},
       "deco": {"slug": "3d-panels", "name": "פאנלים תלת־ממדיים", "title": "פאנלים דקורטיביים תלת־ממדיים לקיר — קשקשים ומשושים", "intro": "פאנלים בדוגמאות קשקשים ומשושים בגוונים לבן, שחור, דמוי עץ ובד — ליצירת קיר מוקד עם עומק וצל."},
       "stone": {"slug": "stone", "name": "חיפוי דמוי אבן", "title": "חיפוי דמוי אבן ואבן גמישה לקיר", "intro": "אבן גמישה, אבן מסותתת, סלע ולבנים — מראה של אבן טבעית במשקל קל ובהתקנה פשוטה יותר."},
       "outdoor": {"slug": "outdoor", "name": "חיפוי חוץ", "title": "חיפוי חוץ לחזיתות — דמוי עץ ואבן", "intro": "חיפויים לחזיתות ולקירות חוץ בדמוי עץ ואבן חול."},
@@ -120,7 +120,7 @@
       "noContact": "Les coordonnées seront publiées très bientôt. En attendant, vous pouvez copier la liste.", "ref": "Réf. interne",
       "illustration": "Simulation à titre indicatif. La teinte réelle peut varier : demandez un échantillon.",
       "lang": "עברית", "langCode": "he", "priceNote": "Prix TTC (TVA israélienne incluse), susceptibles d'évoluer. Le prix final figure sur le devis.",
-      "breadcrumb": "Fil d'Ariane", "products": "produits"
+      "breadcrumb": "Fil d'Ariane", "products": "produits", "viewPlate": "Panneau entier", "viewPhoto": "Photo réelle", "plateNote": "Simulation du panneau entier aux dimensions réelles, à partir de la photo du modèle.", "variants": "Modèles de la série", "models": "modèles", "from": "dès ", "choose": "Choisir le modèle", "series": "série"
     },
     "hero": {
       "kicker": "Studio de revêtements muraux",
@@ -178,7 +178,7 @@
     "categories": {
       "slat": {"slug": "slats", "name": "Lames murales", "title": "Lames murales rainurées (tasseaux) — effet bois, tissu, travertin", "intro": "Lames rainurées et lisses de 2,90 m de long et 10 à 40 cm de large : effet noyer, chêne, tissu, travertin, noir, blanc ou taupe. Pour mur TV, tête de lit, entrée ou commerce."},
       "panel": {"slug": "panels", "name": "Panneaux PVC & SPC", "title": "Panneaux muraux PVC et SPC — effet marbre, travertin, béton, pierre", "intro": "Grands panneaux (96–122 cm) de 2,80–2,90 m effet marbre brillant, travertin, béton, enduit et pierre. L'alternative légère et propre au parement en pierre naturelle."},
-      "flex": {"slug": "flexible-panels", "name": "Panneaux de lames flexibles", "title": "Panneaux de lames flexibles et acoustiques", "intro": "Lames sur support souple, effet bois ou tissu avec joints sombres : idéal pour murs courbes et pour améliorer l'acoustique."},
+      "flex": {"slug": "flexible-panels", "name": "Panneaux acoustiques à lames", "title": "Panneaux acoustiques à lames flexibles", "intro": "Panneaux acoustiques à lames sur feutre souple, effet bois ou tissu avec joints sombres : ils absorbent la réverbération, améliorent l'acoustique de la pièce et épousent aussi les murs courbes."},
       "deco": {"slug": "3d-panels", "name": "Panneaux décoratifs 3D", "title": "Panneaux muraux décoratifs 3D — écailles et hexagones", "intro": "Motifs écailles et hexagones en blanc, noir, effet bois ou tissu, pour un mur d'accent plein de relief."},
       "stone": {"slug": "stone", "name": "Parements effet pierre", "title": "Parement effet pierre et pierre flexible", "intro": "Pierre flexible, pierre taillée, roche et briques : l'aspect de la pierre naturelle, en plus léger et plus simple à poser."},
       "outdoor": {"slug": "outdoor", "name": "Bardage extérieur", "title": "Bardage extérieur effet bois et pierre", "intro": "Revêtements de façade et murs extérieurs effet bois et grès."},

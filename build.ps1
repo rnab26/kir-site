@@ -35,6 +35,7 @@ $Content = Read-Json 'data/content.json'
 $Tax = Read-Json 'data/taxonomy.json'
 $Raw = @(Read-Json 'data/products.json' | ForEach-Object { $_ })  # PS 5.1 emits JSON arrays as one object: unroll
 $Dims = Read-Json 'data/images.json'
+$TexDims = if (Test-Path (Join-Path $Root 'data/tex-dims.json')) { Read-Json 'data/tex-dims.json' } else { $null }
 if ($SiteUrl) { $Site.baseUrl = $SiteUrl }
 $Base = ([string]$Site.baseUrl).TrimEnd('/')
 $BasePath = ([Uri]($Base + '/')).AbsolutePath.TrimEnd('/')
@@ -81,13 +82,69 @@ $ById = @{}; $BySlug = @{}; foreach ($it in $Items) { $ById[$it.img] = $it; $ByS
 $CatOrder = @($Tax.catOrder | Where-Object { $c = $_; @($Items | Where-Object { $_.c -eq $c }).Count -gt 0 })
 $LookOrder = @($Tax.lookOrder)
 
+# ---------- families: variants of one model (same color code / pattern) share one page ----------
+function FamKey($it) {
+  $ov = P $Tax.familyOverride $it.img
+  if ($ov) { return [string]$ov }
+  $sku = if ($it.hasSku) { [string]$it.ref } else { '' }
+  if ($it.c -eq 'slat' -or $it.c -eq 'flex' -or $it.c -eq 'outdoor') { if ($sku) { return $it.c + ':' + ((($sku -split ' ')[0]) -replace '^(?i)no\.', '').ToUpperInvariant() } }
+  elseif ($it.c -eq 'deco') { $parts = @($sku -split ' '); if ($parts.Count -gt 1) { return 'deco:' + $parts[1] } }
+  elseif ($it.c -in @('cornice', 'column', 'ornament', 'deck')) { return $it.c + ':all' }
+  elseif ($it.c -eq 'skirting') { return 'skirting:' + ($it.colors -join '-') }
+  elseif ($it.c -eq 'molding') { if ($sku) { return 'molding:profile' } else { return 'molding:panel' } }
+  elseif ($it.c -eq 'mirror') { return 'mirror:' + $it.he }
+  return 'item:' + $it.slug
+}
+function BaseName([string]$s, [string]$rx) { $b = ($s -split ',')[0]; (($b -replace $rx, '') -replace '\s{2,}', ' ').Trim() }
+$famMap = [ordered]@{}
+foreach ($it in $Items) { $k = FamKey $it; $it | Add-Member -NotePropertyName fam -NotePropertyValue $k; if (-not $famMap.Contains($k)) { $famMap[$k] = New-Object System.Collections.ArrayList }; [void]$famMap[$k].Add($it) }
+$DOT = [string][char]0x00B7
+$Fams = New-Object System.Collections.ArrayList; $famSlugs = @{}; $FamBySlug = @{}; $FamOf = @{}
+foreach ($k in $famMap.Keys) {
+  $vs = @($famMap[$k]); $n = $vs.Count
+  $rep = $vs | Where-Object { $null -ne $_.p -and -not $_.oos } | Select-Object -First 1; if (-not $rep) { $rep = $vs[0] }
+  $code = ''; if ($k -match '^[a-z]+:(.+)$') { $code = $matches[1] }
+  if ($n -eq 1) { $slug = $rep.slug; $he = $rep.he; $fr = $rep.fr; $ref = $rep.ref }
+  else {
+    $nm = P $Tax.familyNames $k
+    if ($nm) { $he = [string]$nm.he; $fr = [string]$nm.fr }
+    else {
+      $ascii = ($code -and $code -notmatch '[^\x00-\x7F]')
+      $he = (BaseName $rep.he $Tax.nameStrip.he) + $(if ($ascii) { ' ' + $DOT + ' ' + (P (P $Content 'he').ui 'series') + ' ' + $code } else { '' })
+      $fr = (BaseName $rep.fr $Tax.nameStrip.fr) + $(if ($ascii) { ' ' + $DOT + ' ' + (P (P $Content 'fr').ui 'series') + ' ' + $code } else { '' })
+    }
+    $core = ($code.ToLowerInvariant() -replace '[^a-z0-9]+', '-').Trim('-'); if (-not $core -or $core -eq 'all') { $core = 'collection' }
+    $slug = (P $Tax.catPrefix $rep.c) + '-' + $core + '-series'
+    $ref = if ($code -and $code -notmatch '[^\x00-\x7F]' -and $code -ne 'all') { $code } else { $rep.ref }
+  }
+  if ($famSlugs.ContainsKey($slug)) { $slug = $slug + '-' + $rep.idx }
+  $famSlugs[$slug] = $true
+  $looks = @(); foreach ($lk in $LookOrder) { foreach ($v in $vs) { if ($v.looks -contains $lk) { $looks += $lk; break } } }
+  $colors = @(); foreach ($ck in $Tax.colorOrder) { foreach ($v in $vs) { if ($v.colors -contains $ck) { $colors += $ck; break } } }
+  $prices = @($vs | Where-Object { $null -ne $_.p } | ForEach-Object { [double]$_.p })
+  $pmin = if ($prices.Count) { ($prices | Measure-Object -Minimum).Minimum } else { $null }
+  $fm = [pscustomobject]@{
+    key = $k; slug = $slug; ref = $ref; hasSku = $rep.hasSku; c = $rep.c; he = $he; fr = $fr; s = $(if ($n -eq 1) { $rep.s } else { '' })
+    p = $pmin; oos = (@($vs | Where-Object { -not $_.oos }).Count -eq 0); img = $rep.img; idx = $vs[0].idx; looks = $looks; colors = $colors
+    n = $n; vars = $vs; rep = $rep
+  }
+  [void]$Fams.Add($fm); $FamBySlug[$slug] = $fm
+  foreach ($v in $vs) { $FamOf[$v.slug] = $fm }
+}
+
 # ---------- url helpers ----------
 function Rel($L, [string]$path) { [string]$L.prefix + $path }
 function Href($L, [string]$path) { $BasePath + '/' + (Rel $L $path) }
 function Abs($L, [string]$path) { $Base + '/' + (Rel $L $path) }
 function AssetUrl([string]$p) { $BasePath + '/assets/' + $p }
-function ImgUrl([string]$id) { $BasePath + '/assets/img/products/' + $id + '.jpg' }
-function ImgAbs([string]$id) { $Base + '/assets/img/products/' + $id + '.jpg' }
+$script:ExistCache = @{}
+function HasImg([string]$kind, [string]$id) { $k = "$kind/$id"; if (-not $script:ExistCache.ContainsKey($k)) { $script:ExistCache[$k] = Test-Path (Join-Path $Root "src/assets/img/$kind/$id.jpg") }; $script:ExistCache[$k] }
+function ImgUrl([string]$id) { if (HasImg 'thumb' $id) { $BasePath + '/assets/img/thumb/' + $id + '.jpg' } else { $BasePath + '/assets/img/products/' + $id + '.jpg' } }
+function PackUrl([string]$id) { if (HasImg 'pack' $id) { $BasePath + '/assets/img/pack/' + $id + '.jpg' } else { ImgUrl $id } }
+function TexUrl([string]$id) { if (HasImg 'tex' $id) { $BasePath + '/assets/img/tex/' + $id + '.jpg' } else { $BasePath + '/assets/img/products/' + $id + '.jpg' } }
+function ImgAbs([string]$id) { $Base + (PackUrl $id).Substring($BasePath.Length) }
+function TexDim([string]$id) { $d = P $TexDims $id; if ($d) { @([int]$d.w, [int]$d.h) } else { @(400, 500) } }
+$PlateCats = @('slat', 'panel', 'flex', 'deco', 'stone', 'outdoor')
 function T($L, [string]$k) { [string](P $L.ui $k) }
 function Other([string]$lang) { if ($lang -eq 'he') { 'fr' } else { 'he' } }
 function Lc([string]$lang) { P $Content $lang }
@@ -124,18 +181,24 @@ function Card($L, $it, [string]$headTag = 'h3') {
 function CardBuild($L, $it, [string]$headTag) {
   $name = NameOf $L $it
   $url = Href $L ('p/' + $it.slug + '/')
-  $q = ($it.he + ' ' + $it.fr + ' ' + $it.ref + ' ' + (P (CatOf $L $it.c) 'name')).ToLowerInvariant()
+  $multi = ($it.n -gt 1)
+  $words = @($it.he, $it.fr, $it.ref, (P (CatOf $L $it.c) 'name'))
+  if ($it.vars) { foreach ($v in $it.vars) { $words += $v.he; $words += $v.fr; $words += $v.ref } }
+  $q = ($words -join ' ').ToLowerInvariant()
   $sz = SizeText $L $it.s
-  $badge = if ($it.oos) { '<span class="badge">' + (Enc (T $L 'preorder')) + '</span>' } else { '' }
+  $badge = if ($it.oos) { '<span class="badge">' + (Enc (T $L 'preorder')) + '</span>' } elseif ($multi) { '<span class="badge badge-light">' + $it.n + ' ' + (Enc (T $L 'models')) + '</span>' } else { '' }
   $pp = if ($null -ne $it.p) { [string]$it.p } else { '' }
   $meta = '<span class="sku">' + (Enc $it.ref) + '</span>'
-  if ($sz) { $meta += '<span>' + (Enc $sz) + '</span>' }
+  if ($multi) { $meta = ''; $ws = @(); foreach ($v in $it.vars) { if ($v.w -and $ws -notcontains $v.w) { $ws += $v.w } }; if ($ws.Count) { $meta += '<span>' + (($ws | Sort-Object | ForEach-Object { Num $_ }) -join ' / ') + ' ' + (Enc (T $L 'cm')) + '</span>' } }
+  elseif ($sz) { $meta += '<span>' + (Enc $sz) + '</span>' }
+  $price = PriceHtml $L $it
+  if ($multi -and $null -ne $it.p) { $price = '<span class="price"><small class="from">' + (Enc (T $L 'from')) + '</small><bdi>' + (Num $it.p) + '&nbsp;&#8362;</bdi></span>' }
+  $btn = if ($multi) { '<a class="add" href="' + $url + '" aria-label="' + (Enc ((T $L 'choose') + ': ' + $name)) + '">' + $Icons.arrow + '</a>' } else { '<button class="add" type="button" data-add="' + $it.slug + '" aria-label="' + (Enc ((T $L 'add') + ': ' + $name)) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>' }
   return '<article class="card" data-c="' + $it.c + '" data-looks="' + ($it.looks -join ' ') + '" data-colors="' + ($it.colors -join ' ') + '" data-p="' + $pp + '" data-i="' + $it.idx + '" data-q="' + (Enc $q) + '">' +
-    '<a class="card-media" href="' + $url + '" tabindex="-1" aria-hidden="true"><img src="' + (ImgUrl $it.img) + '" alt="" width="' + $it.iw + '" height="' + $it.ih + '" loading="lazy" decoding="async">' + $badge + '</a>' +
+    '<a class="card-media" href="' + $url + '" tabindex="-1" aria-hidden="true"><img src="' + (ImgUrl $it.img) + '" alt="" width="520" height="650" loading="lazy" decoding="async">' + $badge + '</a>' +
     '<div class="card-body"><' + $headTag + ' class="card-title"><a href="' + $url + '">' + (Enc $name) + '</a></' + $headTag + '>' +
     '<p class="card-meta">' + $meta + '</p>' +
-    '<div class="card-foot">' + (PriceHtml $L $it) +
-    '<button class="add" type="button" data-add="' + $it.slug + '" aria-label="' + (Enc ((T $L 'add') + ': ' + $name)) + '"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div></div></article>'
+    '<div class="card-foot">' + $price + $btn + '</div></div></article>'
 }
 function Grid($L, $list, [string]$headTag = 'h3') {
   $sb = New-Object Text.StringBuilder
@@ -289,7 +352,7 @@ function StudioHtml($L, $first, [string]$tag = 'h2') {
   foreach ($id in $ids) {
     $it = $ById[$id]; if (-not $it) { continue }
     $sel = if ($k -eq 0) { 'true' } else { 'false' }
-    $sw += '<button type="button" class="swatch" role="radio" aria-checked="' + $sel + '" data-tex="' + (ImgUrl $it.img) + '" data-flute="' + $(if ($it.fl) { '1' } else { '0' }) + '" title="' + (Enc (NameOf $L $it)) + '"><img src="' + (ImgUrl $it.img) + '" alt="' + (Enc (NameOf $L $it)) + '" width="56" height="70" loading="lazy"></button>'
+    $sw += '<button type="button" class="swatch" role="radio" aria-checked="' + $sel + '" data-tex="' + (TexUrl $it.img) + '" data-flute="' + $(if ($it.fl) { '1' } else { '0' }) + '" title="' + (Enc (NameOf $L $it)) + '"><img src="' + (TexUrl $it.img) + '" alt="' + (Enc (NameOf $L $it)) + '" width="56" height="70" loading="lazy"></button>'
     $k++
   }
   $f0 = $ById[$ids[0]]
@@ -300,7 +363,7 @@ function StudioHtml($L, $first, [string]$tag = 'h2') {
   '<div class="seg" role="group"><button type="button" aria-pressed="true" data-light="day">' + (Enc $S.day) + '</button><button type="button" aria-pressed="false" data-light="evening">' + (Enc $S.evening) + '</button></div>' +
   '<label class="check"><input type="checkbox" data-flutes' + $(if ($f0.fl) { ' checked' } else { '' }) + '> ' + (Enc $S.flutes) + '</label></div>' +
   '<p class="note">' + (Enc (T $L 'illustration')) + '</p></div>' +
-  '<div class="room reveal" data-room data-mode="back" data-light="day" data-flute="' + $(if ($f0.fl) { '1' } else { '0' }) + '" style="--tex:url(' + (ImgUrl $f0.img) + ')" aria-hidden="true"><div class="stage"><div class="scene">' +
+  '<div class="room reveal" data-room data-mode="back" data-light="day" data-flute="' + $(if ($f0.fl) { '1' } else { '0' }) + '" style="--tex:url(' + (TexUrl $f0.img) + ')" aria-hidden="true"><div class="stage"><div class="scene">' +
   '<div class="w back"><span class="glow"></span></div><div class="w left"><span class="window"></span></div><div class="w right"></div><div class="floor"></div><div class="ceil"><span class="strip"></span></div>' +
   '<div class="prop sofa"><i class="sb"></i><i class="seat"></i><i class="arm a1"></i><i class="arm a2"></i><i class="cushion"></i></div><div class="prop table"><i></i></div><div class="prop lamp"><i class="shade"></i><i class="pole"></i></div><div class="prop plant"><i class="pot"></i><i class="leaf l1"></i><i class="leaf l2"></i><i class="leaf l3"></i></div>' +
   '</div></div><div class="light-sweep"></div></div>' +
@@ -346,7 +409,7 @@ function LookTiles($L, [string]$tag = 'h3') {
   foreach ($k in $LookOrder) {
     $lk = LookOf $L $k
     $cnt = @($Items | Where-Object { $_.looks -contains $k }).Count
-    $t += '<a class="mat reveal" href="' + (Href $L ('look/' + $lk.slug + '/')) + '" style="--img:url(' + (ImgUrl (P $Tax.lookCover $k)) + ')"><span class="mat-tex" aria-hidden="true"></span><span class="mat-sheen" aria-hidden="true"></span><span class="mat-body"><' + $tag + '>' + (Enc $lk.name) + '</' + $tag + '><span>' + $cnt + ' ' + (Enc (T $L 'products')) + '</span></span></a>'
+    $t += '<a class="mat reveal" href="' + (Href $L ('look/' + $lk.slug + '/')) + '" style="--img:url(' + (TexUrl (P $Tax.lookCover $k)) + ')"><span class="mat-tex" aria-hidden="true"></span><span class="mat-sheen" aria-hidden="true"></span><span class="mat-body"><' + $tag + '>' + (Enc $lk.name) + '</' + $tag + '><span>' + $cnt + ' ' + (Enc (T $L 'products')) + '</span></span></a>'
   }
   '<div class="mats" data-tilt>' + $t + '</div>'
 }
@@ -357,7 +420,7 @@ function CatTiles($L) {
     $cat = CatOf $L $c
     $list = @($Items | Where-Object { $_.c -eq $c })
     $cover = $list[0]
-    $t += '<a class="cat reveal" href="' + (Href $L ('c/' + $cat.slug + '/')) + '"><img src="' + (ImgUrl $cover.img) + '" alt="" width="' + $cover.iw + '" height="' + $cover.ih + '" loading="lazy"><span><strong>' + (Enc $cat.name) + '</strong><em>' + $list.Count + '</em></span></a>'
+    $t += '<a class="cat reveal" href="' + (Href $L ('c/' + $cat.slug + '/')) + '"><img src="' + (ImgUrl $cover.img) + '" alt="" width="520" height="650" loading="lazy"><span><strong>' + (Enc $cat.name) + '</strong><em>' + $list.Count + '</em></span></a>'
   }
   '<div class="cats">' + $t + '</div>'
 }
@@ -381,6 +444,43 @@ function Band([string]$kicker, [string]$title, [string]$lead, [int]$count = -1, 
   '<section class="band"><div class="band-flutes" aria-hidden="true"></div><div class="wrap"><p class="kicker">' + (Enc $kicker) + '</p><h1>' + (Enc $title) + '</h1>' + $(if ($lead) { '<p class="lead">' + (Enc $lead) + '</p>' } else { '' }) + $c + '</div></section>'
 }
 
+function VariantGallery($L, $it, [bool]$sel) {
+  $name = NameOf $L $it
+  $hid = if ($sel) { '' } else { ' hidden' }
+  $ld = if ($sel) { 'eager' } else { 'lazy' }
+  $td = TexDim $it.img
+  $photo = '<figure class="g-view" data-view="photo"' + $(if ($it.c -in $PlateCats) { ' hidden' } else { '' }) + '><div class="zoom" data-zoom style="--img:url(' + (TexUrl $it.img) + ')"><img src="' + (TexUrl $it.img) + '" alt="' + (Enc $name) + '" width="' + $td[0] + '" height="' + $td[1] + '" loading="' + $ld + '"></div></figure>'
+  if ($it.c -notin $PlateCats) { return '<div class="gallery" data-vg="' + $it.slug + '"' + $hid + '><div class="g-stage">' + $photo + '</div></div>' }
+  '<div class="gallery" data-vg="' + $it.slug + '"' + $hid + '><div class="g-stage">' +
+  '<figure class="g-view" data-view="plate"><div class="tilt" data-tilt3d><img src="' + (PackUrl $it.img) + '" alt="' + (Enc ($name + ' - ' + (T $L 'viewPlate'))) + '" width="1000" height="1250" loading="' + $ld + '"' + $(if ($sel) { ' fetchpriority="high"' } else { '' }) + '></div></figure>' + $photo +
+  '</div><div class="g-tabs" role="tablist"><button type="button" role="tab" aria-selected="true" data-show="plate"><img src="' + (ImgUrl $it.img) + '" alt="" width="44" height="55" loading="lazy">' + (Enc (T $L 'viewPlate')) + '</button>' +
+  '<button type="button" role="tab" aria-selected="false" data-show="photo"><img src="' + (TexUrl $it.img) + '" alt="" width="44" height="55" loading="lazy">' + (Enc (T $L 'viewPhoto')) + '</button></div>' +
+  '<p class="g-note">' + (Enc (T $L 'plateNote')) + '</p></div>'
+}
+function VariantBlock($L, $it, $cat, [bool]$sel) {
+  $name = NameOf $L $it
+  $sz = SizeText $L $it.s
+  $specs = '<div><dt>' + (Enc $(if ($it.hasSku) { T $L 'sku' } else { T $L 'ref' })) + '</dt><dd><bdi>' + (Enc $it.ref) + '</bdi></dd></div>'
+  if ($sz) { $specs += '<div><dt>' + (Enc (T $L 'size')) + '</dt><dd><bdi>' + (Enc $sz) + '</bdi></dd></div>' }
+  $fin = FinishText $L $it.f; if ($fin) { $specs += '<div><dt>' + (Enc (T $L 'finish')) + '</dt><dd>' + (Enc $fin) + '</dd></div>' }
+  if ($it.mat) { $specs += '<div><dt>Material</dt><dd>' + $it.mat + '</dd></div>' }
+  $specs += '<div><dt>' + (Enc (T $L 'category')) + '</dt><dd><a href="' + (Href $L ('c/' + $cat.slug + '/')) + '">' + (Enc $cat.name) + '</a></dd></div>'
+  if ($it.looks.Count) {
+    $lks = @(); foreach ($k in $it.looks) { $lks += '<a href="' + (Href $L ('look/' + (P (LookOf $L $k) 'slug') + '/')) + '">' + (Enc (P (LookOf $L $k) 'name')) + '</a>' }
+    $specs += '<div><dt>' + (Enc (T $L 'look')) + '</dt><dd>' + ($lks -join ', ') + '</dd></div>'
+  }
+  $avail = if ($it.oos) { '<span class="avail off">' + (Enc (T $L 'preorder')) + '</span>' } else { '' }
+  $m2 = if ($it.ppm2) { '<p class="ppm2">&asymp; <bdi>' + $it.ppm2 + '&nbsp;&#8362;</bdi> ' + (Enc (T $L 'perM2')) + '</p>' } else { '' }
+  $fm = $FamOf[$it.slug]
+  $url = (Abs $L ('p/' + $fm.slug + '/')) + $(if ($fm.n -gt 1) { '?v=' + $it.slug } else { '' })
+  $waText = (T $L 'listIntro') + ' ' + $name + ' (' + $it.ref + ') ' + $url
+  $ask = if ($Wa) { '<a class="btn btn-ghost-dark" href="https://wa.me/' + $Wa + '?text=' + [Uri]::EscapeDataString($waText) + '" rel="noopener">' + $Icons.wa + (Enc (T $L 'ask')) + '</a>' } else { '' }
+  $wall = if ($it.c -in $PlateCats) { '<a class="btn btn-ghost-dark" href="#studio">' + (Enc (T $L 'seeOnWall')) + '</a>' } else { '' }
+  '<div class="vblock" data-vb="' + $it.slug + '"' + $(if ($sel) { '' } else { ' hidden' }) + '>' + $avail +
+  '<div class="pd-price">' + (PriceHtml $L $it) + $m2 + '</div><dl class="specs">' + $specs + '</dl>' +
+  '<div class="pd-actions"><button type="button" class="btn btn-dark" data-add="' + $it.slug + '" data-label>' + (Enc (T $L 'add')) + '</button>' + $ask + $wall + '</div></div>'
+}
+
 # ---------- build ----------
 if (Test-Path $OutDir) { Remove-Item -Recurse -Force $OutDir }
 New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
@@ -392,16 +492,16 @@ function AddUrl([string]$path, [string]$prio = '0.6') { [void]$sitemap.Add(@($pa
 
 foreach ($lang in $Langs) {
   $L = Lc $lang
-  $catIndex = @{}; foreach ($c in $CatOrder) { $catIndex[$c] = @($Items | Where-Object { $_.c -eq $c }) }
+  $catIndex = @{}; $famIndex = @{}; foreach ($c in $CatOrder) { $catIndex[$c] = @($Items | Where-Object { $_.c -eq $c }); $famIndex[$c] = @($Fams | Where-Object { $_.c -eq $c }) }
 
   # Home
-  $feat = @(); foreach ($id in $Tax.featured) { if ($ById[$id]) { $feat += $ById[$id] } }
+  $feat = @(); foreach ($id in $Tax.featured) { if ($ById[$id]) { $fm0 = $FamOf[$ById[$id].slug]; if ($feat -notcontains $fm0) { $feat += $fm0 } } }
   $stats = ''
   foreach ($s in $L.stats) { $stats += '<li><strong>' + (Enc (Fill ([string]$s[0]) @{ count = $Items.Count; cats = $CatOrder.Count })) + '</strong><span>' + (Enc $s[1]) + '</span></li>' }
   $steps = ''; $n = 0
   foreach ($s in $L.steps.items) { $n++; $steps += '<li class="reveal"><span class="num">0' + $n + '</span><h3>' + (Enc $s[0]) + '</h3><p>' + (Enc $s[1]) + '</p></li>' }
-  $hero = '<section class="hero" data-hero style="--tex:url(' + (ImgUrl $Tax.lookCover.travertine) + ')"><div class="hero-wall" aria-hidden="true"><div class="hw-tex"></div><div class="hw-flutes"></div><div class="hw-light"></div><div class="hw-vignette"></div></div>' +
-    '<div class="hero-tiles" aria-hidden="true"><span style="--img:url(' + (ImgUrl $Tax.lookCover.marble) + ')"></span><span style="--img:url(' + (ImgUrl $Tax.lookCover.wood) + ')"></span><span style="--img:url(' + (ImgUrl $Tax.lookCover.black) + ')"></span></div>' +
+  $hero = '<section class="hero" data-hero style="--tex:url(' + (TexUrl $Tax.lookCover.travertine) + ')"><div class="hero-wall" aria-hidden="true"><div class="hw-tex"></div><div class="hw-flutes"></div><div class="hw-light"></div><div class="hw-vignette"></div></div>' +
+    '<div class="hero-tiles" aria-hidden="true"><span style="--img:url(' + (PackUrl $Tax.lookCover.marble) + ')"></span><span style="--img:url(' + (PackUrl $Tax.lookCover.wood) + ')"></span><span style="--img:url(' + (PackUrl $Tax.lookCover.black) + ')"></span></div>' +
     '<div class="wrap hero-content"><p class="kicker">' + (Enc $L.hero.kicker) + '</p><h1>' + (Enc $L.hero.h1) + '<span class="h1-tag">' + (Enc $L.tagline) + '</span></h1><p class="lead">' + (Enc $L.hero.lead) + '</p>' +
     '<div class="ctas"><a class="btn btn-light" href="' + (Href $L 'catalog/') + '">' + (Enc $L.hero.cta) + $Icons.arrow + '</a><a class="btn btn-ghost" href="#studio">' + (Enc $L.hero.cta2) + '</a></div><ul class="stats">' + $stats + '</ul></div><div class="scroll-cue" aria-hidden="true"></div></section>'
   $body = $hero +
@@ -416,18 +516,18 @@ foreach ($lang in $Langs) {
   if ($lang -eq 'he') { AddUrl '' '1.0' }
 
   # Catalog
-  $body = (Band (P $L.nav 'catalog') $L.catalogTitle $L.catalogDesc $Items.Count $L) + (FilterBar $L $CatOrder) + '<section class="listing"><div class="wrap">' + (Grid $L $Items 'h2') + '</div></section>'
+  $body = (Band (P $L.nav 'catalog') $L.catalogTitle $L.catalogDesc $Items.Count $L) + (FilterBar $L $CatOrder) + '<section class="listing"><div class="wrap">' + (Grid $L $Fams 'h2') + '</div></section>'
   $crumb = @(@((T $L 'home'), ''), @($L.catalogTitle, 'catalog/'))
   Page $L @{ path = 'catalog/'; title = ($L.catalogTitle + ' | ' + $Brand); desc = $L.catalogDesc; body = (CrumbHtml $L $crumb) + $body; cls = 'catalog'; ld = @((CrumbLd $L $crumb), (ItemListLd $L $Items)) }
   if ($lang -eq 'he') { AddUrl 'catalog/' '0.9' }
 
   # Categories
   foreach ($c in $CatOrder) {
-    $cat = CatOf $L $c; $list = $catIndex[$c]
+    $cat = CatOf $L $c; $list = $famIndex[$c]
     $others = ''; foreach ($k in $CatOrder) { if ($k -ne $c) { $others += '<a class="pill" href="' + (Href $L ('c/' + (P (CatOf $L $k) 'slug') + '/')) + '">' + (Enc (P (CatOf $L $k) 'name')) + '</a>' } }
     $crumb = @(@((T $L 'home'), ''), @($L.catalogTitle, 'catalog/'), @($cat.name, ('c/' + $cat.slug + '/')))
     $extra = ''
-    if ($c -eq 'slat' -or $c -eq 'panel' -or $c -eq 'flex') { $extra = (CalcHtml $L ($list | Where-Object { $_.w -and $_.l } | Select-Object -First 1)) }
+    if ($c -eq 'slat' -or $c -eq 'panel' -or $c -eq 'flex') { $extra = (CalcHtml $L ($catIndex[$c] | Where-Object { $_.w -and $_.l } | Select-Object -First 1)) }
     $body = (CrumbHtml $L $crumb) + (Band (P $L.nav 'catalog') $cat.title $cat.intro $list.Count $L) + (FilterBar $L @($c)) + '<section class="listing"><div class="wrap">' + (Grid $L $list 'h2') + '</div></section>' + $extra + '<section class="more"><div class="wrap"><div class="pills">' + $others + '</div></div></section>'
     $desc = $cat.intro
     Page $L @{ path = ('c/' + $cat.slug + '/'); title = ($cat.title + ' | ' + $Brand); desc = $desc; body = $body; cls = 'category'; og = (ImgAbs $list[0].img); ld = @((CrumbLd $L $crumb), (ItemListLd $L $list)) }
@@ -441,7 +541,7 @@ foreach ($lang in $Langs) {
   if ($lang -eq 'he') { AddUrl 'looks/' '0.7' }
   foreach ($k in $LookOrder) {
     $lk = LookOf $L $k
-    $list = @($Items | Where-Object { $_.looks -contains $k })
+    $list = @($Fams | Where-Object { $_.looks -contains $k })
     if (-not $list.Count) { continue }
     $cats = @($CatOrder | Where-Object { $cc = $_; @($list | Where-Object { $_.c -eq $cc }).Count -gt 0 })
     $others = ''; foreach ($j in $LookOrder) { if ($j -ne $k) { $others += '<a class="pill" href="' + (Href $L ('look/' + (P (LookOf $L $j) 'slug') + '/')) + '">' + (Enc (P (LookOf $L $j) 'name')) + '</a>' } }
@@ -452,60 +552,64 @@ foreach ($lang in $Langs) {
     if ($lang -eq 'he') { AddUrl ('look/' + $lk.slug + '/') '0.8' }
   }
 
-  # Products
-  foreach ($it in $Items) {
-    $cat = CatOf $L $it.c
-    $name = NameOf $L $it
-    $sz = SizeText $L $it.s
-    $crumb = @(@((T $L 'home'), ''), @($cat.name, ('c/' + $cat.slug + '/')), @($name, ('p/' + $it.slug + '/')))
-    $specs = ''
-    $specs += '<div><dt>' + (Enc $(if ($it.hasSku) { T $L 'sku' } else { T $L 'ref' })) + '</dt><dd><bdi>' + (Enc $it.ref) + '</bdi></dd></div>'
-    if ($sz) { $specs += '<div><dt>' + (Enc (T $L 'size')) + '</dt><dd><bdi>' + (Enc $sz) + '</bdi></dd></div>' }
-    $fin = FinishText $L $it.f; if ($fin) { $specs += '<div><dt>' + (Enc (T $L 'finish')) + '</dt><dd>' + (Enc $fin) + '</dd></div>' }
-    if ($it.mat) { $specs += '<div><dt>Material</dt><dd>' + $it.mat + '</dd></div>' }
-    $specs += '<div><dt>' + (Enc (T $L 'category')) + '</dt><dd><a href="' + (Href $L ('c/' + $cat.slug + '/')) + '">' + (Enc $cat.name) + '</a></dd></div>'
-    if ($it.looks.Count) {
-      $lks = @(); foreach ($k in $it.looks) { $lks += '<a href="' + (Href $L ('look/' + (P (LookOf $L $k) 'slug') + '/')) + '">' + (Enc (P (LookOf $L $k) 'name')) + '</a>' }
-      $specs += '<div><dt>' + (Enc (T $L 'look')) + '</dt><dd>' + ($lks -join ', ') + '</dd></div>'
+  # Product pages: one per family, variants switchable on the page
+  foreach ($fm in $Fams) {
+    $cat = CatOf $L $fm.c
+    $name = NameOf $L $fm
+    $multi = $fm.n -gt 1
+    $crumb = @(@((T $L 'home'), ''), @($cat.name, ('c/' + $cat.slug + '/')), @($name, ('p/' + $fm.slug + '/')))
+    $gal = ''; $blk = ''; $opts = ''
+    foreach ($v in $fm.vars) {
+      $sel = ($v.slug -eq $fm.rep.slug)
+      $gal += VariantGallery $L $v $sel
+      $blk += VariantBlock $L $v $cat $sel
+      if ($multi) {
+        $opts += '<button type="button" class="vopt" role="radio" aria-checked="' + $(if ($sel) { 'true' } else { 'false' }) + '" data-v="' + $v.slug + '"><img src="' + (ImgUrl $v.img) + '" alt="" width="52" height="65" loading="lazy"><span class="vtxt"><strong>' + (Enc (NameOf $L $v)) + '</strong><small><bdi>' + (Enc $v.ref) + '</bdi>' + $(if ($v.s) { ' ' + $DOT + ' <bdi>' + (Enc (SizeText $L $v.s)) + '</bdi>' } else { '' }) + '</small></span>' + (PriceHtml $L $v) + '</button>'
+      }
     }
-    $avail = if ($it.oos) { '<span class="avail off">' + (Enc (T $L 'preorder')) + '</span>' } else { '' }
-    $m2 = if ($it.ppm2) { '<p class="ppm2">&asymp; <bdi>' + $it.ppm2 + '&nbsp;&#8362;</bdi> ' + (Enc (T $L 'perM2')) + '</p>' } else { '' }
-    $waText = (T $L 'listIntro') + ' ' + $name + ' (' + $it.ref + ') ' + (Abs $L ('p/' + $it.slug + '/'))
-    $ask = if ($Wa) { '<a class="btn btn-ghost-dark" href="https://wa.me/' + $Wa + '?text=' + [Uri]::EscapeDataString($waText) + '" rel="noopener">' + $Icons.wa + (Enc (T $L 'ask')) + '</a>' } else { '' }
+    $vpick = if ($multi) { '<div class="variants"><p class="label" id="vl">' + (Enc (T $L 'variants')) + ' (' + $fm.n + ')</p><div class="vlist" role="radiogroup" aria-labelledby="vl" data-variants>' + $opts + '</div></div>' } else { '' }
+    $pd = '<section class="product wrap" data-product><div class="pd-media">' + $gal + '</div>' +
+      '<div class="pd-info"><p class="kicker"><a href="' + (Href $L ('c/' + $cat.slug + '/')) + '">' + (Enc $cat.name) + '</a></p><h1>' + (Enc $name) + '</h1>' + $vpick + $blk +
+      '<p class="note">' + (Enc (T $L 'priceNote')) + '</p></div></section>'
     $rel = New-Object System.Collections.ArrayList
-    foreach ($o in $catIndex[$it.c]) {
-      if ($rel.Count -ge 8) { break }
-      if ($o.slug -eq $it.slug) { continue }
-      $share = ($it.looks.Count -eq 0)
-      foreach ($k in $o.looks) { if ($it.looks -contains $k) { $share = $true; break } }
+    foreach ($o in $famIndex[$fm.c]) {
+      if ($rel.Count -ge 8) { break }; if ($o.slug -eq $fm.slug) { continue }
+      $share = ($fm.looks.Count -eq 0); foreach ($k in $o.looks) { if ($fm.looks -contains $k) { $share = $true; break } }
       if ($share) { [void]$rel.Add($o) }
     }
-    if ($rel.Count -lt 4) { $rel = New-Object System.Collections.ArrayList; foreach ($o in $catIndex[$it.c]) { if ($rel.Count -ge 8) { break }; if ($o.slug -ne $it.slug) { [void]$rel.Add($o) } } }
-    $pd = '<section class="product wrap"><div class="pd-media reveal"><div class="zoom" data-zoom style="--img:url(' + (ImgUrl $it.img) + ')"><img src="' + (ImgUrl $it.img) + '" alt="' + (Enc $name) + '" width="' + $it.iw + '" height="' + $it.ih + '" fetchpriority="high"></div></div>' +
-      '<div class="pd-info"><p class="kicker"><a href="' + (Href $L ('c/' + $cat.slug + '/')) + '">' + (Enc $cat.name) + '</a></p><h1>' + (Enc $name) + '</h1>' + $avail +
-      '<div class="pd-price">' + (PriceHtml $L $it) + $m2 + '</div><dl class="specs">' + $specs + '</dl>' +
-      '<div class="pd-actions"><button type="button" class="btn btn-dark" data-add="' + $it.slug + '" data-label>' + (Enc (T $L 'add')) + '</button>' + $ask + '<a class="btn btn-ghost-dark" href="#studio">' + (Enc (T $L 'seeOnWall')) + '</a></div>' +
-      '<p class="note">' + (Enc (T $L 'priceNote')) + ' ' + (Enc (T $L 'illustration')) + '</p></div></section>'
-    $calc = if ($it.w -and $it.l -and $it.l -lt 10 -and ($it.c -eq 'slat' -or $it.c -eq 'panel' -or $it.c -eq 'flex' -or $it.c -eq 'stone')) { CalcHtml $L $it } else { '' }
+    if ($rel.Count -lt 4) { $rel = New-Object System.Collections.ArrayList; foreach ($o in $famIndex[$fm.c]) { if ($rel.Count -ge 8) { break }; if ($o.slug -ne $fm.slug) { [void]$rel.Add($o) } } }
     $relHtml = if ($rel.Count) { '<section class="related"><div class="wrap">' + (SectionHead (T $L 'related') '') + (Grid $L $rel) + '</div></section>' } else { '' }
-    $studio = if ($it.c -in @('slat', 'panel', 'flex', 'deco', 'stone', 'outdoor')) { StudioHtml $L $it } else { '' }
+    $calcIt = $fm.vars | Where-Object { $_.w -and $_.l -and $_.l -lt 10 } | Select-Object -First 1
+    $calc = if ($calcIt -and $fm.c -in @('slat', 'panel', 'flex', 'stone')) { CalcHtml $L $calcIt } else { '' }
+    $studio = if ($fm.c -in $PlateCats) { StudioHtml $L $fm.rep } else { '' }
     $body = (CrumbHtml $L $crumb) + $pd + $studio + $calc + $relHtml
-    $sizePart = if ($sz) { (T $L 'size') + ': ' + $sz + '. ' } else { '' }
-    $pricePart = if ($null -ne $it.p) { (PriceText $L $it) + ' ' + (T $L 'priceVat') + '.' } else { (T $L 'onRequest') + '.' }
-    $desc = Fill $L.productDesc @{ name = $name; size = $sizePart; price = $pricePart }
-    $title = Fill $L.productTitle @{ name = $name; sku = $it.ref; brand = $Brand }
-    $ld = @((CrumbLd $L $crumb))
-    if ($null -ne $it.p) {
-      $prod = [ordered]@{ '@context' = 'https://schema.org'; '@type' = 'Product'; name = $name; sku = $it.ref; image = @((ImgAbs $it.img)); description = $desc; category = $cat.name; url = (Abs $L ('p/' + $it.slug + '/')) }
-      if ($it.slug -like 'adhesive-homey*') { $prod.brand = [ordered]@{ '@type' = 'Brand'; name = 'HOMEY' } }
-      $prod.offers = [ordered]@{ '@type' = 'Offer'; price = [string]$it.p; priceCurrency = 'ILS'; availability = $(if ($it.oos) { 'https://schema.org/PreOrder' } else { 'https://schema.org/InStock' }); itemCondition = 'https://schema.org/NewCondition'; url = (Abs $L ('p/' + $it.slug + '/')); seller = @{ '@id' = ($Base + '/#org') } }
-      if ($it.w -and $it.l -and $it.l -lt 10) { $prod.width = [ordered]@{ '@type' = 'QuantitativeValue'; value = $it.w; unitCode = 'CMT' }; $prod.depth = [ordered]@{ '@type' = 'QuantitativeValue'; value = $it.l; unitCode = 'MTR' } }
-      $ld += $prod
+    $rp = $fm.rep
+    if ($multi) {
+      $pricePart = if ($null -ne $fm.p) { (T $L 'from') + (Num $fm.p) + ' ' + $SHEKEL + ' ' + (T $L 'priceVat') + '.' } else { (T $L 'onRequest') + '.' }
+      $desc = Fill $L.productDesc @{ name = ($name + ' (' + $fm.n + ' ' + (T $L 'models') + ')'); size = ''; price = $pricePart }
+      $title = $name + ' | ' + $Brand
+    } else {
+      $sz = SizeText $L $rp.s
+      $sizePart = if ($sz) { (T $L 'size') + ': ' + $sz + '. ' } else { '' }
+      $pricePart = if ($null -ne $rp.p) { (PriceText $L $rp) + ' ' + (T $L 'priceVat') + '.' } else { (T $L 'onRequest') + '.' }
+      $desc = Fill $L.productDesc @{ name = $name; size = $sizePart; price = $pricePart }
+      $title = Fill $L.productTitle @{ name = $name; sku = $rp.ref; brand = $Brand }
     }
-    Page $L @{ path = ('p/' + $it.slug + '/'); title = $title; desc = $desc; body = $body; cls = 'product-page'; og = (ImgAbs $it.img); ogType = 'product'; ld = $ld }
-    if ($lang -eq 'he') { AddUrl ('p/' + $it.slug + '/') '0.6' }
+    $ld = @((CrumbLd $L $crumb))
+    $offers = New-Object System.Collections.ArrayList
+    foreach ($v in $fm.vars) {
+      if ($null -eq $v.p) { continue }
+      $vp = [ordered]@{ '@type' = 'Product'; name = (NameOf $L $v); sku = $v.ref; image = @((ImgAbs $v.img)); category = $cat.name; url = (Abs $L ('p/' + $fm.slug + '/')) + $(if ($multi) { '?v=' + $v.slug } else { '' }) }
+      if ($v.slug -like 'adhesive-homey*') { $vp.brand = [ordered]@{ '@type' = 'Brand'; name = 'HOMEY' } }
+      if ($v.w -and $v.l -and $v.l -lt 10) { $vp.width = [ordered]@{ '@type' = 'QuantitativeValue'; value = $v.w; unitCode = 'CMT' }; $vp.depth = [ordered]@{ '@type' = 'QuantitativeValue'; value = $v.l; unitCode = 'MTR' } }
+      $vp.offers = [ordered]@{ '@type' = 'Offer'; price = [string]$v.p; priceCurrency = 'ILS'; availability = $(if ($v.oos) { 'https://schema.org/PreOrder' } else { 'https://schema.org/InStock' }); itemCondition = 'https://schema.org/NewCondition'; url = $vp.url; seller = @{ '@id' = ($Base + '/#org') } }
+      [void]$offers.Add($vp)
+    }
+    if ($offers.Count -eq 1 -and -not $multi) { $o1 = $offers[0]; $o1['@context'] = 'https://schema.org'; $o1.description = $desc; $ld += $o1 }
+    elseif ($offers.Count -ge 1) { $ld += [ordered]@{ '@context' = 'https://schema.org'; '@type' = 'ProductGroup'; name = $name; productGroupID = $fm.ref; description = $desc; url = (Abs $L ('p/' + $fm.slug + '/')); variesBy = @('https://schema.org/size', 'https://schema.org/pattern'); hasVariant = @($offers) } }
+    Page $L @{ path = ('p/' + $fm.slug + '/'); title = $title; desc = $desc; body = $body; cls = 'product-page'; og = (ImgAbs $fm.img); ogType = 'product'; ld = $ld }
+    if ($lang -eq 'he') { AddUrl ('p/' + $fm.slug + '/') '0.6' }
   }
-
   # Studio + calculator page
   $crumb = @(@((T $L 'home'), ''), @((P $L.studio 'title'), 'studio/'))
   $body = (CrumbHtml $L $crumb) + (Band (P $L.nav 'studio') (P $L.studio 'title') (P $L.studio 'lead') -1 $L) + (StudioHtml $L $null 'h2') + (CalcHtml $L $null)
@@ -546,7 +650,7 @@ Write-Out '404.html' $nf
 # Client data (public fields only)
 $pub = New-Object System.Collections.ArrayList
 foreach ($it in $Items) {
-  [void]$pub.Add([ordered]@{ id = $it.slug; r = $it.ref; c = $it.c; he = $it.he; fr = $it.fr; s = $it.s; w = $it.w; l = $it.l; p = $it.p; img = $it.img; oos = $it.oos; fl = $it.fl })
+  [void]$pub.Add([ordered]@{ id = $it.slug; f = $FamOf[$it.slug].slug; r = $it.ref; c = $it.c; he = $it.he; fr = $it.fr; s = $it.s; w = $it.w; l = $it.l; p = $it.p; img = $it.img; oos = $it.oos; fl = $it.fl })
 }
 Write-Out 'assets/data/products.json' (ConvertTo-Json -InputObject @($pub) -Depth 5 -Compress)
 
@@ -556,7 +660,7 @@ $sb = New-Object Text.StringBuilder
 foreach ($u in $sitemap) {
   $path = $u[0]; $prio = $u[1]
   $img = ''
-  if ($path -like 'p/*') { $sl = $path.Substring(2).TrimEnd('/'); $it = $BySlug[$sl]; if ($it) { $img = '<image:image><image:loc>' + (ImgAbs $it.img) + '</image:loc></image:image>' } }
+  if ($path -like 'p/*') { $sl = $path.Substring(2).TrimEnd('/'); $it = $FamBySlug[$sl]; if ($it) { $img = '<image:image><image:loc>' + (ImgAbs $it.img) + '</image:loc></image:image>' } }
   foreach ($lang in $Langs) {
     $L = Lc $lang
     [void]$sb.Append('<url><loc>' + (Abs $L $path) + '</loc><lastmod>' + $Today + '</lastmod><priority>' + $prio + '</priority>')
@@ -592,7 +696,7 @@ $sb = New-Object Text.StringBuilder
 [void]$sb.Append('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"><channel><title>' + (Enc $BrandFull) + '</title><link>' + $Base + '/</link><description>' + (Enc $he.metaDescHome) + '</description>' + "`n")
 foreach ($it in ($Items | Where-Object { $null -ne $_.p })) {
   $cat = CatOf $he $it.c
-  [void]$sb.Append('<item><g:id>' + (Enc $it.slug) + '</g:id><g:title>' + (Enc ($it.he + ' ' + $it.ref)) + '</g:title><g:description>' + (Enc ($it.he + '. ' + (SizeText $he $it.s))) + '</g:description><g:link>' + (Abs $he ('p/' + $it.slug + '/')) + '</g:link><g:image_link>' + (ImgAbs $it.img) + '</g:image_link><g:availability>' + $(if ($it.oos) { 'preorder' } else { 'in_stock' }) + '</g:availability><g:price>' + $it.p + '.00 ILS</g:price><g:condition>new</g:condition><g:identifier_exists>no</g:identifier_exists><g:product_type>' + (Enc $cat.name) + '</g:product_type><g:mpn>' + (Enc $it.ref) + '</g:mpn></item>' + "`n")
+  [void]$sb.Append('<item><g:id>' + (Enc $it.slug) + '</g:id><g:title>' + (Enc ($it.he + ' ' + $it.ref)) + '</g:title><g:description>' + (Enc ($it.he + '. ' + (SizeText $he $it.s))) + '</g:description><g:link>' + (Abs $he ('p/' + $FamOf[$it.slug].slug + '/')) + $(if ($FamOf[$it.slug].n -gt 1) { '?v=' + $it.slug } else { '' }) + '</g:link><g:image_link>' + (ImgAbs $it.img) + '</g:image_link><g:availability>' + $(if ($it.oos) { 'preorder' } else { 'in_stock' }) + '</g:availability><g:price>' + $it.p + '.00 ILS</g:price><g:condition>new</g:condition><g:identifier_exists>no</g:identifier_exists><g:product_type>' + (Enc $cat.name) + '</g:product_type><g:mpn>' + (Enc $it.ref) + '</g:mpn></item>' + "`n")
 }
 [void]$sb.Append('</channel></rss>')
 Write-Out 'merchant-feed.xml' $sb.ToString()

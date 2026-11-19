@@ -1,0 +1,26 @@
+{
+  "_lisezmoi": "Traduction automatique hébreu → français des NOUVEAUX produits (remplacement d'expressions, de la plus longue à la plus courte). Les produits traduits ainsi sont marqués frAuto: true pour relecture.",
+  "pairs": [
+    ["פלטת סרגלים אקוסטית גמישה", "panneau acoustique à lames flexible"], ["פלטת סרגלים גמישה", "panneau acoustique à lames flexible"],
+    ["חיפוי אבן גמיש", "pierre flexible"], ["פלטת דמוי אבן", "parement effet pierre"], ["חיפוי דמוי אבן", "parement effet pierre"],
+    ["פלטה דקורטיבית", "panneau décoratif"], ["פלטת PVC", "panneau PVC"], ["פלטת SPC", "panneau SPC"], ["חיפוי חוץ", "bardage extérieur"],
+    ["דק WPC", "lame de terrasse WPC"], ["מראה LED", "miroir LED"], ["תאורה אחורית", "rétroéclairage"], ["3 צבעים", "3 teintes"],
+    ["גימור מבריק", "finition brillante"], ["פרופיל עיטור", "moulure décorative"], ["פס דקורטיבי", "frise décorative"], ["עמוד דקורטיבי", "colonne décorative"],
+    ["דמוי עץ אגוז", "effet noyer"], ["דמוי עץ אלון", "effet chêne"], ["דמוי עץ", "effet bois"], ["דמוי בד", "effet tissu"], ["דמוי שיש", "effet marbre"],
+    ["דמוי טרוורטין", "effet travertin"], ["דמוי בטון", "effet béton"], ["דמוי טיח", "effet enduit"], ["דמוי אבן", "effet pierre"], ["דמוי טראצו", "effet terrazzo"],
+    ["דמוי לבנים", "effet briques"], ["אבן חול", "grès"], ["עורקי זהב", "veines dorées"], ["בסגנון קרניז", "style corniche"],
+    ["סרגל", "lame"], ["פלטה", "panneau"], ["פלטת", "panneau"], ["חיפוי", "parement"], ["קרניז", "corniche"], ["שיפולית", "plinthe"], ["מראה", "miroir"], ["עמוד", "colonne"],
+    ["מחורצת", "rainuré"], ["מחורץ", "rainurée"], ["חלקה", "lisse"], ["חלק", "lisse"], ["דמוי", "effet"],
+    ["צפחה", "ardoise"], ["גרניט", "granit"], ["סלע", "roche"], ["שיש", "marbre"], ["טרוורטין", "travertin"], ["בטון", "béton"], ["עץ", "bois"], ["אגוז", "noyer"], ["אלון", "chêne"], ["בד", "tissu"],
+    ["עורקים", "veines"], ["עורק", "veine"], ["חריצים", "rainures"], ["חריץ", "rainure"], ["פסים", "stries"], ["פס", "strie"],
+    ["דקים", "fines"], ["רחבים", "larges"], ["צרים", "étroites"], ["מעוגלים", "arrondies"], ["מרובעים", "carrées"], ["צפופים", "serrées"], ["אנכיים", "verticales"], ["אופקיים", "horizontales"], ["בולטים", "en relief"],
+    ["מחוספס", "texturé"], ["מוחלק", "lissé"], ["מרקם", "texture"], ["טקסטורת", "texture"], ["טקסטורה", "texture"], ["מובלטת", "en relief"],
+    ["בדוגמת", "motif"], ["דוגמת", "motif"], ["קשקשים", "écailles"], ["משושים", "hexagones"], ["הרינגבון", "chevrons"], ["אדרה", "chevrons"],
+    ["שחורה", "noire"], ["שחורים", "noirs"], ["שחור", "noir"], ["לבנה", "blanche"], ["לבן", "blanc"], ["אפורה", "grise"], ["אפור", "gris"], ["אפרפר", "grisé"],
+    ["בז׳", "beige"], ["טאופ", "taupe"], ["חום", "brun"], ["קרם", "crème"], ["ברונזה", "bronze"], ["זהובים", "dorées"], ["זהוב", "doré"], ["כהה", "foncé"], ["בהירה", "claire"], ["בהיר", "clair"], ["מאוד", "très"],
+    ["אקוסטית", "acoustique"], ["אקוסטי", "acoustique"], ["גמישה", "flexible"], ["גמיש", "flexible"], ["מבריק", "brillant"], ["מט", "mat"],
+    ["עגולה", "rond"], ["אורגנית", "organique"], ["בצורת", "forme"], ["בצורה", "forme"], ["כותרת", "chapiteau"], ["יונית", "ionique"],
+    ["דבק", "colle"], ["שפופרת", "cartouche"], ["היברידי", "hybride"], ["מחורר", "ajouré"], ["מדורג", "à gradins"], ["מעוגל", "arrondi"], ["קטן", "petit"], ["קעור", "concave"],
+    ["עם", "avec"], ["גובה", "hauteur"], ["ס״מ", "cm"], ["מ״ל", "ml"]
+  ]
+}

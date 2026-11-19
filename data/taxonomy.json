@@ -34,5 +34,23 @@
     "white": "1ap4OJMSWn5NE-S8yQKpcQ_etHyNk7KC3"
   },
   "studioSwatches": ["1XEzpUmwczuEFAtZea0kZfXf1OV1Tis8j", "1U7LiwoEvQ-tzhER0nzWsGZau_N5GCZQS", "1W5ZFcndSAxLTc0EEh4pPxpkGNoQXrPO-", "1njVWGQBUTAHAKbMFNgzGSbCVi2D33Kh6", "1n-GFc05E3uw73-Oa_GpJBjGKQeGYV20r", "1pu6-sNO8Wpn_v2iGIEdyiLaEjvNe7zUL", "1ap4OJMSWn5NE-S8yQKpcQ_etHyNk7KC3", "1kXH7ZtrELLbwj1QMlBQzamTa9trcQj_V"],
+  "sheetCats": {"סרגל": "slat", "פלטה": "panel", "דמוי אבן": "stone", "חוץ": "outdoor", "דק": "deck", "מראה": "mirror", "קרניז": "cornice", "שיפולית": "skirting", "פרופיל עיטור": "molding", "עמוד": "column", "עיטור": "ornament", "דבק": "adhesive"},
+  "nameStrip": {"he": "\\s*(מחורץ|חלק)(?=\\s|$)", "fr": "\\s*\\b(rainurée|lisse)\\b"},
+  "familyOverride": {
+    "1IAHJSNaI3MTDDIgDEfgfjiupd7KYIyvX": "stone:rock", "1WnrP_5rKvLSMjPat5HleUvgVWiP9OyhO": "stone:rock",
+    "10UBtF9BNlQYmWciVE9oO5bAuBLdHg7yM": "stone:rock", "16AlERHRZJ6dnZKQ8i9Y41CQrEc6ap_Ve": "stone:rock"
+  },
+  "familyNames": {
+    "deco:620845": {"he": "פאנל דקורטיבי תלת־ממדי בדוגמת קשקשים", "fr": "Panneau décoratif 3D motif écailles"},
+    "deco:750615": {"he": "פאנל דקורטיבי תלת־ממדי בדוגמת משושים", "fr": "Panneau décoratif 3D motif hexagones"},
+    "cornice:all": {"he": "קרניזים לבנים בפרופיל קעור", "fr": "Corniches blanches à profil concave"},
+    "skirting:black": {"he": "שיפולים שחורים", "fr": "Plinthes noires"},
+    "molding:panel": {"he": "פרופילים לבנים בסגנון קרניז", "fr": "Moulures blanches style corniche"},
+    "molding:profile": {"he": "פרופילי עיטור לבנים דקים", "fr": "Fines moulures décoratives blanches"},
+    "column:all": {"he": "עמודים דקורטיביים מחורצים", "fr": "Colonnes décoratives cannelées"},
+    "ornament:all": {"he": "פסים דקורטיביים מחוררים", "fr": "Frises décoratives ajourées"},
+    "deck:all": {"he": "דק WPC דמוי עץ", "fr": "Lames de terrasse WPC effet bois"},
+    "stone:rock": {"he": "פלטת דמוי אבן בטקסטורת סלע", "fr": "Parement effet pierre, texture roche"}
+  },
   "featured": ["1XEzpUmwczuEFAtZea0kZfXf1OV1Tis8j", "1U7LiwoEvQ-tzhER0nzWsGZau_N5GCZQS", "1W5ZFcndSAxLTc0EEh4pPxpkGNoQXrPO-", "1njVWGQBUTAHAKbMFNgzGSbCVi2D33Kh6", "1kXH7ZtrELLbwj1QMlBQzamTa9trcQj_V", "1jQ0SGRo-gW75MWJpT145HsAIkaQAGumF", "1grwoMfEj5rDJepoln3nqNZ_QPH-DSctV", "1VCVlSTqL12shWYFc5M2MRedSwTwJtbxS"]
 }
