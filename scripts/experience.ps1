@@ -46,7 +46,8 @@ function ExperiencePage($L) {
   $head += '<meta property="og:type" content="website"><meta property="og:site_name" content="' + (Enc (BrandOf $L)) + '"><meta property="og:title" content="' + (Enc $title) + '"><meta property="og:description" content="' + (Enc $x.desc) + '"><meta property="og:url" content="' + (Abs $L $path) + '"><meta property="og:image" content="' + $og + '"><meta property="og:locale" content="' + $L.locale + '">'
   $head += '<meta name="twitter:card" content="summary_large_image"><meta name="theme-color" content="#100e0b"><link rel="icon" href="' + $BasePath + '/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="' + (AssetUrl 'img/logo.png') + '">'
   $t = [ordered]@{}
-  foreach ($k in @('soundOn', 'soundOff', 'units', 'unitsSlat', 'priceSlat', 'priceUnit', 'onRequest', 'msg', 'error', 'c290', 'c20', 'c4', 'cHollow', 'cRound')) { $t[$k] = [string](P $x $k) }
+  foreach ($k in @('soundOn', 'soundOff', 'units', 'unitsSlat', 'priceSlat', 'priceUnit', 'onRequest', 'msg', 'error', 'c290', 'c20', 'c4', 'cHollow', 'cRound', 'allModels')) { $t[$k] = [string](P $x $k) }
+  foreach ($pp in $x.PSObject.Properties) { if ($pp.Name -match '^(ed|wall)[A-Z]') { $t[$pp.Name] = [string]$pp.Value } }   # wall-by-wall editor strings
   $quick = @(); $alb = [ordered]@{}
   foreach ($q in $ExpQuick) { $quick += [ordered]@{ id = $q[0]; c = $q[1]; n = [string](P $x $q[2]) }; $alb[$q[0]] = $(if ($q[3]) { $q[3] } else { $null }) }
   $cats = @(); foreach ($c in $ExpCats) { if (@($items | Where-Object { $_.c -eq $c }).Count) { $cats += [ordered]@{ c = $c; n = [string](P (CatOf $L $c) 'name') } } }

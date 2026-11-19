@@ -42,7 +42,13 @@
     "teaserLead": "בחרו סרגל או פאנל, וגללו: הוא מונח בגודל אמיתי על שלושה קירות של חדר אמיתי, עם האור של החדר.",
     "teaserBtn": "לסטודיו הקיר",
     "teaserBefore": "לפני", "teaserAfter": "אחרי",
-    "seeOnWall": "לראות על הקיר"
+    "seeOnWall": "לראות על הקיר",
+    "edOpen": "קיר אחרי קיר", "edTitle": "חיפוי לכל קיר", "edBack": "חזרה", "edCta": "לעצב קיר אחרי קיר",
+    "edHint": "געו בקיר אחד או יותר, ואז בחרו חיפוי", "edPick": "{w}: בחרו חיפוי",
+    "edWallsL": "קירות", "edMatsL": "חיפוי", "edAll": "כל הקירות", "edNone": "הקיר המקורי", "edAllApplied": "הוחל על כל הקירות",
+    "wallBack": "קיר מרכזי", "wallLeft": "קיר שמאל", "wallRight": "קיר ימין", "wallN": "קיר {n}",
+    "edTotal": "סה״כ משוער", "edMeta": "{q} {u} · {a} מ״ר", "edSend": "שליחה בוואטסאפ", "edReq": "+ פריטים במחיר לפי בקשה",
+    "edMsg": "שלום, עיצבתי את החדר שלי באתר:", "edLine": "• {w}: {n} ({r}) – {q} {u}", "edMsgTotal": "סה״כ משוער: {t}"
   },
   "fr": {
     "path": "experience/",
@@ -87,7 +93,13 @@
     "teaserLead": "Choisissez une lame ou un panneau et faites défiler : il est posé à taille réelle sur les trois murs d'une vraie pièce, avec sa lumière.",
     "teaserBtn": "Ouvrir le studio mur",
     "teaserBefore": "Avant", "teaserAfter": "Après",
-    "seeOnWall": "Voir sur le mur"
+    "seeOnWall": "Voir sur le mur",
+    "edOpen": "Mur par mur", "edTitle": "Un revêtement par mur", "edBack": "Retour", "edCta": "Composer mur par mur",
+    "edHint": "Touchez un ou plusieurs murs, puis choisissez un revêtement", "edPick": "{w} : choisissez un revêtement",
+    "edWallsL": "Murs", "edMatsL": "Revêtement", "edAll": "Tous les murs", "edNone": "Mur d’origine", "edAllApplied": "Appliqué à tous les murs",
+    "wallBack": "Mur du fond", "wallLeft": "Mur de gauche", "wallRight": "Mur de droite", "wallN": "Mur {n}",
+    "edTotal": "Total estimé", "edMeta": "{q} {u} · {a} m²", "edSend": "Envoyer sur WhatsApp", "edReq": "+ articles prix sur demande",
+    "edMsg": "Bonjour, j’ai composé ma pièce sur le site :", "edLine": "• {w} : {n} ({r}) – {q} {u}", "edMsgTotal": "Total estimé : {t}"
   },
   "en": {
     "path": "experience/",
@@ -132,6 +144,12 @@
     "teaserLead": "Pick a slat or a panel and scroll: it is laid at true size on the three walls of a real room, in its own light.",
     "teaserBtn": "Open the wall studio",
     "teaserBefore": "Before", "teaserAfter": "After",
-    "seeOnWall": "See it on the wall"
+    "seeOnWall": "See it on the wall",
+    "edOpen": "Wall by wall", "edTitle": "A finish for each wall", "edBack": "Back", "edCta": "Design it wall by wall",
+    "edHint": "Tap one or more walls, then pick a finish", "edPick": "{w}: pick a finish",
+    "edWallsL": "Walls", "edMatsL": "Finish", "edAll": "All walls", "edNone": "Original wall", "edAllApplied": "Applied to all walls",
+    "wallBack": "Back wall", "wallLeft": "Left wall", "wallRight": "Right wall", "wallN": "Wall {n}",
+    "edTotal": "Estimated total", "edMeta": "{q} {u} · {a} m²", "edSend": "Send on WhatsApp", "edReq": "+ items priced on request",
+    "edMsg": "Hi, I designed my room on your site:", "edLine": "• {w}: {n} ({r}) – {q} {u}", "edMsgTotal": "Estimated total: {t}"
   }
 }
