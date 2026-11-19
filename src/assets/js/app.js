@@ -190,7 +190,7 @@
     var apply = function (push) {
       var term = norm(q && q.value), n = 0;
       cards.forEach(function (c) {
-        var ok = (!active.c.length || active.c.indexOf(c.getAttribute('data-c')) > -1) && (!active.s.length || active.s.indexOf(c.getAttribute('data-s')) > -1)
+        var ok = (!active.c.length || active.c.indexOf(c.getAttribute('data-c')) > -1) && (!active.s.length || (c.getAttribute('data-s') || '').split(' ').some(function (k) { return active.s.indexOf(k) > -1; }))
           && (!active.look.length || active.look.some(function (v) { return (' ' + c.getAttribute('data-looks') + ' ').indexOf(' ' + v + ' ') > -1; }))
           && (!active.color.length || active.color.some(function (v) { return (' ' + c.getAttribute('data-colors') + ' ').indexOf(' ' + v + ' ') > -1; }))
           && (!term || term.split(/\s+/).every(function (w) { return c.getAttribute('data-q').indexOf(w) > -1; }));
