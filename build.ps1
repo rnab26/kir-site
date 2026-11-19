@@ -612,8 +612,10 @@ function VariantGallery($L, $it, [bool]$sel) {
   $vk = if ($slats) { 'viewSlats' } else { 'viewPlate' }
   '<div class="gallery" data-vg="' + $it.slug + '"' + $hid + '><div class="g-stage">' +
   '<figure class="g-view" data-view="plate"><div class="tilt" data-tilt3d><img src="' + (PackUrl $it.img) + '" alt="' + (Enc ($name + ' - ' + (T $L $vk))) + '" width="1000" height="1250" loading="' + $ld + '"' + $(if ($sel) { ' fetchpriority="high"' } else { '' }) + '></div></figure>' + $photo +
-  '</div><div class="g-tabs" role="tablist"><button type="button" role="tab" aria-selected="true" data-show="plate"><img src="' + (ImgUrl $it.img) + '" alt="" width="44" height="55" loading="lazy">' + (Enc (T $L $vk)) + '</button>' +
-  '<button type="button" role="tab" aria-selected="false" data-show="photo"><img src="' + (TexUrl $it.img) + '" alt="" width="44" height="55" loading="lazy">' + (Enc (T $L 'viewPhoto')) + '</button></div>' +
+  # second view: the product laid in a real room (src/assets/img/room/<id>.jpg, rendered from the wall studio); no text tabs
+  $(if (HasImg 'room' $it.img) { '<figure class="g-view g-room" data-view="room" hidden><img src="' + $BasePath + '/assets/img/room/' + $it.img + '.jpg" alt="' + (Enc ($name + ' - ' + (T $L 'inRoom'))) + '" width="1500" height="1000" loading="lazy"></figure>' } else { '' }) +
+  '</div>' + $(if (HasImg 'room' $it.img) { '<div class="g-tabs g-thumbs" role="tablist"><button type="button" role="tab" aria-selected="true" data-show="plate" aria-label="' + (Enc (T $L $vk)) + '"><img src="' + (ImgUrl $it.img) + '" alt="" width="44" height="55" loading="lazy"></button>' +
+  '<button type="button" role="tab" aria-selected="false" data-show="room" aria-label="' + (Enc (T $L 'inRoom')) + '"><img src="' + $BasePath + '/assets/img/room/' + $it.img + '.jpg" alt="" width="66" height="44" loading="lazy"></button></div>' } else { '' }) +
   $(if ($slats) { '' } else { '<p class="g-note">' + (Enc (T $L 'plateNote')) + '</p>' }) + '</div>'
 }
 function VariantBlock($L, $it, $cat, [bool]$sel) {
@@ -667,7 +669,7 @@ foreach ($lang in $Langs) {
     '<section class="universes" id="universes"><div class="wrap">' + (SectionHead (T $L 'sectionsTitle') (T $L 'sectionsLead') (P $L.nav 'catalog')) + (SectionTiles $L) + '</div></section>' +
     '<section class="materials"><div class="wrap">' + (SectionHead $L.materialsTitle $L.materialsLead (P $L.nav 'looks')) + (LookTiles $L) + '</div></section>' +
     (StudioHtml $L $null) +
-    '<section class="featured"><div class="wrap">' + (SectionHead $L.featured '' (P $L.nav 'catalog')) + (Grid $L $feat) + '<p class="center"><a class="btn" href="' + (Href $L 'catalog/') + '">' + (Enc (T $L 'viewAll')) + ' (' + $Items.Count + ')' + $Icons.arrow + '</a></p></div></section>' +
+    '<section class="featured"><div class="wrap">' + (SectionHead $L.featured '' (P $L.nav 'catalog')) + (Grid $L $feat) + '<p class="center"><a class="btn" href="' + (Href $L 'catalog/') + '">' + (Enc (T $L 'viewAll')) + ' (' + $Fams.Count + ')' + $Icons.arrow + '</a></p></div></section>' +
     '<section class="steps"><div class="wrap">' + (SectionHead $L.steps.title '') + '<ol class="steps-list">' + $steps + '</ol></div></section>' +
     (VisitHtml $L $false) +
     (FaqHtml $L)

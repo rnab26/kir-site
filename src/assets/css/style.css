@@ -87,8 +87,8 @@ section { padding-block: clamp(56px, 9vw, 120px); }
 .hero { position: relative; min-height: 100svh; display: flex; align-items: flex-end; padding: calc(var(--header) + 40px) 0 clamp(48px, 8vh, 96px); color: var(--on-dark); background: #161411; overflow: hidden; isolation: isolate; --mx: 60%; --my: 40%; --lx: .6; }
 .hero-wall, .hero-wall > div { position: absolute; inset: 0; }
 .hero-wall { z-index: -1; }
-.hw-tex { background: var(--tex) 0 0 / 420px auto repeat; filter: brightness(.5) saturate(.8) contrast(1.05); }
-.hw-light { background: var(--tex) 0 0 / 420px auto repeat; filter: brightness(1.08) saturate(1.05); -webkit-mask-image: radial-gradient(circle 36vmax at var(--mx) var(--my), #000 0%, rgba(0,0,0,.55) 35%, transparent 72%); mask-image: radial-gradient(circle 36vmax at var(--mx) var(--my), #000 0%, rgba(0,0,0,.55) 35%, transparent 72%); }
+.hw-tex { background: var(--tex) center / cover no-repeat; filter: brightness(.5) saturate(.8) contrast(1.05); }
+.hw-light { background: var(--tex) center / cover no-repeat; filter: brightness(1.08) saturate(1.05); -webkit-mask-image: radial-gradient(circle 36vmax at var(--mx) var(--my), #000 0%, rgba(0,0,0,.55) 35%, transparent 72%); mask-image: radial-gradient(circle 36vmax at var(--mx) var(--my), #000 0%, rgba(0,0,0,.55) 35%, transparent 72%); }
 .hw-flutes { background:
   repeating-linear-gradient(90deg, rgba(0,0,0,.42) 0, rgba(0,0,0,.08) 10px, rgba(255,246,230,.16) calc(22px + var(--lx) * 12px), rgba(0,0,0,.05) 46px, rgba(0,0,0,.5) 64px);
   mix-blend-mode: multiply; opacity: .95; }
@@ -103,7 +103,7 @@ section { padding-block: clamp(56px, 9vw, 120px); }
 .stats { list-style: none; margin: 0; padding: 22px 0 0; display: flex; flex-wrap: wrap; gap: clamp(20px, 5vw, 64px); border-top: 1px solid rgba(241,234,223,.18); max-width: 720px; }
 .stats strong { display: block; font: 500 clamp(1.8rem, 3vw, 2.4rem)/1 var(--serif); color: #fff; }
 .stats span { font-size: .9rem; color: var(--on-dark-2); }
-.hero-tiles { position: absolute; inset-inline-end: max(16px, calc((100vw - var(--wrap)) / 2)); top: 50%; width: min(34vw, 460px); height: min(52vh, 520px); transform: translateY(-50%); pointer-events: none; }
+.hero-tiles { position: absolute; inset-inline-end: max(56px, calc((100vw - var(--wrap)) / 2 + 24px)); top: 50%; width: min(34vw, 460px); height: min(52vh, 520px); transform: translateY(-50%); pointer-events: none; }
 .hero-tiles span { position: absolute; width: 46%; aspect-ratio: 4/5; border-radius: 10px; background: var(--img) center / cover; box-shadow: 0 40px 70px -20px rgba(0,0,0,.7), inset 0 0 0 1px rgba(255,255,255,.08); transition: transform .9s var(--ease); }
 .hero-tiles span:nth-child(1) { inset-inline-start: 0; top: 4%; transform: translate(calc(var(--px, 0) * -18px), calc(var(--py, 0) * -14px)) rotate(-5deg); }
 .hero-tiles span:nth-child(2) { inset-inline-start: 30%; top: 24%; width: 50%; transform: translate(calc(var(--px, 0) * 26px), calc(var(--py, 0) * 20px)) rotate(3deg); z-index: 2; }
@@ -355,7 +355,7 @@ body.product-page .crumbs { position: static; color: var(--muted); }
 @media (max-width: 1080px) {
   .studio-grid, .calc-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
-  .hero-tiles { opacity: .55; }
+  .hero-tiles { display: none; }   /* tablets: the tiles would cover the title */
 }
 @media (max-width: 860px) {
   :root { --header: 64px; }
@@ -410,6 +410,11 @@ a.add { text-decoration: none; color: inherit; }
 .g-view[data-view="photo"] .zoom { aspect-ratio: auto; width: auto; max-width: 100%; box-shadow: var(--shadow); border-radius: 12px; }
 .g-view[data-view="photo"] .zoom img { width: auto; max-width: 100%; max-height: 74vh; height: auto; object-fit: contain; }
 .g-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.g-room { border-radius: var(--r-lg); overflow: hidden; box-shadow: var(--shadow); background: #ece6dc; }
+.g-room img { width: 100%; height: auto; display: block; }
+.g-thumbs button { padding: 4px; gap: 0; }
+.g-thumbs button[aria-selected="true"] { border-color: var(--ink); }
+.g-thumbs img { border-radius: 8px; object-fit: cover; height: 55px; width: auto; }
 .g-tabs button { display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--surface); cursor: pointer; font-weight: 600; font-size: .9rem; }
 [dir="rtl"] .g-tabs button { padding: 6px 6px 6px 14px; }
 .g-tabs button[aria-selected="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); background: #fff; }

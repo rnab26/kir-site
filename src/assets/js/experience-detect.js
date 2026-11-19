@@ -248,6 +248,15 @@ export async function analyze(source, onProgress = () => {}, opt = {}) {
     if (!near(w.floor, fx, fy)) w.floor = fx.length >= 8 ? fitLine(fx, fy) : null;
     if (!near(w.ceil, cx, cy)) w.ceil = cx.length >= 8 ? fitLine(cx, cy) : null;
     w.fN = fx.length; w.cN = cx.length; w.colX = colX; w.colT = colT; w.colB = colB;
+    // a line seen only over a small piece of the wall extrapolates badly (a corner of ceiling): it must cover a third of the wall
+    const span = (xs) => (xs.length ? (Math.max(...xs) - Math.min(...xs)) / Math.max(0.02, w.maxX - w.minX) : 0);
+    if (w.ceil && span(cx) < 0.33) w.ceil = null;
+    if (w.floor && span(fx) < 0.33 && !floorP) w.floor = null;
+    // floor and ceiling lines of one wall meet on the horizon, between them: if they cross elsewhere the ceiling line is wrong
+    if (w.floor && w.ceil) {
+      const xm = (w.minX + w.maxX) / 2, yf = yAt(w.floor, xm), yc = yAt(w.ceil, xm), vp = meet(w.floor, w.ceil);
+      if (yf <= yc || (vp && Math.abs(vp[0] - xm) < 3 && (vp[1] < yc || vp[1] > yf))) w.ceil = null;
+    }
   }
   // corners between neighbours
   // (corners already set from the bands)
@@ -325,18 +334,19 @@ export async function analyze(source, onProgress = () => {}, opt = {}) {
     const at = (c) => (LT[c][y0 * AW + x0] * (1 - tx) + LT[c][y0 * AW + x1] * tx) * (1 - ty) + (LT[c][y1 * AW + x0] * (1 - tx) + LT[c][y1 * AW + x1] * tx) * ty;
     const er = at(0), eg = at(1), eb = at(2), lp = 0.2126 * r + 0.7152 * gg + 0.0722 * b + 0.004, le = 0.2126 * er + 0.7152 * eg + 0.0722 * eb + 0.004;
     const ratio = lp / le, chroma = Math.abs(r / lp - er / le) + Math.abs(gg / lp - eg / le) + Math.abs(b / lp - eb / le);
-    obj[i] = Math.max(sm(0.5, 0.3, ratio), sm(2.0, 2.6, ratio), sm(0.14, 0.3, chroma));
+    // only really dark or differently coloured pixels are objects: a shadow on the wall is darker but keeps the wall colour
+    obj[i] = Math.max(sm(0.3, 0.16, ratio), sm(2.2, 2.8, ratio), sm(0.2, 0.36, chroma));
   }
   const objS = boxBlur(obj, MW, MH, 1);
   const mask = new Uint8Array(MW * MH * 4);
   out2.forEach((w, k) => {
     const p = new Float32Array(MW * MH);
     for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const gx = Math.min(AW - 1, (x / MW * AW) | 0), gy = Math.min(AH - 1, (y / MH * AH) | 0); p[y * MW + x] = lab[gy * AW + gx] === w.label ? 1 : 0; }
-    const q = guided(lum, boxBlur(p, MW, MH, 1), MW, MH, Math.max(4, Math.round(MW / 128)), 2e-3);
+    const q = guided(lum, boxBlur(p, MW, MH, 1), MW, MH, Math.max(3, Math.round(MW / 256)), 1e-3);   // small radius: crisp cut-outs
     // a plain wall (most of its pixels look like its light) gets the object test; a textured one (wallpaper, brick) does not
     let n = 0, o = 0; for (let i = 0; i < MW * MH; i += 7) if (p[i] > 0.5) { n++; if (obj[i] > 0.5) o++; }
     const useObj = n > 0 && o / n < 0.12;
-    for (let i = 0; i < MW * MH; i++) mask[i * 4 + k] = clamp(Math.round((q[i] - 0.06) / 0.5 * (useObj ? 1 - objS[i] : 1) * 255), 0, 255);
+    for (let i = 0; i < MW * MH; i++) mask[i * 4 + k] = Math.round(sm(0.3, 0.62, q[i]) * (useObj ? sm(0.65, 0.35, objS[i]) : 1) * 255);   // steep but anti-aliased edge
   });
   T.mask = performance.now() - tt;
   return { W: W0, H: H0, MW, MH, mask, AW, AH, light, ref: [mr / 0.85, mg / 0.85, mb / 0.85], walls: out2, f, fpx: fp, yh, rho, debug: { cls, pwall, disp, lab, planes, floorP, ceilP, AW, AH, sse: B.sse, cuts: B.cuts } };
