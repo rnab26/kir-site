@@ -156,104 +156,117 @@ function albedoOf(id) {
 }
 function faceOf(id) { if (!faceCache[id]) faceCache[id] = load(E.img + 'face/' + id + '.jpg').then((t) => (faceTex[id] = t)); return faceCache[id]; }
 
-// ---------------------------------------------------------------- the room: measured walls of a real photo
-const ROOM = { W: 2400, H: 1333, CX: 1196, CY: 693, F: 1100, ZB: 4.003, XL: -2.14, XR: 2.125, CAMH: 1.063, TOP: 2.70, ZR: 2.432, CURTAIN_X: 318 };
-const WALL_B = ROOM.XR - ROOM.XL, WALL_R = ROOM.ZB - ROOM.ZR, ZLEFT = ROOM.F * -ROOM.XL / ROOM.CX, WALL_L = ROOM.ZB - ZLEFT;
-const HIDDEN_L = ROOM.ZB - ROOM.F * -ROOM.XL / (ROOM.CX - ROOM.CURTAIN_X);
-const lay = { SW: 0.2, SL: 2.9, R: 1, NB: 22, NR: 8, NL: 11, total: 41, walls: 3, cum: [0], weights: [] };
+// ---------------------------------------------------------------- the room of the scroll story: a real photo prepared like the editor's rooms
+// (walls as quads = homographies, one mask channel per wall, light map). Pieces go up wall after wall, each one lifted off the wall
+// (its plane moved towards the camera, from the wall pose) and slid down into place with its shadow.
+let SR = null;   // the story room (data/experience.json > storyRoom), loaded at boot
+const lay = { SW: 0.2, SL: 2.9, R: 1, total: 1, walls: 3, cum: [0, 1], weights: [1], per: [], area: 1 };
+function wallPose(r, wl) {   // camera-space pose of a wall from its quad and the focal length
+  const M = homFwd(wl.q), f = r.fpx, cx = r.W / 2, cy = r.H / 2;
+  const kin = (x, y, z) => new THREE.Vector3((x - cx * z) / f, (y - cy * z) / f, z);
+  const a1 = kin(M[0], M[3], M[6]), a2 = kin(M[1], M[4], M[7]), a3 = kin(M[2], M[5], M[8]);
+  const lam = a2.length() / wl.h, n = new THREE.Vector3().crossVectors(a1, a2).normalize();
+  if (n.dot(a3) > 0) n.negate();   // towards the camera
+  return { a1, a2, a3, lam, n, f, cx, cy };
+}
+const liftM = new THREE.Matrix3();
+function liftedInv(p, d) {   // photo px -> (s, t) on the wall plane moved d metres towards the camera
+  const c = p.a3.clone().addScaledVector(p.n, p.lam * d), K = (v) => [p.f * v.x + p.cx * v.z, p.f * v.y + p.cy * v.z, v.z];
+  const A = K(p.a1), B = K(p.a2), C = K(c);
+  return liftM.set(A[0], B[0], C[0], A[1], B[1], C[1], A[2], B[2], C[2]).invert();
+}
+function quadPoint(wl, s, t) { const M = wl.M, z = M[6] * s + M[7] * t + M[8]; return [(M[0] * s + M[1] * t + M[2]) / z, (M[3] * s + M[4] * t + M[5]) / z]; }
+function pieceVisible(r, wi, s0, ds, t0, dt) {   // share of a piece that is visible in the photo (hidden pieces go by faster)
+  const wl = r.walls[wi], mk = r.mk; let v = 0;
+  for (let a = 0; a < 3; a++) for (let b = 0; b < 5; b++) {
+    const [x, y] = quadPoint(wl, s0 + (a - 1) * ds * 0.3, clamp(t0 + (b - 2) * dt * 0.2, 0.01, 0.99));
+    const ix = Math.floor(x / r.W * mk.w), iy = Math.floor(y / r.H * mk.h);
+    if (ix >= 0 && iy >= 0 && ix < mk.w && iy < mk.h && mk.d[(iy * mk.w + ix) * 4 + wi] > 127) v++;
+  }
+  return v / 15;
+}
 function layout(it, walls) {
-  const SW = it.w / 100, SLn = it.h / 100, R = Math.max(1, Math.ceil(ROOM.TOP / SLn - 1e-6));
-  const NB = Math.ceil(WALL_B / SW - 1e-6), NR = Math.ceil(WALL_R / SW - 1e-6), NL = Math.ceil(WALL_L / SW - 1e-6), hid = Math.floor(HIDDEN_L / SW);
-  const cols = walls === 3 ? NB + NR + NL : NB, weights = [];
-  for (let col = 0; col < cols; col++) { const left = col >= NB + NR, k = col - NB - NR; for (let r = 0; r < R; r++) weights.push(left && k < hid ? 0.12 : 1); }
+  const r = SR, SW = it.w / 100, SLn = it.h / 100, R = Math.max(1, Math.ceil(r.walls[0].h / SLn - 1e-6)), per = [], weights = [];
+  let off = 0, area = 0;
+  for (const wi of r.order) {
+    const wl = r.walls[wi], on = walls === 3 || wi === r.order[0], cols = on ? Math.ceil(wl.w / SW - 1e-6) : 0;
+    per[wi] = { off, cols };
+    for (let k = 0; k < cols; k++) for (let row = 0; row < R; row++) weights.push(0.12 + 0.88 * pieceVisible(r, wi, (k + 0.5) * SW / wl.w, SW / wl.w, (row + 0.5) * SLn / wl.h, SLn / wl.h));
+    off += cols; if (on) area += wl.w * wl.h;
+  }
   const cum = [0]; for (const w of weights) cum.push(cum[cum.length - 1] + w);
-  Object.assign(lay, { SW, SL: SLn, R, NB, NR: walls === 3 ? NR : 0, NL, total: cols * R, walls, cum, weights });
+  Object.assign(lay, { SW, SL: SLn, R, total: off * R, walls, cum, weights, per, area });
 }
 const countAt = (p) => {
   const x = p * lay.cum[lay.total]; let g = 0;
   while (g < lay.total && lay.cum[g + 1] < x) g++;
   return g >= lay.total ? lay.total : g + (x - lay.cum[g]) / lay.weights[g];
 };
-const AREA = { 1: WALL_B * ROOM.TOP, 3: (WALL_B + WALL_R + WALL_L) * ROOM.TOP };
-function pieceImageX(g) {
-  const col = Math.floor(g / lay.R); let X, Z;
-  if (col < lay.NB) { X = ROOM.XL + (col + 0.5) * lay.SW; Z = ROOM.ZB; }
-  else if (col < lay.NB + lay.NR) { X = ROOM.XR; Z = ROOM.ZB - (col - lay.NB + 0.5) * lay.SW; }
-  else { X = ROOM.XL; Z = ROOM.ZB - (col - lay.NB - lay.NR + 0.5) * lay.SW; }
-  return (ROOM.CX + ROOM.F * X / Z) / ROOM.W;
+function pieceAt(g) {   // global piece index -> wall, column on that wall, row
+  const col = Math.floor(g / lay.R), row = g - col * lay.R;
+  for (const wi of SR.order) { const p = lay.per[wi]; if (col < p.off + p.cols) return { wi, k: col - p.off, row }; }
+  return null;
 }
+function pieceImageX(g) { const p = pieceAt(g); if (!p) return 0.5; const wl = SR.walls[p.wi]; return quadPoint(wl, (p.k + 0.5) * lay.SW / wl.w, 0.45)[0] / SR.W; }
 
 const VS = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }';
 const RoomShader = {
   uniforms: {
     tDiffuse: { value: null }, uPhoto: { value: null }, uMask: { value: null }, uClean: { value: null }, uFace: { value: null },
-    uMix: { value: 0 }, uCount: { value: 0 }, uWin: { value: new THREE.Vector4(0, 0, 1, 1) }, uRef: { value: new THREE.Vector3(1, 1, 1) },
-    uSW: { value: 0.2 }, uSL: { value: 2.9 }, uR: { value: 1 }, uNB: { value: 22 }, uNR: { value: 8 }, uTotal: { value: 41 }, uWalls: { value: 3 }
+    uMix: { value: 0 }, uCount: { value: 0 }, uN: { value: 1 }, uGc: { value: 0 }, uR: { value: 1 },
+    uWin: { value: new THREE.Vector4(0, 0, 1, 1) }, uRef: { value: new THREE.Vector3(1, 1, 1) }, uImg: { value: new THREE.Vector2(1, 1) }, uSzC: { value: new THREE.Vector2(1, 1) },
+    uHas: { value: new THREE.Vector4() }, uCols: { value: new THREE.Vector4() }, uPiece: { value: new THREE.Vector4() }, uAnim: { value: new THREE.Vector4() },
+    uH: { value: [0, 1, 2, 3].map(() => new THREE.Matrix3()) }, uHL: { value: new THREE.Matrix3() }, uSz: { value: [0, 1, 2, 3].map(() => new THREE.Vector2(1, 1)) }, uPc: { value: [0, 1, 2, 3].map(() => new THREE.Vector4(0.2, 2.9, 1, 0)) }
   },
   vertexShader: VS,
   fragmentShader: `
     uniform sampler2D tDiffuse, uPhoto, uMask, uClean, uFace;
-    uniform float uMix, uCount, uSW, uSL, uR, uNB, uNR, uTotal, uWalls;
-    uniform vec4 uWin; uniform vec3 uRef;
+    uniform float uMix, uCount, uN, uGc, uR;
+    uniform vec4 uWin, uHas, uCols, uPiece, uAnim; uniform vec3 uRef; uniform vec2 uImg, uSzC;
+    uniform mat3 uH[4], uHL; uniform vec2 uSz[4]; uniform vec4 uPc[4];
     varying vec2 vUv;
-    const float CX = ${ROOM.CX.toFixed(1)}, CY = ${ROOM.CY.toFixed(1)}, F = ${ROOM.F.toFixed(1)}, ZB = ${ROOM.ZB}, XL = ${ROOM.XL}, XR = ${ROOM.XR}, CAMH = ${ROOM.CAMH}, TOPV = ${ROOM.TOP.toFixed(2)};
-    const vec2 IMG = vec2(${ROOM.W.toFixed(1)}, ${ROOM.H.toFixed(1)});
     float hash(float n){ return fract(sin(n * 12.9898 + 4.1) * 43758.5453); }
     vec3 toSRGB(vec3 c){ c = max(c, 0.0); return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c)); }
-    vec2 wallUV(vec2 P, int w, float off){
-      vec3 d = vec3((P.x - CX) / F, (CY - P.y) / F, 1.0);
-      if (w == 1) { float z = ZB - off; return vec2(d.x * z - XL, d.y * z + CAMH); }
-      if (w == 2) { float t = (XL + off) / d.x; return vec2(ZB - t, d.y * t + CAMH); }
-      float t = (XR - off) / d.x; return vec2(ZB - t, d.y * t + CAMH);
-    }
     vec3 pieceTex(float g, float s, float t){
       if (hash(g + 3.7) > 0.5) t = 0.98 - t;
       if (uR < 1.5) t += (hash(g * 1.7 + 1.1) - 0.5) * 0.05;
       return texture2D(uFace, vec2(clamp(s, 0.004, 0.996), clamp(t, 0.002, 0.998))).rgb;
     }
-    float colIndex(int w, float k){ return w == 1 ? k : (w == 3 ? uNB + k : uNB + uNR + k); }
-    void colWall(float col, out int w, out float k){
-      if (col < uNB) { w = 1; k = col; } else if (col < uNB + uNR) { w = 3; k = col - uNB; } else { w = 2; k = col - uNB - uNR; }
-    }
     void main(){
       vec4 base = texture2D(tDiffuse, vUv);
       vec2 puv = uWin.xy + vUv * uWin.zw;
-      vec2 P = vec2(puv.x * IMG.x, (1.0 - puv.y) * IMG.y);
-      vec3 photo = texture2D(uPhoto, puv).rgb;
-      vec3 m = texture2D(uMask, puv).rgb;
-      vec3 shade = texture2D(uClean, puv).rgb / uRef;
-      vec3 col = photo;
-      float cov = max(m.r, max(m.g, m.b));
+      vec2 P = vec2(puv.x * uImg.x, (1.0 - puv.y) * uImg.y);
+      vec3 photo = texture2D(uPhoto, puv).rgb, col = photo;
+      vec4 m = texture2D(uMask, puv) * vec4(1.0, step(1.5, uN), step(2.5, uN), step(3.5, uN));
+      float cov = max(max(m.r, m.g), max(m.b, m.a));
       if (cov > 0.002) {
-        int w = (m.r >= m.g && m.r >= m.b) ? 1 : (m.g >= m.b ? 2 : 3);
-        bool on = uWalls > 2.0 || w == 1;
-        vec2 uv = wallUV(P, w, 0.0);
-        float k = floor(uv.x / uSW), s = fract(uv.x / uSW);
-        float row = clamp(floor(uv.y / uSL), 0.0, uR - 1.0);
-        float g = colIndex(w, k) * uR + row;
-        float placed = on ? step(g + 1.0, uCount) : 0.0;
-        vec3 wall = mix(photo, pieceTex(g, s, (uv.y - row * uSL) / uSL) * shade, placed);
-        float prev = on ? step(g, uCount) * (1.0 - placed) * step(0.5, k) * step(row, 0.5) : 0.0;
-        wall *= 1.0 - prev * 0.3 * (1.0 - smoothstep(0.0, 0.07 * 0.2 / uSW, s));
-        // the piece being laid: lifted off the wall and sliding down into place, with its shadow
-        float gc = floor(uCount), tc = uCount - gc;
-        if (tc > 0.0 && gc < uTotal) {
-          float colc = floor(gc / uR), rowc = gc - colc * uR;
-          int wc; float kc; colWall(colc, wc, kc);
-          float e = pow(1.0 - tc, 2.2);
-          float lift = 0.28 * e, dv = 0.85 * e, a = smoothstep(0.0, 0.12, tc);
-          float x0 = kc * uSW, x1 = x0 + uSW, y0 = rowc * uSL + dv, y1 = y0 + uSL;
-          if (wc == w) {
-            vec2 sh = vec2(wc == 1 ? 0.55 : (wc == 3 ? -0.5 : 0.5), -0.8) * (lift + 0.012);
-            vec2 su = uv - sh; float b = 0.012 + lift * 0.22;
-            float inS = (smoothstep(x0 - b, x0 + b, su.x) - smoothstep(x1 - b, x1 + b, su.x)) * (smoothstep(y0 - b, y0 + b, su.y) - smoothstep(y1 - b, y1 + b, su.y));
+        int w = 0; float best = m.r;
+        if (m.g > best) { w = 1; best = m.g; }
+        if (m.b > best) { w = 2; best = m.b; }
+        if (m.a > best) { w = 3; best = m.a; }
+        mat3 H = uH[0]; vec2 sz = uSz[0]; vec4 pc = uPc[0]; float has = uHas.x, cols = uCols.x;
+        if (w == 1) { H = uH[1]; sz = uSz[1]; pc = uPc[1]; has = uHas.y; cols = uCols.y; }
+        else if (w == 2) { H = uH[2]; sz = uSz[2]; pc = uPc[2]; has = uHas.z; cols = uCols.z; }
+        else if (w == 3) { H = uH[3]; sz = uSz[3]; pc = uPc[3]; has = uHas.w; cols = uCols.w; }
+        vec3 shade = texture2D(uClean, puv).rgb / uRef;
+        vec3 q = H * vec3(P, 1.0); vec2 uv = q.xy / q.z * sz;
+        float k = floor(uv.x / pc.x), s = fract(uv.x / pc.x), row = clamp(floor(uv.y / pc.y), 0.0, pc.z - 1.0);
+        float g = (pc.w + clamp(k, 0.0, max(cols - 1.0, 0.0))) * pc.z + row;
+        float placed = has * step(g + 1.0, uCount);
+        vec3 wall = mix(photo, pieceTex(g, s, (uv.y - row * pc.y) / pc.y) * shade, placed);
+        // the piece being laid: lifted off its wall, sliding down into place, with its shadow on the wall
+        if (uAnim.z > 0.001) {
+          float e = uAnim.y, a = uAnim.z, lift = uAnim.w;
+          if (abs(float(w) - uAnim.x) < 0.5) {
+            vec2 su = uv - vec2(0.5, -0.8) * (lift + 0.012); float b = 0.012 + lift * 0.22;
+            float inS = (smoothstep(uPiece.x - b, uPiece.x + b, su.x) - smoothstep(uPiece.y - b, uPiece.y + b, su.x)) * (smoothstep(uPiece.z - b, uPiece.z + b, su.y) - smoothstep(uPiece.w - b, uPiece.w + b, su.y));
             wall *= 1.0 - inS * a * (0.5 - 0.25 * e);
           }
-          vec2 ul = wallUV(P, wc, lift + 0.02);
+          vec3 ql = uHL * vec3(P, 1.0); vec2 ul = ql.xy / ql.z * uSzC;
           float aa = 0.003;
-          float inX = smoothstep(x0 - aa, x0 + aa, ul.x) * (1.0 - smoothstep(x1 - aa, x1 + aa, ul.x));
-          float inY = smoothstep(y0 - aa, y0 + aa, ul.y) * (1.0 - smoothstep(y1 - aa, y1 + aa, ul.y));
-          vec3 lc = pieceTex(gc, (ul.x - x0) / uSW, (ul.y - y0) / uSL) * shade * (1.0 + 0.18 * e);
+          float inX = smoothstep(uPiece.x - aa, uPiece.x + aa, ul.x) * (1.0 - smoothstep(uPiece.y - aa, uPiece.y + aa, ul.x));
+          float inY = smoothstep(uPiece.z - aa, uPiece.z + aa, ul.y) * (1.0 - smoothstep(uPiece.w - aa, uPiece.w + aa, ul.y));
+          vec3 lc = pieceTex(uGc, (ul.x - uPiece.x) / (uPiece.y - uPiece.x), (ul.y - uPiece.z) / (uPiece.w - uPiece.z)) * shade * (1.0 + 0.18 * e);
           wall = mix(wall, lc, inX * inY * a);
         }
         col = mix(photo, wall, cov);
@@ -398,7 +411,8 @@ function drawCallouts(q, room) {
 
 // ---------------------------------------------------------------- product choice
 const params = new URLSearchParams(location.search);
-let cur = BYID[params.get('m')] || BYID[E.story];
+const byRef = (ref) => { ref = (ref || '').trim(); return ref ? ITEMS.find((it) => it.r === ref) || ITEMS.find((it) => it.r.startsWith(ref + ' ')) || ITEMS.find((it) => it.r.includes(ref)) : null; };
+let cur = BYID[params.get('m')] || byRef(params.get('ref')) || BYID[E.start] || BYID[E.story];   // ?m=<image id> or ?ref=108, else data/experience.json
 let walls = 3;
 const swatchHTML = () => E.quick.map((m) => `<button type="button" class="sw" data-id="${m.id}" aria-pressed="${m.id === cur.id}" style="--c:${m.c}"><i></i>${m.n}</button>`).join('');
 $('#asmSwatches').innerHTML = swatchHTML();
@@ -414,8 +428,11 @@ for (const b of document.querySelectorAll('[data-walls]')) b.addEventListener('c
 });
 const priceText = (it) => (it.p != null ? fmt(it.p) + ' ₪' : T.onRequest);
 function applyLayout() {
+  if (!SR) return;
   layout(cur, walls);
-  RU.uSW.value = lay.SW; RU.uSL.value = lay.SL; RU.uR.value = lay.R; RU.uNB.value = lay.NB; RU.uNR.value = lay.NR; RU.uTotal.value = lay.total; RU.uWalls.value = walls;
+  const has = [0, 0, 0, 0], cols = [0, 0, 0, 0];
+  SR.walls.forEach((wl, i) => { const p = lay.per[i]; cols[i] = p.cols; has[i] = p.cols > 0 ? 1 : 0; RU.uPc.value[i].set(lay.SW, lay.SL, lay.R, p.off); });
+  RU.uHas.value.set(...has); RU.uCols.value.set(...cols); RU.uR.value = lay.R;
   lastCount = -1;
 }
 let threeId = E.alb[cur.id] !== undefined ? cur.id : E.story;
@@ -435,7 +452,7 @@ async function choose(it) {
     faceMat.map = alb; faceMat.color.set(E.plain[it.id] || 0xffffff); faceMat.roughness = E.plain[it.id] ? 0.6 : 0.52; faceMat.needsUpdate = true;
     storyLook(it.id);
   }
-  if (params.get('m') !== it.id && (params.has('m') || it.id !== E.story) && history.replaceState) { params.set('m', it.id); history.replaceState(null, '', location.pathname + '?' + params.toString() + location.hash); }
+  if (params.get('m') !== it.id && (params.has('m') || it.id !== (E.start || E.story)) && history.replaceState) { params.set('m', it.id); history.replaceState(null, '', location.pathname + '?' + params.toString() + location.hash); }
   tap(0.4);
 }
 // the 3D story follows the slat shown in 3D: its reference, colour and price in the hero, and a brighter studio for a dark slat
@@ -528,17 +545,6 @@ function makeRoom(o) {
   return o;
 }
 const wallNames = (n) => (n === 1 ? [T.wallBack] : n === 2 ? [T.wallLeft, T.wallRight] : n === 3 ? [T.wallLeft, T.wallBack, T.wallRight] : [...Array(n)].map((_, i) => fill(T.wallN, { n: i + 1 })));
-function defaultRoom() {
-  const { XL, XR, ZB, ZR, TOP } = ROOM, pr = (X, Y, Z) => [ROOM.CX + ROOM.F * X / Z, ROOM.CY - ROOM.F * (Y - ROOM.CAMH) / Z];
-  return makeRoom({
-    id: 'studio', photo: RU.uPhoto.value, mask: RU.uMask.value, clean: RU.uClean.value, ref: RU.uRef.value.clone(), W: ROOM.W, H: ROOM.H, fpx: ROOM.F,
-    walls: [   // mask channels: R back, G left, B right; ord = laying order of the story (back, right, left), so the pieces match it
-      { name: T.wallBack, ord: 0, w: WALL_B, h: TOP, q: [pr(XL, 0, ZB), pr(XR, 0, ZB), pr(XR, TOP, ZB), pr(XL, TOP, ZB)] },
-      { name: T.wallLeft, ord: 2, w: WALL_L, h: TOP, q: [pr(XL, 0, ZB), pr(XL, 0, ZLEFT), pr(XL, TOP, ZLEFT), pr(XL, TOP, ZB)] },
-      { name: T.wallRight, ord: 1, w: WALL_R, h: TOP, q: [pr(XR, 0, ZB), pr(XR, 0, ZR), pr(XR, TOP, ZR), pr(XR, TOP, ZB)] }
-    ]
-  });
-}
 // real rooms prepared offline with the same detector (assets/exp/rooms/<id>/): photo.jpg, mask.png (walls in R, G, B), light.png, room.json
 async function preparedRoom(id) {
   const base = E.assets + 'rooms/' + id + '/';
@@ -750,7 +756,7 @@ async function edApply(it) {
 function edOpen(push = true) {
   if (ED.open || !ED.def) return;
   if (!ED.room) ED.room = ED.def;
-  if (ED.room === ED.def && !ED.dirty) ED.def.walls.forEach((wl, i) => { wl.item = walls === 3 || i === 0 ? cur : null; });
+  if (ED.room === ED.def && !ED.dirty) ED.def.walls.forEach((wl, i) => { wl.item = walls === 3 || i === ED.def.order[0] ? cur : null; });
   for (const wl of ED.room.walls) if (wl.item) faceOf(wl.item.id).then(() => ED.open && edUniforms()).catch(() => {});
   const fromStory = roomPass.enabled && RU.uMix.value > 0.5;
   ED.open = true; edEl.hidden = false; document.documentElement.classList.add('ed-on');
@@ -775,6 +781,7 @@ function edClose(fromPop) {
 addEventListener('popstate', () => { if (ED.open) edClose(true); });
 document.addEventListener('click', (e) => {
   if (e.target.closest('[data-ed-open]')) { edOpen(); return; }
+  if (e.target.closest('[data-ed-photo]')) { if (!ED.def) return; edOpen(); document.getElementById('edFile').click(); return; }   // straight to the photo picker (same tap)
   if (!ED.open) return;
   const w = e.target.closest('[data-wall]');
   if (w) { edSelect(w.dataset.wall === 'all' ? 'all' : +w.dataset.wall); return; }
@@ -816,10 +823,9 @@ function edFrame(dt, time) {
 // rooms: the studio photo, real rooms prepared offline, and the visitor's own photo (analysed on the device)
 function roomTiles() {
   const tile = (id, img, label, extra = '') => `<button type="button" class="room${extra}" data-room="${id}" aria-pressed="${ED.room && ED.room.id === id}">${img}<span>${label}</span></button>`;
-  let h = tile('studio', `<img src="${E.assets}before.jpg" alt="" loading="lazy">`, T.edStudio);
-  (E.rooms || []).forEach((id, i) => { h += tile(id, `<img src="${E.assets}rooms/${id}/thumb.jpg" alt="" loading="lazy">`, fill(T.edRoomN, { n: i + 1 })); });
+  let h = tile('upload', '<i>+</i>', ED.rooms.mine ? '+' : T.edUpload, ' up');   // the visitor's photo first: it is the point
   if (ED.rooms.mine) h += tile('mine', `<img src="${ED.rooms.mine.thumb}" alt="">`, T.edUpload);
-  h += tile('upload', '<i>+</i>', ED.rooms.mine ? '+' : T.edUpload, ' up');
+  (E.rooms || []).forEach((id, i) => { h += tile(id, `<img src="${E.assets}rooms/${id}/thumb.jpg" alt="" loading="lazy">`, fill(T.edRoomN, { n: i + 1 })); });
   $('#edRoomList').innerHTML = h;
 }
 function roomsOpen(on) { $('#edRooms').hidden = !on; $('#edRoomsBtn').setAttribute('aria-expanded', String(on)); if (on) roomTiles(); }
@@ -835,7 +841,7 @@ $('#edRoomList').addEventListener('click', async (e) => {
   const b = e.target.closest('[data-room]'); if (!b) return;
   const id = b.dataset.room;
   if (id === 'upload') { $('#edFile').click(); return; }
-  if (id === 'studio') { edSetRoom(ED.def); return; }
+  if (ED.def && id === ED.def.id) { edSetRoom(ED.def); return; }
   if (id === 'mine') { edSetRoom(ED.rooms.mine); return; }
   try { if (!ED.rooms[id]) ED.rooms[id] = await preparedRoom(id); edSetRoom(ED.rooms[id]); } catch (er) { toast(T.error); }
 });
@@ -940,9 +946,15 @@ function frame() {
   state.count = reduced ? goal : lerp(state.count, goal, 1 - Math.exp(-dt * 8));
   if (Math.abs(state.count - goal) < 0.002) state.count = goal;
   RU.uMix.value = mix; RU.uCount.value = state.count;
+  const gc = Math.floor(state.count), tc = state.count - gc, pcur = tc > 0.0001 && gc < lay.total ? pieceAt(gc) : null;
+  if (pcur) {
+    const e = Math.pow(1 - tc, 2.2), lift = 0.28 * e, dv = 0.85 * e, wl = SR.walls[pcur.wi], x0 = pcur.k * lay.SW, y0 = pcur.row * lay.SL + dv;
+    RU.uPiece.value.set(x0, x0 + lay.SW, y0, y0 + lay.SL); RU.uAnim.value.set(pcur.wi, e, smooth(clamp(tc / 0.12)), lift); RU.uGc.value = gc;
+    RU.uHL.value.copy(liftedInv(wl.pose, lift + 0.02)); RU.uSzC.value.set(wl.w, wl.h);
+  } else RU.uAnim.value.z = 0;
   roomPass.enabled = mix > 0.001;
   renderPass.enabled = bloom.enabled = outPass.enabled = mix < 0.999;
-  const asp = innerWidth / innerHeight, pa = ROOM.W / ROOM.H, zoom = 1 + 0.1 * (1 - mix);
+  const asp = innerWidth / innerHeight, pa = SR.W / SR.H, zoom = 1 + 0.1 * (1 - mix);
   let ww = 1, wh = 1; if (asp < pa) ww = asp / pa; else wh = pa / asp;
   ww /= zoom; wh /= zoom;
   const want = asp < 1.2 && state.count < lay.total - 0.01 ? pieceImageX(Math.min(lay.total - 1, Math.floor(state.count))) : 0.5;
@@ -954,7 +966,7 @@ function frame() {
     lastCount = placed;
     $('#nSlats').textContent = fmt(placed);
     $('#nUnits').textContent = cur.k === 'slats' ? T.unitsSlat : T.units;
-    $('#nArea').textContent = fmt(Math.min(AREA[walls], placed * lay.SW * Math.min(lay.SL, ROOM.TOP)), 1);
+    $('#nArea').textContent = fmt(Math.min(lay.area, placed * lay.SW * Math.min(lay.SL, SR.walls[0].h)), 1);
     $('#priceFact').hidden = cur.p == null;
     if (cur.p != null) { $('#nPrice').textContent = fmt(placed * cur.p) + ' ₪'; $('#nPriceL').textContent = fill(cur.k === 'slats' ? T.priceSlat : T.priceUnit, { p: fmt(cur.p) }); }
     $('#meterFill').style.transform = `scaleX(${placed / lay.total})`;
@@ -986,21 +998,22 @@ addEventListener('resize', resize);
 // ---------------------------------------------------------------- boot: load, compile every shader behind the loader, then fade in
 async function boot() {
   resize();
-  const [photo, mask, clean, alb] = await Promise.all([load(E.assets + 'room.jpg'), load(E.assets + 'room-mask.png', false), load(E.assets + 'room-clean.jpg'), albedoOf(threeId)]);
-  for (const t of [photo, mask, clean]) { t.anisotropy = 1; t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; }
-  RU.uPhoto.value = photo; RU.uMask.value = mask; RU.uClean.value = clean;
-  const lin = (c) => Math.pow(c / 255, 2.2);
-  RU.uRef.value.set(lin(180.3), lin(170.4), lin(161.7)).multiplyScalar(1 / 0.8);   // the wall paint under full light
+  const [sr, alb] = await Promise.all([preparedRoom(E.storyRoom), albedoOf(threeId)]);
+  // laying order: the wall facing the camera (closest to the middle of the photo) first, then the others
+  const mid = (i) => Math.abs((sr.walls[i].anchor || [1e9])[0] - sr.W / 2);
+  sr.order = sr.walls.map((_, i) => i).sort((a, b) => mid(a) - mid(b));
+  sr.walls.forEach((wl, i) => { wl.M = homFwd(wl.q); wl.pose = wallPose(sr, wl); wl.ord = sr.order.indexOf(i); RU.uH.value[i].copy(wl.Hinv); RU.uSz.value[i].set(wl.w, wl.h); });
+  RU.uPhoto.value = sr.photo; RU.uMask.value = sr.mask; RU.uClean.value = sr.clean; RU.uRef.value.copy(sr.ref); RU.uImg.value.set(sr.W, sr.H); RU.uN.value = sr.walls.length;
+  SR = sr; ED.def = sr; ED.rooms[sr.id] = sr;
   faceMat.map = alb; faceMat.color.set(E.plain[threeId] || 0xffffff); faceMat.needsUpdate = true;
   storyLook(threeId);
   await choose(cur);
   try { await renderer.compileAsync(scene, camera); } catch (e) { /* compile on the first frame */ }
-  ED.def = defaultRoom();
   canvas.classList.add('on'); $('#loading').classList.add('done');
   measure();
   requestAnimationFrame(frame);
   if (location.hash === '#room') requestAnimationFrame(() => { measure(); scrollTo(0, roomTop + roomLen * 0.08); });
-  if (location.hash === '#walls') { ED.boot = true; edOpen(false); }
+  if (location.hash === '#walls' || location.hash === '#photo') { ED.boot = true; edOpen(false); if (location.hash === '#photo') roomsOpen(true); }
   (window.requestIdleCallback || setTimeout)(() => E.quick.forEach((m) => { faceOf(m.id).catch(() => {}); albedoOf(m.id).catch(() => {}); }));
 }
 boot().catch((e) => { $('#loading').textContent = T.error; console.error(e); });

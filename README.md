@@ -52,7 +52,12 @@ mur ; crédits dans `CREDITS.txt`) et **« Ma photo »** : la photo du visiteur 
 `src/assets/js/experience-detect.js` (IA de segmentation SegFormer + profondeur Depth Anything via transformers.js, ~30 Mo téléchargés
 une seule fois, rien n'est envoyé) : murs, angles, ligne du sol et du plafond, lumière. « Ajuster les coins » permet de corriger
 la perspective d'un mur à la main, et la hauteur des murs (2,60 m par défaut) se règle. Pour ajouter une pièce préparée : passer la photo
-dans le même détecteur, copier les fichiers dans `rooms/<id>/` et ajouter l'id dans `$ExpRooms` (`scripts/experience.ps1`).
+dans le même détecteur, copier les fichiers dans `rooms/<id>/` et ajouter l'id dans `data/experience.json`.
+
+**Réglages simples (`data/experience.json`)** : `storyModel` = référence du modèle posé dans la pièce au chargement
+(ex. `"035 20025"` ou juste `"108"`), `storyRoom` = vraie pièce du défilement, `rooms` = pièces proposées. Un lien peut aussi
+choisir le modèle : `experience/?ref=108`. Le visiteur peut essayer sa propre photo : bouton « Essayer avec ma photo »
+(accueil, barre du studio, fin de page) ou lien `experience/#photo`.
 
 Sur toutes les pages : sélecteur de langue עב / EN / FR dans l'en-tête (et suggestion automatique selon la langue du navigateur),
 bouton WhatsApp flottant (message pré-rempli avec le produit consulté), menu d'accessibilité, « vus récemment ».

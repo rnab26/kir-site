@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap">
-<link rel="preload" as="image" href="{{assets}}room.jpg">
+<link rel="preload" as="image" href="{{roomPhoto}}">
 <style>
 /* Layout: one fixed WebGL stage behind the page, the story scrolls over it (text on the reading side, object on the other). */
 :root {
@@ -198,6 +198,8 @@ html.ed-on .story, html.ed-on .top, html.ed-on .dock, html.ed-on #labels, html.e
   .cur b { max-width: 7.5rem; }
   .cur { padding-inline-end: 6px; }
   .dots, #moreBtn, .dock .seg { display: none; }
+  .dock [data-ed-photo] { font-size: 0; padding: 9px 11px; }
+  .dock [data-ed-photo] svg { margin: 0 !important; }
   .seg button { padding: 8px 9px; }
   .brand span { display: none; }
 }
@@ -284,6 +286,7 @@ html.ed-on .story, html.ed-on .top, html.ed-on .dock, html.ed-on #labels, html.e
       <p>{{ctaP}}</p>
       <div class="actions">
         <button class="btn btn-main" type="button" data-ed-open>{{edCta}}</button>
+        <button class="btn" type="button" data-ed-photo>{{edTry}}</button>
         <a class="btn" id="waCta" href="https://wa.me/{{waNum}}" target="_blank" rel="noopener">{{ctaWa}}</a>
         <a class="btn" id="siteLink" href="{{home}}">{{ctaPage}}</a>
       </div>
@@ -302,6 +305,7 @@ html.ed-on .story, html.ed-on .top, html.ed-on .dock, html.ed-on #labels, html.e
     <div class="dots" id="dots"></div>
     <button class="more" type="button" id="moreBtn" aria-haspopup="dialog">{{allModels}}</button>
     <div class="seg" role="group"><button type="button" aria-pressed="false" data-walls="1">{{oneWall}}</button><button type="button" aria-pressed="true" data-walls="3">{{allWalls}}</button></div>
+    <button class="more" type="button" data-ed-photo><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true" style="width:15px;height:15px;vertical-align:-3px;margin-inline-end:6px"><path d="M2 5h2.5l1.2-2h4.6l1.2 2H14v8H2z"/><circle cx="8" cy="9" r="2.4"/></svg>{{edTry}}</button>
     <button class="go" type="button" data-ed-open><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M1.5 3.5 6 2v10.5l-4.5 1.5zM6 2l4 1.5V14L6 12.5M10 3.5 14.5 2v10.5L10 14"/></svg>{{edOpen}}</button>
   </div>
 </div>

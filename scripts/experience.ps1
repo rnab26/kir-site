@@ -15,10 +15,27 @@ $ExpQuick = @(
 )
 $ExpPlain = @{ '1ap4OJMSWn5NE-S8yQKpcQ_etHyNk7KC3' = '#e4e0d8' }
 $ExpCats = @('slat', 'panel', 'flex', 'stone', 'deco')
-$ExpRooms = @('r04', 'r02', 'r01', 'r31', 'r27', 'r13')   # real rooms prepared with experience-detect.js (src/assets/exp/rooms/<id>/)
+# data/experience.json: the model laid in the room at load (by its reference, e.g. "035 20025" or just "108"),
+# the room of the scroll story and the rooms offered in the editor (real rooms in src/assets/exp/rooms/<id>/)
+$ExpCfg = Read-Json 'data/experience.json'
+$ExpRooms = @($ExpCfg.rooms | Where-Object { Test-Path (Join-Path $Root ('src/assets/exp/rooms/' + $_ + '/room.json')) })
+$ExpRoom = [string]$ExpCfg.storyRoom
+if (-not ($ExpRooms -contains $ExpRoom)) { throw "data/experience.json: storyRoom '$ExpRoom' has no prepared room in src/assets/exp/rooms" }
 
 function ExpX($L) { P $ExpTxt $L.lang }
 function ExpHasFace($it) { ($it.c -in $ExpCats) -and (P $FaceDims $it.img) -and (HasImg 'face' $it.img) }
+function ExpByRef([string]$ref) {   # exact reference first, then "108" -> "108 20025", then any reference containing it
+  $ref = $ref.Trim(); if (-not $ref) { return $null }
+  $c = @($Items | Where-Object { ExpHasFace $_ })
+  foreach ($t in @({ param($r) $r -eq $ref }, { param($r) $r.StartsWith($ref + ' ') }, { param($r) $r.Contains($ref) })) {
+    $hit = $c | Where-Object { & $t ([string]$_.ref) } | Select-Object -First 1
+    if ($hit) { return $hit }
+  }
+  $null
+}
+$ExpStart = ExpByRef ([string]$ExpCfg.storyModel)
+if (-not $ExpStart) { Write-Warning "data/experience.json: storyModel '$($ExpCfg.storyModel)' not found, using 035"; $ExpStart = $ById[$ExpStory] }
+if ($ExpQuick | Where-Object { $_[0] -eq $ExpStart.img }) { $ExpStory = $ExpStart.img }   # one of the four 3D slats: the 3D story shows it too
 function ExpHref($L, [string]$img) { (Href $L 'experience/') + $(if ($img) { '?m=' + $img + '#room' } else { '' }) }
 function ExpItems($L) {
   $seen = @{}; $out = New-Object System.Collections.ArrayList
@@ -52,10 +69,10 @@ function ExperiencePage($L) {
   $quick = @(); $alb = [ordered]@{}
   foreach ($q in $ExpQuick) { $quick += [ordered]@{ id = $q[0]; c = $q[1]; n = [string](P $x $q[2]) }; $alb[$q[0]] = $(if ($q[3]) { $q[3] } else { $null }) }
   $cats = @(); foreach ($c in $ExpCats) { if (@($items | Where-Object { $_.c -eq $c }).Count) { $cats += [ordered]@{ c = $c; n = [string](P (CatOf $L $c) 'name') } } }
-  $rooms = @($ExpRooms | Where-Object { Test-Path (Join-Path $Root ('src/assets/exp/rooms/' + $_ + '/room.json')) })
-  $cfg = [ordered]@{ rooms = $rooms; detect = (AssetUrl ('js/experience-detect.js?v=' + $Ver)); lang = $L.lang; rtl = ($L.dir -eq 'rtl'); assets = (AssetUrl 'exp/'); img = (AssetUrl 'img/'); wa = $Wa; story = $ExpStory; quick = $quick; alb = $alb; plain = $ExpPlain; cats = $cats; items = $items; t = $t }
+  $rooms = $ExpRooms
+  $cfg = [ordered]@{ rooms = $rooms; storyRoom = $ExpRoom; start = $ExpStart.img; detect = (AssetUrl ('js/experience-detect.js?v=' + $Ver)); lang = $L.lang; rtl = ($L.dir -eq 'rtl'); assets = (AssetUrl 'exp/'); img = (AssetUrl 'img/'); wa = $Wa; story = $ExpStory; quick = $quick; alb = $alb; plain = $ExpPlain; cats = $cats; items = $items; t = $t }
   $html = $ExpTpl
-  $vars = @{ lang = $L.lang; dir = $L.dir; head = $head; assets = (AssetUrl 'exp/'); home = (Href $L ''); brand = (Enc (BrandOf $L)); waNum = $Wa; phone = (Enc ([string]$Site.phoneDisplay)); js = (AssetUrl ('js/experience.js?v=' + $Ver)); p035 = $(if ($story -and $null -ne $story.p) { [string]$story.p } else { '44' }); config = ((To-Json $cfg) -replace '</', '<\/') }
+  $vars = @{ roomPhoto = (AssetUrl ('exp/rooms/' + $ExpRoom + '/photo.jpg')); lang = $L.lang; dir = $L.dir; head = $head; assets = (AssetUrl 'exp/'); home = (Href $L ''); brand = (Enc (BrandOf $L)); waNum = $Wa; phone = (Enc ([string]$Site.phoneDisplay)); js = (AssetUrl ('js/experience.js?v=' + $Ver)); p035 = $(if ($story -and $null -ne $story.p) { [string]$story.p } else { '44' }); config = ((To-Json $cfg) -replace '</', '<\/') }
   foreach ($k in $vars.Keys) { $html = $html.Replace('{{' + $k + '}}', [string]$vars[$k]) }
   foreach ($pp in $x.PSObject.Properties) { $html = $html.Replace('{{' + $pp.Name + '}}', [string]$pp.Value) }
   Write-Out ((Rel $L $path) + 'index.html') $html
@@ -67,7 +84,7 @@ function ExpTeaser($L, $first, [string]$tag = 'h2') {
   $img = if ($first -and (ExpHasFace $first)) { $first.img } else { '' }
   '<section class="exp-teaser" id="studio"><div class="wrap exp-grid">' +
   '<div class="exp-copy reveal"><p class="kicker">' + (Enc $x.teaserKicker) + '</p><' + $tag + '>' + (Enc $x.teaserTitle) + '</' + $tag + '><p class="lead">' + (Enc $x.teaserLead) + '</p>' +
-  '<p><a class="btn btn-dark" href="' + (ExpHref $L $img) + '">' + (Enc $x.teaserBtn) + $Icons.arrow + '</a></p></div>' +
+  '<p class="exp-actions"><a class="btn btn-dark" href="' + (ExpHref $L $img) + '">' + (Enc $x.teaserBtn) + $Icons.arrow + '</a> <a class="btn btn-ghost-dark" href="' + (Href $L 'experience/') + '#photo">' + (Enc $x.edTry) + '</a></p></div>' +
   '<figure class="ba reveal" dir="ltr" data-ba style="--p:55%"><img src="' + (AssetUrl 'exp/before.jpg') + '" alt="" width="1600" height="889" loading="lazy">' +
   '<img class="ba-after" src="' + (AssetUrl 'exp/after-035.jpg') + '" alt="' + (Enc $x.teaserTitle) + '" width="1600" height="889" loading="lazy">' +
   '<span class="ba-line" aria-hidden="true"></span><span class="ba-tag ba-b">' + (Enc $x.teaserBefore) + '</span><span class="ba-tag ba-a">' + (Enc $x.teaserAfter) + '</span>' +

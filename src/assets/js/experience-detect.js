@@ -98,7 +98,7 @@ function fitLine(xs, ys) {   // y = m x + k, robust (2 passes trimming the worst
 export async function analyze(source, onProgress = () => {}, opt = {}) {
   const { RawImage } = lib;
   const W0 = source.naturalWidth || source.width, H0 = source.naturalHeight || source.height;
-  const big = document.createElement('canvas'), sc = Math.min(1, 1024 / Math.max(W0, H0));
+  const big = document.createElement('canvas'), sc = Math.min(1, (opt.maskMax || 1024) / Math.max(W0, H0));
   big.width = Math.round(W0 * sc); big.height = Math.round(H0 * sc);
   big.getContext('2d').drawImage(source, 0, 0, big.width, big.height);
   const raw = RawImage.fromCanvas(big);
@@ -295,17 +295,8 @@ export async function analyze(source, onProgress = () => {}, opt = {}) {
   for (let k = out2.length - 1; k >= 0; k--) if (out2[k].w < 0.6 && (out2[k].floorFrom === 'guess' || out2[k].n < N * 0.04)) out2.splice(k, 1);   // slivers at the edge of the photo
   T.walls = performance.now() - tt; tt = performance.now();
   onProgress('mask', 0);
-  // masks at up to 1024 px, refined on the photo edges; light map at the analysis grid
+  // light first: normalised convolution of the wall colour (linear) inside all walls, so objects and outlets vanish
   const MW = big.width, MH = big.height, g = big.getContext('2d').getImageData(0, 0, MW, MH).data;
-  const lum = new Float32Array(MW * MH); for (let i = 0; i < MW * MH; i++) lum[i] = (0.299 * g[i * 4] + 0.587 * g[i * 4 + 1] + 0.114 * g[i * 4 + 2]) / 255;
-  const mask = new Uint8Array(MW * MH * 4);
-  out2.forEach((w, k) => {
-    const p = new Float32Array(MW * MH);
-    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const gx = Math.min(AW - 1, (x / MW * AW) | 0), gy = Math.min(AH - 1, (y / MH * AH) | 0); p[y * MW + x] = lab[gy * AW + gx] === w.label ? 1 : 0; }
-    const q = guided(lum, boxBlur(p, MW, MH, 2), MW, MH, Math.max(4, Math.round(MW / 128)), 2e-3);
-    for (let i = 0; i < MW * MH; i++) mask[i * 4 + k] = clamp(Math.round((q[i] - 0.15) / 0.7 * 255), 0, 255);
-  });
-  // light: normalised convolution of the wall colour (linear) inside all walls, so objects and outlets vanish
   const lin = (c) => Math.pow(c / 255, 2.2), R = Math.max(3, Math.round(AW * 0.045));
   const chans = [new Float32Array(N), new Float32Array(N), new Float32Array(N)], wgt = new Float32Array(N);
   const small = document.createElement('canvas'); small.width = AW; small.height = AH; small.getContext('2d').drawImage(big, 0, 0, AW, AH);
@@ -316,11 +307,37 @@ export async function analyze(source, onProgress = () => {}, opt = {}) {
   let mr = 0, mg = 0, mb = 0, mn = 0;
   for (let i = 0; i < N; i++) if (lab[i] >= 0) { mr += chans[0][i]; mg += chans[1][i]; mb += chans[2][i]; mn++; }
   mr /= mn || 1; mg /= mn || 1; mb /= mn || 1;
+  const LT = [new Float32Array(N), new Float32Array(N), new Float32Array(N)];
   const light = new Uint8Array(N * 4), enc = (v) => clamp(Math.round(Math.pow(Math.max(0, v), 1 / 2.2) * 255), 0, 255);
   for (let i = 0; i < N; i++) {
-    const ww = bw[i]; const r = ww > 0.02 ? bc[0][i] / ww : mr, gg = ww > 0.02 ? bc[1][i] / ww : mg, b = ww > 0.02 ? bc[2][i] / ww : mb;
-    light[i * 4] = enc(r); light[i * 4 + 1] = enc(gg); light[i * 4 + 2] = enc(b); light[i * 4 + 3] = 255;
+    const ww = bw[i]; LT[0][i] = ww > 0.02 ? bc[0][i] / ww : mr; LT[1][i] = ww > 0.02 ? bc[1][i] / ww : mg; LT[2][i] = ww > 0.02 ? bc[2][i] / ww : mb;
+    light[i * 4] = enc(LT[0][i]); light[i * 4 + 1] = enc(LT[1][i]); light[i * 4 + 2] = enc(LT[2][i]); light[i * 4 + 3] = 255;
   }
+  // masks at full resolution, refined on the photo edges (guided filter). Thin things in front of a wall (stems, lamp poles,
+  // stands) slip through the coarse segmentation, so on a plain wall a pixel must also look like the wall: close to its smooth light.
+  const LUT = new Float32Array(256); for (let v = 0; v < 256; v++) LUT[v] = lin(v);
+  const lum = new Float32Array(MW * MH), obj = new Float32Array(MW * MH);
+  const sm = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+    const i = y * MW + x, r = LUT[g[i * 4]], gg = LUT[g[i * 4 + 1]], b = LUT[g[i * 4 + 2]];
+    lum[i] = (0.299 * g[i * 4] + 0.587 * g[i * 4 + 1] + 0.114 * g[i * 4 + 2]) / 255;
+    const fx = clamp((x + 0.5) / MW * AW - 0.5, 0, AW - 1), fy = clamp((y + 0.5) / MH * AH - 0.5, 0, AH - 1), x0 = fx | 0, y0 = fy | 0, x1 = Math.min(AW - 1, x0 + 1), y1 = Math.min(AH - 1, y0 + 1), tx = fx - x0, ty = fy - y0;
+    const at = (c) => (LT[c][y0 * AW + x0] * (1 - tx) + LT[c][y0 * AW + x1] * tx) * (1 - ty) + (LT[c][y1 * AW + x0] * (1 - tx) + LT[c][y1 * AW + x1] * tx) * ty;
+    const er = at(0), eg = at(1), eb = at(2), lp = 0.2126 * r + 0.7152 * gg + 0.0722 * b + 0.004, le = 0.2126 * er + 0.7152 * eg + 0.0722 * eb + 0.004;
+    const ratio = lp / le, chroma = Math.abs(r / lp - er / le) + Math.abs(gg / lp - eg / le) + Math.abs(b / lp - eb / le);
+    obj[i] = Math.max(sm(0.5, 0.3, ratio), sm(2.0, 2.6, ratio), sm(0.14, 0.3, chroma));
+  }
+  const objS = boxBlur(obj, MW, MH, 1);
+  const mask = new Uint8Array(MW * MH * 4);
+  out2.forEach((w, k) => {
+    const p = new Float32Array(MW * MH);
+    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const gx = Math.min(AW - 1, (x / MW * AW) | 0), gy = Math.min(AH - 1, (y / MH * AH) | 0); p[y * MW + x] = lab[gy * AW + gx] === w.label ? 1 : 0; }
+    const q = guided(lum, boxBlur(p, MW, MH, 1), MW, MH, Math.max(4, Math.round(MW / 128)), 2e-3);
+    // a plain wall (most of its pixels look like its light) gets the object test; a textured one (wallpaper, brick) does not
+    let n = 0, o = 0; for (let i = 0; i < MW * MH; i += 7) if (p[i] > 0.5) { n++; if (obj[i] > 0.5) o++; }
+    const useObj = n > 0 && o / n < 0.12;
+    for (let i = 0; i < MW * MH; i++) mask[i * 4 + k] = clamp(Math.round((q[i] - 0.06) / 0.5 * (useObj ? 1 - objS[i] : 1) * 255), 0, 255);
+  });
   T.mask = performance.now() - tt;
   return { W: W0, H: H0, MW, MH, mask, AW, AH, light, ref: [mr / 0.85, mg / 0.85, mb / 0.85], walls: out2, f, fpx: fp, yh, rho, debug: { cls, pwall, disp, lab, planes, floorP, ceilP, AW, AH, sse: B.sse, cuts: B.cuts } };
 }

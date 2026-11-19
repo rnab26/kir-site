@@ -654,6 +654,8 @@ body.has-buybar .site-footer { padding-bottom: 96px; }
 .exp-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: clamp(28px, 5vw, 72px); align-items: center; }
 .exp-copy .kicker { color: var(--brass); }
 .exp-copy .lead { color: var(--on-dark-2); }
+.exp-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.exp-actions .btn-ghost-dark { border-color: rgba(242, 234, 221, .4); color: var(--on-dark, #f2eadd); }
 .exp-copy .btn-dark { background: var(--on-dark); color: var(--ink); border-color: var(--on-dark); }
 .exp-copy .btn-dark:hover { background: #fff; }
 .ba { position: relative; margin: 0; border-radius: var(--r-lg); overflow: hidden; aspect-ratio: 1600 / 889; max-width: 100%; background: var(--dark-2); --p: 55%; touch-action: pan-y; }
