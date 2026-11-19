@@ -614,7 +614,7 @@ function VariantGallery($L, $it, [bool]$sel) {
   $td = TexDim $it.img
   $photo = '<figure class="g-view" data-view="photo"' + $(if ($it.c -in $PlateCats) { ' hidden' } else { '' }) + '><div class="zoom" data-zoom style="--img:url(' + (TexUrl $it.img) + ')"><img src="' + (TexUrl $it.img) + '" alt="' + (Enc $name) + '" width="' + $td[0] + '" height="' + $td[1] + '" loading="' + $ld + '"></div></figure>'
   if ($it.c -notin $PlateCats) { return '<div class="gallery" data-vg="' + $it.slug + '"' + $hid + '><div class="g-stage">' + $photo + '</div></div>' }
-  $slats = ($it.c -eq 'slat') -or ($it.c -eq 'outdoor' -and -not ($it.w -ge 40))
+  $slats = ($it.c -eq 'slat')
   $vk = if ($slats) { 'viewSlats' } else { 'viewPlate' }
   '<div class="gallery" data-vg="' + $it.slug + '"' + $hid + '><div class="g-stage">' +
   '<figure class="g-view" data-view="plate"><div class="tilt" data-tilt3d><img src="' + (PackUrl $it.img) + '" alt="' + (Enc ($name + ' - ' + (T $L $vk))) + '" width="1000" height="1250" loading="' + $ld + '"' + $(if ($sel) { ' fetchpriority="high"' } else { '' }) + '></div></figure>' + $photo +
