@@ -6,8 +6,9 @@
 //    each wall becomes a quad (homography) + a soft mask refined on the photo edges + a smooth light map.
 const TF = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1';
 const SEG = 'Xenova/segformer-b0-finetuned-ade-512-512', DEPTH = 'onnx-community/depth-anything-v2-small';
-const C_WALL = 0, C_FLOOR = 3, C_CEIL = 5, C_RUG = 28;
-let lib = null, seg = null, depth = null;
+const SAM = 'Xenova/slimsam-77-uniform';   // Segment Anything (light): crisp outlines of the objects in front of the walls
+const C_WALL = 0, C_FLOOR = 3, C_CEIL = 5, C_RUG = 28, C_SKY = 2;
+let lib = null, seg = null, depth = null, sam = null;
 
 export async function loadModels(onProgress = () => {}, opt = {}) {
   if (!lib) lib = await import(TF);
@@ -21,6 +22,214 @@ export async function loadModels(onProgress = () => {}, opt = {}) {
   if (!seg) seg = { proc: await AutoProcessor.from_pretrained(opt.seg || SEG), model: await AutoModel.from_pretrained(opt.seg || SEG, { dtype: gpu ? (opt.segGpu || 'fp16') : 'q8', device, progress_callback: cb }) };
   if (!depth) depth = await pipeline('depth-estimation', DEPTH, { dtype: gpu ? (opt.depthGpu || 'q4f16') : 'q8', device, progress_callback: cb });
   if (opt.depthSize) depth.processor.image_processor.size = { width: opt.depthSize, height: opt.depthSize };
+  if (opt.sam !== false && !sam) {
+    try { sam = { proc: await AutoProcessor.from_pretrained(opt.sam || SAM), model: await lib.SamModel.from_pretrained(opt.sam || SAM, { dtype: 'q8', device, progress_callback: cb }) }; }
+    catch (e) { sam = null; console.warn('SAM unavailable', e); }   // the walls still work, with the softer outlines
+  }
+}
+
+// ---------------------------------------------------------------- vertical vanishing point
+// Near-vertical edges of the photo (door and window frames, corners, furniture) all point to one vanishing point; walls are
+// built with their sides through it, so the slats stand exactly like the real verticals of the photo, whatever the camera tilt.
+// Structure tensor orientations + iteratively reweighted least squares. Homogeneous, in x = X/W, y = Y/W units.
+function smallestEig3(M) {   // eigenvector of the smallest eigenvalue of a symmetric 3x3 (Jacobi)
+  const a = M.map((r) => r.slice()), v = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+  for (let sweep = 0; sweep < 30; sweep++) {
+    for (const [p, q] of [[0, 1], [0, 2], [1, 2]]) {
+      if (Math.abs(a[p][q]) < 1e-15) continue;
+      const th = (a[q][q] - a[p][p]) / (2 * a[p][q]), t = Math.sign(th || 1) / (Math.abs(th) + Math.sqrt(th * th + 1)), c = 1 / Math.sqrt(t * t + 1), s = t * c;
+      for (let k = 0; k < 3; k++) { const akp = a[k][p], akq = a[k][q]; a[k][p] = c * akp - s * akq; a[k][q] = s * akp + c * akq; }
+      for (let k = 0; k < 3; k++) { const apk = a[p][k], aqk = a[q][k]; a[p][k] = c * apk - s * aqk; a[q][k] = s * apk + c * aqk; }
+      for (let k = 0; k < 3; k++) { const vkp = v[k][p], vkq = v[k][q]; v[k][p] = c * vkp - s * vkq; v[k][q] = s * vkp + c * vkq; }
+    }
+  }
+  let m = 0; for (let i = 1; i < 3; i++) if (a[i][i] < a[m][m]) m = i;
+  return [v[0][m], v[1][m], v[2][m]];
+}
+function verticalVP(cv) {
+  const W = 480, H = Math.max(8, Math.round(480 * cv.height / cv.width)), hImg = H / W;
+  const c = document.createElement('canvas'); c.width = W; c.height = H; c.getContext('2d').drawImage(cv, 0, 0, W, H);
+  const d = c.getContext('2d').getImageData(0, 0, W, H).data, G = new Float32Array(W * H);
+  for (let i = 0; i < W * H; i++) G[i] = 0.299 * d[i * 4] + 0.587 * d[i * 4 + 1] + 0.114 * d[i * 4 + 2];
+  const xx = new Float32Array(W * H), xy = new Float32Array(W * H), yy = new Float32Array(W * H);
+  for (let y = 1; y < H - 1; y++) for (let x = 1; x < W - 1; x++) {
+    const i = y * W + x, gx = (G[i - W + 1] + 2 * G[i + 1] + G[i + W + 1]) - (G[i - W - 1] + 2 * G[i - 1] + G[i + W - 1]), gy = (G[i + W - 1] + 2 * G[i + W] + G[i + W + 1]) - (G[i - W - 1] + 2 * G[i - W] + G[i - W + 1]);
+    xx[i] = gx * gx; xy[i] = gx * gy; yy[i] = gy * gy;
+  }
+  const Jxx = boxBlur(xx, W, H, 2), Jxy = boxBlur(xy, W, H, 2), Jyy = boxBlur(yy, W, H, 2);
+  const E = new Float32Array(W * H); for (let i = 0; i < W * H; i++) E[i] = Jxx[i] + Jyy[i];
+  const sample = []; for (let i = 0; i < W * H; i += 13) sample.push(E[i]); sample.sort((a, b) => a - b);
+  const thr = sample[(sample.length * 0.8) | 0] || 1;
+  const L = [];
+  for (let y = 3; y < H - 3; y++) for (let x = 3; x < W - 3; x++) {
+    const i = y * W + x, e = E[i]; if (e < thr) continue;
+    const coh = Math.sqrt((Jxx[i] - Jyy[i]) ** 2 + 4 * Jxy[i] ** 2) / (e + 1e-9); if (coh < 0.75) continue;
+    const phi = 0.5 * Math.atan2(2 * Jxy[i], Jxx[i] - Jyy[i]), dx = -Math.sin(phi), dy = Math.cos(phi);
+    if (Math.abs(dx) > 0.34) continue;
+    const px = (x + 0.5) / W, py = (y + 0.5) / W;
+    L.push([dy, -dx, -(dy * px - dx * py), Math.sqrt(e) * coh, px, py, dx, dy]);
+  }
+  if (L.length < 300) return [0, 1, 0];
+  let v = [0, 1, 0];
+  for (let it = 0; it < 8; it++) {
+    const M = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    for (const l of L) {
+      let tx, ty; if (Math.abs(v[2]) < 1e-9) { tx = v[0]; ty = v[1]; } else { tx = v[0] / v[2] - l[4]; ty = v[1] / v[2] - l[5]; }
+      const tn = Math.hypot(tx, ty) || 1, r = Math.abs(l[6] * ty / tn - l[7] * tx / tn), w = l[3] / (1 + (r / 0.035) ** 2);
+      for (let a = 0; a < 3; a++) for (let b = 0; b < 3; b++) M[a][b] += w * l[a] * l[b];
+    }
+    v = smallestEig3(M);
+  }
+  // sanity: a vertical vanishing point is far above or below the picture, close to the vertical through its centre
+  if (Math.abs(v[2]) > 1e-9) {
+    const vx = v[0] / v[2] - 0.5, vy = v[1] / v[2] - hImg / 2;
+    if (Math.hypot(vx, vy) < 1.2 || Math.abs(Math.atan2(Math.abs(vx), Math.abs(vy))) > 0.26) return [0, 1, 0];
+    if (Math.hypot(vx, vy) > 60) return [0, 1, 0];
+  } else if (Math.abs(Math.atan2(Math.abs(v[0]), Math.abs(v[1]))) > 0.26) return [0, 1, 0];
+  return v;
+}
+const cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+
+// ---------------------------------------------------------------- crisp object outlines (Segment Anything)
+// Every patch of non-wall pixels that touches a wall (furniture, lamps, frames, curtains, plants) gets one SAM prompt at its
+// most inner point; the best SAM mask that is neither tiny nor mostly wall is cut out of the walls with a 1 px feather.
+async function samObjects(raw, lab, cls, AW, AH, MW, MH) {
+  const { Tensor } = lib, N = AW * AH;
+  const isObj = (i) => lab[i] < 0 && cls[i] !== C_FLOOR && cls[i] !== C_CEIL && cls[i] !== C_RUG && cls[i] !== C_SKY;
+  const comp = new Int32Array(N).fill(-1), kept = [];
+  for (let s0 = 0; s0 < N; s0++) {
+    if (comp[s0] >= 0 || !isObj(s0)) continue;
+    const px = [], st = [s0]; comp[s0] = s0; let touch = 0;
+    while (st.length) {
+      const j = st.pop(); px.push(j); const x = j % AW, y = (j / AW) | 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= AW || yy >= AH) continue;
+        const k = yy * AW + xx; if (lab[k] >= 0) touch++; else if (comp[k] < 0 && isObj(k)) { comp[k] = s0; st.push(k); }
+      }
+    }
+    if (px.length < Math.max(10, N * 0.0005) || touch < 6) continue;
+    // most inner point: chamfer distance inside the patch
+    const set = new Set(px), dist = new Map(); let best = px[0], bd = -1;
+    for (const j of px) { const x = j % AW, y = (j / AW) | 0; let m = 99; for (let r = 1; r < 12 && m === 99; r++) { if (!set.has(j - r) || !set.has(j + r) || !set.has(j - r * AW) || !set.has(j + r * AW) || x - r < 0 || x + r >= AW) m = r; } dist.set(j, m); if (m > bd) { bd = m; best = j; } }
+    kept.push({ area: px.length, ix: best % AW, iy: (best / AW) | 0 });
+  }
+  if (!kept.length) return null;
+  kept.sort((a, b) => b.area - a.area);
+  const inputs = await sam.proc(raw), emb = await sam.model.get_image_embeddings(inputs);
+  const rs = inputs.reshaped_input_sizes[0], os = inputs.original_sizes[0], OH = os[0], OW = os[1];
+  const obj = new Uint8Array(MW * MH), px2 = (OW * OH) / N;
+  for (const c of kept.slice(0, 40)) {
+    const x = (c.ix + 0.5) / AW * OW, y = (c.iy + 0.5) / AH * OH;
+    const input_points = new Tensor('float32', new Float32Array([x * rs[1] / OW, y * rs[0] / OH]), [1, 1, 1, 2]);
+    const input_labels = new Tensor('int64', new BigInt64Array([1n]), [1, 1, 1]);
+    const out = await sam.model({ ...emb, input_points, input_labels });
+    const masks = await sam.proc.post_process_masks(out.pred_masks, inputs.original_sizes, inputs.reshaped_input_sizes);
+    const m = masks[0], md = m.data, plane = OW * OH, ious = out.iou_scores.data;
+    let pick = -1, ps = -1;
+    for (let k = 0; k < 3; k++) {
+      let area = 0, onWall = 0;
+      for (let i = k * plane, e = (k + 1) * plane, q = 0; i < e; i += 3, q += 3) {
+        if (!md[i]) continue; area += 3;
+        const gx = Math.min(AW - 1, ((q % OW) / OW * AW) | 0), gy = Math.min(AH - 1, (((q / OW) | 0) / OH * AH) | 0);
+        if (lab[gy * AW + gx] >= 0) onWall += 3;
+      }
+      const ca = c.area * px2;
+      if (area < ca * 0.3 || area > ca * 8 || onWall > area * 0.55) continue;
+      if (ious[k] > ps) { ps = ious[k]; pick = k; }
+    }
+    if (pick < 0) continue;
+    for (let i = 0, o = pick * plane; i < plane; i++) if (md[o + i]) obj[i] = 1;
+  }
+  return obj;
+}
+
+// ---------------------------------------------------------------- rectangles on the wall (windows, doors, frames, screens)
+// Their hole becomes the exact rectangle in perspective (through the wall homography), each side moved onto the outermost strong
+// photo edge nearby (the frame), and the rounded margin the segmentation leaves around them is wall again.
+const RECT = new Set([8, 14, 22, 27, 58, 63, 89, 100, 130, 141, 143, 144]);   // windowpane, door, painting, mirror, screen door, blind, tv, poster, screens, board
+const SEEN = new Set([1, 2, 4, 6, 9, 11, 16, 20, 25, 29, 32, 48, 68, 72, 84, 87]);   // what shows through a window: sky, trees, houses, street...
+function inv3(m) {
+  const [a, b, c, d, e, f, g, h, i] = m, A = e * i - f * h, B = -(d * i - f * g), C = d * h - e * g, det = a * A + b * B + c * C;
+  if (Math.abs(det) < 1e-14) return null;
+  return [A / det, -(b * i - c * h) / det, (b * f - c * e) / det, B / det, (a * i - c * g) / det, -(a * f - c * d) / det, C / det, -(a * h - b * g) / det, (a * e - b * d) / det];
+}
+function snapRects(mask, base, out2, lab, cls, lum, AW, AH, MW, MH, W0, gIdx) {
+  const N = AW * AH, ms = MW / W0, comp = new Int32Array(N).fill(-1);
+  const isR = (i) => lab[i] < 0 && (RECT.has(cls[i]) || SEEN.has(cls[i]));
+  const Hs = out2.map((w) => { const H = homography(w.q.map(([x, y]) => [x * ms, y * ms])); return { H, Hi: inv3(H) }; });
+  const toP = (H, u, v) => { const z = H[6] * u + H[7] * v + H[8]; return [(H[0] * u + H[1] * v + H[2]) / z, (H[3] * u + H[4] * v + H[5]) / z]; };
+  const lumAt = ([X, Y]) => { const x = clamp(X - 0.5, 0, MW - 1.001), y = clamp(Y - 0.5, 0, MH - 1.001), x0 = x | 0, y0 = y | 0, tx = x - x0, ty = y - y0, i = y0 * MW + x0; return (lum[i] * (1 - tx) + lum[i + 1] * tx) * (1 - ty) + (lum[i + MW] * (1 - tx) + lum[i + MW + 1] * tx) * ty; };
+  let done = 0;
+  for (let s0 = 0; s0 < N && done < 16; s0++) {
+    if (comp[s0] >= 0 || !isR(s0)) continue;
+    const px = [], st = [s0], touch = out2.map(() => 0); comp[s0] = s0; let nR = 0;
+    while (st.length) {
+      const j = st.pop(); px.push(j); if (RECT.has(cls[j])) nR++;
+      const x = j % AW, y = (j / AW) | 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= AW || yy >= AH) continue;
+        const kk = yy * AW + xx;
+        if (lab[kk] >= 0) { const wi = out2.findIndex((w) => w.label === lab[kk]); if (wi >= 0) touch[wi]++; } else if (comp[kk] < 0 && isR(kk)) { comp[kk] = s0; st.push(kk); }
+      }
+    }
+    if (px.length < N * 0.002 || nR < px.length * 0.15) continue;
+    let k = 0; for (let i = 1; i < touch.length; i++) if (touch[i] > touch[k]) k = i;
+    if (touch[k] < 12 || !Hs[k].Hi) continue;
+    const { H, Hi } = Hs[k], us = [], vs = [];
+    for (const j of px) { const X = (j % AW + 0.5) / AW * MW, Y = (((j / AW) | 0) + 0.5) / AH * MH, z = Hi[6] * X + Hi[7] * Y + Hi[8]; us.push((Hi[0] * X + Hi[1] * Y + Hi[2]) / z); vs.push((Hi[3] * X + Hi[4] * Y + Hi[5]) / z); }
+    us.sort((a, b) => a - b); vs.sort((a, b) => a - b);
+    const pc = (a, t) => a[Math.round(t * (a.length - 1))];
+    const u0 = pc(us, 0.02), u1 = pc(us, 0.98), v0 = pc(vs, 0.02), v1 = pc(vs, 0.98), du = u1 - u0, dv = v1 - v0;
+    if (du < 0.02 || dv < 0.02 || u0 < -0.05 || u1 > 1.05 || v0 < -0.05 || v1 > 1.05) continue;
+    // a rectangle: nearly all of it is off the wall, and most of it is this patch
+    let nS = 0, off = 0, mine = 0;
+    for (let a = 0; a < 16; a++) for (let b = 0; b < 16; b++) {
+      const [X, Y] = toP(H, u0 + (a + 0.5) / 16 * du, v0 + (b + 0.5) / 16 * dv); if (!(X >= 0 && Y >= 0 && X < MW && Y < MH)) continue;
+      const gi = gIdx[(Y | 0) * MW + (X | 0)]; nS++; if (lab[gi] < 0) off++; if (comp[gi] === s0) mine++;
+    }
+    if (nS < 64 || off / nS < 0.9 || mine / nS < 0.6) continue;
+    // sides onto the outermost strong edge within 15 % of the size (the outside of the frame)
+    const cu = (u0 + u1) / 2, cv = (v0 + v1) / 2, Pc = toP(H, cu, cv), Pu = toP(H, cu + 0.01, cv), Pv = toP(H, cu, cv + 0.01);
+    const pxU = Math.hypot(Pu[0] - Pc[0], Pu[1] - Pc[1]) / 0.01, pxV = Math.hypot(Pv[0] - Pc[0], Pv[1] - Pc[1]) / 0.01;
+    if (!(pxU > 0 && pxV > 0)) continue;
+    const eu = 1.5 / pxU, ev = 1.5 / pxV;
+    const side = (t0, span, vert, outward) => {
+      const S = [], ts = [];
+      for (let s = -15; s <= 15; s++) {
+        const t = t0 + s / 100 * span; let sc = 0;
+        for (let j = 0; j < 24; j++) {
+          const a = (vert ? v0 + (0.15 + 0.7 * j / 23) * dv : u0 + (0.15 + 0.7 * j / 23) * du);
+          sc += vert ? Math.abs(lumAt(toP(H, t + eu, a)) - lumAt(toP(H, t - eu, a))) : Math.abs(lumAt(toP(H, a, t + ev)) - lumAt(toP(H, a, t - ev)));
+        }
+        S.push(sc / 24); ts.push(t);
+      }
+      const mx = Math.max(...S); if (mx < 0.04) return t0;
+      let best = -1; for (let s = 0; s < S.length; s++) if (S[s] >= mx * 0.6) { if (best < 0 || (outward < 0 ? ts[s] < ts[best] : ts[s] > ts[best])) best = s; }
+      return ts[best];
+    };
+    const uL = side(u0, du, true, -1), uR = side(u1, du, true, 1), vB = side(v0, dv, false, -1), vT = side(v1, dv, false, 1);
+    if (uR - uL < du * 0.5 || vT - vB < dv * 0.5) continue;
+    const band = Math.max(4, 0.1 * Math.min((uR - uL) * pxU, (vT - vB) * pxV));
+    const cs = [toP(H, uL, vB), toP(H, uR, vB), toP(H, uR, vT), toP(H, uL, vT)];
+    const bx0 = Math.max(0, Math.floor(Math.min(...cs.map((c) => c[0])) - band - 2)), bx1 = Math.min(MW - 1, Math.ceil(Math.max(...cs.map((c) => c[0])) + band + 2));
+    const by0 = Math.max(0, Math.floor(Math.min(...cs.map((c) => c[1])) - band - 2)), by1 = Math.min(MH - 1, Math.ceil(Math.max(...cs.map((c) => c[1])) + band + 2));
+    const lw = out2[k].label;
+    // stray bits of the patch outside the rectangle are wall again too: scan the patch's own box as well
+    let gx0 = AW, gx1 = 0, gy0 = AH, gy1 = 0; for (const j of px) { const gx = j % AW, gy = (j / AW) | 0; gx0 = Math.min(gx0, gx); gx1 = Math.max(gx1, gx); gy0 = Math.min(gy0, gy); gy1 = Math.max(gy1, gy); }
+    const near = (gi) => { const gx = gi % AW, gy = (gi / AW) | 0; for (let b = -1; b <= 1; b++) for (let a = -1; a <= 1; a++) { const xx = gx + a, yy = gy + b; if (xx >= 0 && yy >= 0 && xx < AW && yy < AH && comp[yy * AW + xx] === s0) return true; } return false; };
+    const X0 = Math.min(bx0, Math.floor(gx0 / AW * MW) - 2), X1 = Math.max(bx1, Math.ceil((gx1 + 1) / AW * MW) + 2), Y0 = Math.min(by0, Math.floor(gy0 / AH * MH) - 2), Y1 = Math.max(by1, Math.ceil((gy1 + 1) / AH * MH) + 2);
+    for (let y = Math.max(0, Y0); y <= Math.min(MH - 1, Y1); y++) for (let x = Math.max(0, X0); x <= Math.min(MW - 1, X1); x++) {
+      const X = x + 0.5, Y = y + 0.5, z = Hi[6] * X + Hi[7] * Y + Hi[8], u = (Hi[0] * X + Hi[1] * Y + Hi[2]) / z, v = (Hi[3] * X + Hi[4] * Y + Hi[5]) / z;
+      const d = Math.min(Math.min(u - uL, uR - u) * pxU, Math.min(v - vB, vT - v) * pxV), cin = clamp(d + 0.5, 0, 1), i = y * MW + x, gi = gIdx[i];
+      const m0 = mask[i * 4 + k], b = 255 * base[k][i]; let m = m0 * (1 - cin);
+      // the wall comes up to the frame: the patch outside the rectangle, and the soft rim of wall along the patch's old edge
+      // (not the edge of anything else, a curtain or a lamp next to the window keeps its cut-out)
+      if (d < 0 && (comp[gi] === s0 || (d > -band && lab[gi] === lw && near(gi)))) m = Math.max(m, b * (1 - cin));
+      mask[i * 4 + k] = Math.round(m);
+    }
+    done++;
+  }
+  return done;
 }
 
 // ---------------------------------------------------------------- small helpers
@@ -247,7 +456,7 @@ export async function analyze(source, onProgress = () => {}, opt = {}) {
     if (w.ceil && !above(w.ceil)) w.ceil = null;
     if (!near(w.floor, fx, fy)) w.floor = fx.length >= 8 ? fitLine(fx, fy) : null;
     if (!near(w.ceil, cx, cy)) w.ceil = cx.length >= 8 ? fitLine(cx, cy) : null;
-    w.fN = fx.length; w.cN = cx.length; w.colX = colX; w.colT = colT; w.colB = colB;
+    w.fN = fx.length; w.cN = cx.length; w.colX = colX; w.colT = colT; w.colB = colB; w.fS = [fx, fy]; w.cS = [cx, cy];
     // a line seen only over a small piece of the wall extrapolates badly (a corner of ceiling): it must cover a third of the wall
     const span = (xs) => (xs.length ? (Math.max(...xs) - Math.min(...xs)) / Math.max(0.02, w.maxX - w.minX) : 0);
     if (w.ceil && span(cx) < 0.33) w.ceil = null;
@@ -270,6 +479,7 @@ export async function analyze(source, onProgress = () => {}, opt = {}) {
   let f = 0.72 * Math.max(1, hImg);
   const hv = walls.filter((w) => w.floor).map((w) => { const hor = [0, 1, -yh]; return meet(w.floor, hor); });
   for (let k = 0; k < hv.length - 1; k++) { const a = hv[k], b = hv[k + 1]; if (!a || !b) continue; const v = -((a[0] - 0.5) * (b[0] - 0.5) + (a[1] - hImg / 2) * (b[1] - hImg / 2)); if (v > 0) { const ff = Math.sqrt(v); if (ff > 0.35 && ff < 1.6) { f = ff; break; } } }
+  const VVP = opt.vertical === false ? [0, 1, 0] : verticalVP(big);
   // build the quads (in x = X/W, y = Y/W units, then photo px)
   const vert = (x) => [1, 0, -x];
   const out2 = [];
@@ -285,13 +495,23 @@ export async function analyze(source, onProgress = () => {}, opt = {}) {
     if (!w.ceil) ceil = push(ceil, true);
     if (!w.floor) floor = push(floor, false);
     // side edges: the corner with the neighbour, else a line parallel to the nearest corner through the wall's extent
+    // sides through the photo's vertical vanishing point: the slats follow the real verticals of the picture
+    // (a corner shared by two walls gets one line, cached on the corner, so both walls meet exactly)
+    const ymidV = (w.minY + w.maxY) / 2, xAt = (Lr, y) => -(Lr[1] * y + Lr[2]) / Lr[0];
+    const viaVP = (Lr, dflt) => {
+      if (Lr && Math.abs(Lr[0]) > 1e-12) { if (!Lr.vv) Lr.vv = cross3([xAt(Lr, ymidV), ymidV, 1], VVP); return Lr.vv; }
+      return cross3([dflt, ymidV, 1], VVP);
+    };
+    w.cornL = !!w.left; w.cornR = !!w.right;
+    w.left = viaVP(w.left, w.minX); w.right = viaVP(w.right, w.maxX);
     const ref = w.left || w.right;
     const side = (x, yRef) => { if (!ref || Math.abs(ref[0]) < 1e-9 || Math.abs(ref[1]) > Math.abs(ref[0]) * VT) return vert(x); return [ref[0], ref[1], -(ref[0] * x + ref[1] * yRef)]; };
     const ymid = (w.minY + w.maxY) / 2;
     const left = w.left || side(w.minX, ymid), right = w.right || side(w.maxX, ymid);
     const q = [meet(floor, left), meet(floor, right), meet(ceil, right), meet(ceil, left)];
     if (q.some((p) => !p || !isFinite(p[0]) || !isFinite(p[1]))) continue;
-    out2.push({ plane: w.plane, label: w.p, q: q.map((p) => [p[0] * big.width / sc, p[1] * big.width / sc]), qn: q, floorFrom: w.floor ? (floorP ? 'plane/edge' : 'edge') : 'guess', ceilFrom: w.ceil ? 'seen' : 'guess', n: w.n });
+    out2.push({ plane: w.plane, label: w.p, q: q.map((p) => [p[0] * big.width / sc, p[1] * big.width / sc]), qn: q, floorFrom: w.floor ? (floorP ? 'plane/edge' : 'edge') : 'guess', ceilFrom: w.ceil ? 'seen' : 'guess', n: w.n,
+      fL: w.floor || null, cL: w.ceil || null, fS: w.fS, cS: w.cS, cornL: w.cornL, cornR: w.cornR, minX: w.minX, maxX: w.maxX });
   }
   // aspect ratio of each wall from its quad and f (Zhang's rectangle test), real height assumed
   const HM = opt.height || 2.6, fp = f * W0, cxp = W0 / 2, cyp = H0 / 2;
@@ -338,16 +558,58 @@ export async function analyze(source, onProgress = () => {}, opt = {}) {
     obj[i] = Math.max(sm(0.3, 0.16, ratio), sm(2.2, 2.8, ratio), sm(0.2, 0.36, chroma));
   }
   const objS = boxBlur(obj, MW, MH, 1);
-  const mask = new Uint8Array(MW * MH * 4);
+  const mask = new Uint8Array(MW * MH * 4), base = [], ms = MW / W0;
+  const gIdx = new Int32Array(MW * MH);
+  for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) gIdx[y * MW + x] = Math.min(AH - 1, (y / MH * AH) | 0) * AW + Math.min(AW - 1, (x / MW * AW) | 0);
+  const CEILS = new Set([C_CEIL]), FLOORS = new Set([C_FLOOR, C_RUG]);
   out2.forEach((w, k) => {
-    const p = new Float32Array(MW * MH);
-    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) { const gx = Math.min(AW - 1, (x / MW * AW) | 0), gy = Math.min(AH - 1, (y / MH * AH) | 0); p[y * MW + x] = lab[gy * AW + gx] === w.label ? 1 : 0; }
+    // straight edges: a seen ceiling / floor line that matches the segmentation boundary and the corners with the neighbours cut
+    // the wall exactly (anti-aliased); what the segmentation gave to the ceiling, the floor or the next wall just inside is wall
+    const Q = w.q.map(([x, y]) => [x * ms, y * ms]), ccx = (Q[0][0] + Q[1][0] + Q[2][0] + Q[3][0]) / 4, ccy = (Q[0][1] + Q[1][1] + Q[2][1] + Q[3][1]) / 4;
+    const E = [];
+    const add = (a, b, fill, m) => { let L = lineThrough(a, b); const n = Math.hypot(L[0], L[1]); if (n < 1e-9) return; L = L.map((v) => v / n); if (L[0] * ccx + L[1] * ccy + L[2] < 0) L = L.map((v) => -v); E.push({ L, fill, m }); };
+    const fits = (L, S) => { if (!L || !S || S[0].length < 8 || Math.abs(L[1]) < 1e-9) return false; const e = S[0].map((x, i) => Math.abs(yAt(L, x) - S[1][i])).sort((a, b) => a - b); return e[(e.length / 2) | 0] < 0.006; };
+    if (opt.straight !== false) {
+      if (fits(w.cL, w.cS)) add(Q[3], Q[2], CEILS, MW * 0.03);
+      if (fits(w.fL, w.fS)) add(Q[0], Q[1], FLOORS, MW * 0.03);
+      if (w.cornL) add(Q[0], Q[3], null, MW * 0.05);
+      if (w.cornR) add(Q[1], Q[2], null, MW * 0.05);
+    }
+    const x0 = w.cornL ? -1e9 : w.minX * MW - 2, x1 = w.cornR ? 1e9 : w.maxX * MW + 2;
+    const p = new Float32Array(MW * MH), C = new Float32Array(MW * MH);
+    for (let y = 0; y < MH; y++) for (let x = 0; x < MW; x++) {
+      // the label grid is read bilinearly: a slanted edge (white curtain on a white wall, where the photo gives the guided
+      // filter nothing to follow) comes out as a smooth line, not as stair steps of grid cells
+      const fx = clamp((x + 0.5) / MW * AW - 0.5, 0, AW - 1.001), fy = clamp((y + 0.5) / MH * AH - 0.5, 0, AH - 1.001), ax = fx | 0, ay = fy | 0, tx = fx - ax, ty = fy - ay, a0 = ay * AW + ax;
+      const bl = ((lab[a0] === w.label) * (1 - tx) + (lab[a0 + 1] === w.label) * tx) * (1 - ty) + ((lab[a0 + AW] === w.label) * (1 - tx) + (lab[a0 + AW + 1] === w.label) * tx) * ty;
+      const i = y * MW + x, gi = gIdx[i], l = lab[gi]; let v = bl, c = 1;
+      for (const e of E) {
+        const d = e.L[0] * (x + 0.5) + e.L[1] * (y + 0.5) + e.L[2];
+        c *= d <= -0.5 ? 0 : d >= 0.5 ? 1 : d + 0.5;
+        if (v < 1 && d > -6 && d < e.m && (e.fill ? x >= x0 && x <= x1 && e.fill.has(cls[gi]) : l >= 0)) v = 1;
+      }
+      p[i] = v; C[i] = c;
+    }
     const q = guided(lum, boxBlur(p, MW, MH, 1), MW, MH, Math.max(3, Math.round(MW / 256)), 1e-3);   // small radius: crisp cut-outs
     // a plain wall (most of its pixels look like its light) gets the object test; a textured one (wallpaper, brick) does not
     let n = 0, o = 0; for (let i = 0; i < MW * MH; i += 7) if (p[i] > 0.5) { n++; if (obj[i] > 0.5) o++; }
-    const useObj = n > 0 && o / n < 0.12;
-    for (let i = 0; i < MW * MH; i++) mask[i * 4 + k] = Math.round(sm(0.3, 0.62, q[i]) * (useObj ? sm(0.65, 0.35, objS[i]) : 1) * 255);   // steep but anti-aliased edge
+    const useObj = n > 0 && o / n < 0.12, B = new Float32Array(MW * MH);
+    for (let i = 0; i < MW * MH; i++) { B[i] = C[i] * (useObj ? sm(0.65, 0.35, objS[i]) : 1); mask[i * 4 + k] = Math.round(sm(0.3, 0.62, q[i]) * B[i] * 255); }   // steep but anti-aliased edge
+    base.push(B);
   });
+  if (sam && opt.sam !== false) {   // crisp outlines: what Segment Anything calls an object is cut out of every wall
+    onProgress('cut', 0);
+    try {
+      const objM = await samObjects(raw, lab, cls, AW, AH, MW, MH);
+      if (objM) {
+        const fo = new Float32Array(MW * MH); for (let i = 0; i < fo.length; i++) fo[i] = objM[i];
+        const ff = boxBlur(fo, MW, MH, 1);
+        for (let i = 0; i < MW * MH; i++) { const keep = 1 - ff[i]; if (keep < 0.999) for (let k = 0; k < out2.length; k++) mask[i * 4 + k] = Math.round(mask[i * 4 + k] * keep); }
+      }
+    } catch (e) { console.warn('SAM step skipped', e); }
+    T.sam = performance.now() - tt;
+  }
+  if (opt.rects !== false) { try { T.rects = snapRects(mask, base, out2, lab, cls, lum, AW, AH, MW, MH, W0, gIdx); } catch (e) { console.warn('rectangle step skipped', e); } }
   T.mask = performance.now() - tt; tt = performance.now();
   // opt.room = {fpx, walls: [{q, w}]} (a prepared room.json): the floor follows that stored geometry instead of this run's walls
   let fFp = fp, fWalls = out2, fYh = yh;

@@ -16,6 +16,13 @@ const easeOut = (t) => 1 - Math.pow(1 - t, 3);
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mobile = () => innerWidth < 760;
 const SIDE = E.rtl ? 1 : -1;   // the object sits opposite the text
+// data/experience.json > design, or try another one with the address: ?theme=light|warm|dark &anim=lift|drop|fade &speed=1.5
+const QD = new URLSearchParams(location.search);
+if (QD.get('theme')) document.documentElement.dataset.theme = QD.get('theme');
+if (QD.get('speed')) document.documentElement.style.setProperty('--speed', QD.get('speed'));
+const DZ = Object.assign({}, E.design, QD.get('theme') ? { theme: QD.get('theme') } : {}, QD.get('anim') ? { anim: QD.get('anim') } : {});
+const THEME = DZ.theme || 'dark', ANIM = DZ.anim || 'lift';
+const BGC = new THREE.Color(getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() || '#100e0b');   // page colour, linear
 const fmt = (n, d = 0) => Number(n).toLocaleString(E.lang === 'he' ? 'he-IL' : E.lang, { minimumFractionDigits: d, maximumFractionDigits: d });
 const fill = (s, v) => s.replace(/\{(\w+)\}/g, (m, k) => (v[k] != null ? v[k] : ''));
 const ITEMS = E.items, BYID = {}; for (const it of ITEMS) BYID[it.id] = it;
@@ -36,7 +43,9 @@ const camera = new THREE.PerspectiveCamera(28, innerWidth / innerHeight, 0.01, 8
 const bgCanvas = document.createElement('canvas'); bgCanvas.width = 64; bgCanvas.height = 512;
 function paintBg(lift) {
   const g = bgCanvas.getContext('2d'), gr = g.createLinearGradient(0, 0, 0, 512);
-  const stops = lift ? ['#4a4136', '#2c261f', '#141210'] : ['#1d1913', '#15120e', '#0c0a08'];
+  // design.theme palettes; 'lift' = a slat that would melt into the backdrop (dark slat on dark, light slat on light)
+  const P = { dark: [['#1d1913', '#15120e', '#0c0a08'], ['#4a4136', '#2c261f', '#141210']], warm: [['#3a2a1d', '#2a1f16', '#18110c'], ['#5a4330', '#3b2c1f', '#1e150e']], light: [['#f7f2ea', '#efe8dd', '#e2d9cb'], ['#cfc4b3', '#b9ad9b', '#9d917f']] };
+  const stops = (P[THEME] || P.dark)[lift ? 1 : 0];
   gr.addColorStop(0, stops[0]); gr.addColorStop(0.55, stops[1]); gr.addColorStop(1, stops[2]);
   g.fillStyle = gr; g.fillRect(0, 0, 64, 512);
   if (scene.background) scene.background.needsUpdate = true;
@@ -213,7 +222,7 @@ const VS = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMat
 const RoomShader = {
   uniforms: {
     tDiffuse: { value: null }, uPhoto: { value: null }, uMask: { value: null }, uClean: { value: null }, uFace: { value: null },
-    uMix: { value: 0 }, uCount: { value: 0 }, uN: { value: 1 }, uGc: { value: 0 }, uR: { value: 1 }, uBand: { value: 0 },
+    uMix: { value: 0 }, uCount: { value: 0 }, uN: { value: 1 }, uGc: { value: 0 }, uR: { value: 1 }, uBand: { value: 0 }, uBg: { value: BGC.clone() },
     uWin: { value: new THREE.Vector4(0, 0, 1, 1) }, uRef: { value: new THREE.Vector3(1, 1, 1) }, uImg: { value: new THREE.Vector2(1, 1) }, uSzC: { value: new THREE.Vector2(1, 1) },
     uHas: { value: new THREE.Vector4() }, uCols: { value: new THREE.Vector4() }, uPiece: { value: new THREE.Vector4() }, uAnim: { value: new THREE.Vector4() },
     uH: { value: [0, 1, 2, 3].map(() => new THREE.Matrix3()) }, uHL: { value: new THREE.Matrix3() }, uSz: { value: [0, 1, 2, 3].map(() => new THREE.Vector2(1, 1)) }, uPc: { value: [0, 1, 2, 3].map(() => new THREE.Vector4(0.2, 2.9, 1, 0)) }
@@ -221,7 +230,7 @@ const RoomShader = {
   vertexShader: VS,
   fragmentShader: `
     uniform sampler2D tDiffuse, uPhoto, uMask, uClean, uFace;
-    uniform float uMix, uCount, uN, uGc, uR, uBand;
+    uniform float uMix, uCount, uN, uGc, uR, uBand; uniform vec3 uBg;
     uniform vec4 uWin, uHas, uCols, uPiece, uAnim; uniform vec3 uRef; uniform vec2 uImg, uSzC;
     uniform mat3 uH[4], uHL; uniform vec2 uSz[4]; uniform vec4 uPc[4];
     varying vec2 vUv;
@@ -235,7 +244,7 @@ const RoomShader = {
     void main(){
       vec4 base = texture2D(tDiffuse, vUv);
       vec2 puv = uWin.xy + vUv * uWin.zw;
-      if (puv.y < 0.0 || puv.y > 1.0) { gl_FragColor = vec4(mix(base.rgb, vec3(0.063, 0.055, 0.043), uMix), 1.0); return; }
+      if (puv.y < 0.0 || puv.y > 1.0) { gl_FragColor = vec4(mix(base.rgb, toSRGB(uBg), uMix), 1.0); return; }
       vec2 P = vec2(puv.x * uImg.x, (1.0 - puv.y) * uImg.y);
       vec3 photo = texture2D(uPhoto, puv).rgb, col = photo;
       vec4 m = texture2D(uMask, puv) * vec4(1.0, step(1.5, uN), step(2.5, uN), step(3.5, uN));
@@ -272,7 +281,7 @@ const RoomShader = {
         }
         col = mix(photo, wall, cov);
       }
-      col = mix(vec3(0.0052, 0.0044, 0.0034), col, mix(1.0, smoothstep(0.0, 0.03, puv.y) * smoothstep(1.0, 0.97, puv.y), uBand));   // soft top and bottom edges of a shorter photo
+      col = mix(uBg, col, mix(1.0, smoothstep(0.0, 0.03, puv.y) * smoothstep(1.0, 0.97, puv.y), uBand));   // soft top and bottom edges of a shorter photo
       gl_FragColor = vec4(mix(base.rgb, toSRGB(col), uMix), 1.0);
     }`
 };
@@ -467,7 +476,7 @@ function storyLook(id) {
   if (it && it.p != null) $('#heroPrice').textContent = fmt(it.p) + ' ₪';
   const h = parseInt(q.c.slice(1), 16), lum = (0.299 * (h >> 16) + 0.587 * ((h >> 8) & 255) + 0.114 * (h & 255)) / 255;
   const dark = lum < 0.3;
-  paintBg(dark);
+  paintBg(THEME === 'light' ? lum > 0.72 : dark);
   key.intensity = dark ? 3.4 : 2.7; rim.intensity = dark ? 2.6 : 0.85; scene.environmentIntensity = dark ? 1.6 : 0.9;
   faceMat.clearcoat = dark ? 0.45 : 0.22;
 }
@@ -602,7 +611,7 @@ const blank = new THREE.DataTexture(new Uint8Array([128, 128, 128, 255]), 1, 1);
 const gold = new THREE.Color('#cda56b');
 const EditShader = {
   uniforms: {
-    uPhoto: { value: null }, uMask: { value: null }, uClean: { value: null },
+    uPhoto: { value: null }, uMask: { value: null }, uClean: { value: null }, uAmb: { value: null },
     uF0: { value: blank }, uF1: { value: blank }, uF2: { value: blank }, uF3: { value: blank },
     uWin: { value: new THREE.Vector4(0, 0, 1, 1) }, uRef: { value: new THREE.Vector3(1, 1, 1) }, uImg: { value: new THREE.Vector2(1, 1) }, uPx: { value: new THREE.Vector2(0.001, 0.001) },
     uH: { value: [0, 1, 2, 3].map(() => new THREE.Matrix3()) }, uSz: { value: [0, 1, 2, 3].map(() => new THREE.Vector2(1, 1)) }, uPc: { value: [0, 1, 2, 3].map(() => new THREE.Vector4(0.2, 2.9, 1, 0)) },
@@ -611,14 +620,17 @@ const EditShader = {
     // floor: mask (R), its own light, homography photo px -> (s, t), size in metres, plank texture, planks (width, length, stagger, direction)
     uFOn: { value: 0 }, uFHas: { value: 0 }, uFSel: { value: 0 }, uFM: { value: blank }, uFL: { value: blank }, uFT: { value: blank },
     uFH: { value: new THREE.Matrix3() }, uFSz: { value: new THREE.Vector2(1, 1) }, uFRef: { value: new THREE.Vector3(1, 1, 1) },
-    uFP: { value: new THREE.Vector4(0.19, 1.5, -1, 0) }, uFTs: { value: new THREE.Vector2(0.6, 2.4) }
+    uFP: { value: new THREE.Vector4(0.19, 1.5, -1, 0) }, uFTs: { value: new THREE.Vector2(0.6, 2.4) },
+    // presentation: per-wall reveal (slats appear one by one), before/after split (screen x, 2 = off), light mood (0 day, 1 evening, 2 bright)
+    uRev: { value: new THREE.Vector4(1, 1, 1, 1) }, uSplit: { value: 2 }, uMood: { value: 0 }, uBg: { value: BGC.clone() }
   },
   vertexShader: VS,
   fragmentShader: `
-    uniform sampler2D uPhoto, uMask, uClean, uF0, uF1, uF2, uF3, uFM, uFL, uFT;
+    uniform sampler2D uPhoto, uMask, uClean, uAmb, uF0, uF1, uF2, uF3, uFM, uFL, uFT;
     uniform vec4 uWin, uHas, uSel, uFP; uniform vec3 uRef, uGold, uFRef; uniform vec2 uImg, uPx, uFSz, uFTs;
     uniform mat3 uH[4], uFH; uniform vec2 uSz[4]; uniform vec4 uPc[4];
-    uniform float uN, uTime, uScan, uFocus, uFOn, uFHas, uFSel;
+    uniform float uN, uTime, uScan, uFocus, uFOn, uFHas, uFSel, uSplit, uMood;
+    uniform vec4 uRev; uniform vec3 uBg;
     varying vec2 vUv;
     float hash(float n){ return fract(sin(n * 12.9898 + 4.1) * 43758.5453); }
     float fmAt(vec2 p){ return texture2D(uFM, p).r * uFOn; }
@@ -650,7 +662,12 @@ const EditShader = {
     vec4 maskAt(vec2 p){ return texture2D(uMask, p) * vec4(1.0, step(1.5, uN), step(2.5, uN), step(3.5, uN)); }
     void main(){
       vec2 puv = uWin.xy + vUv * uWin.zw;
-      if (puv.x < 0.0 || puv.x > 1.0 || puv.y < 0.0 || puv.y > 1.0) { gl_FragColor = vec4(0.063, 0.055, 0.043, 1.0); return; }
+      if (puv.x < 0.0 || puv.x > 1.0 || puv.y < 0.0 || puv.y > 1.0) {   // beside the photo: a soft glow of its colours, fading into the page
+        vec2 cp = clamp(puv, 0.0, 1.0); vec3 a = vec3(0.0);
+        for (int i = 0; i < 3; i++) for (int j = 0; j < 3; j++) a += texture2D(uAmb, clamp(cp + (vec2(float(i), float(j)) - 1.0) * 0.04, 0.0, 1.0)).rgb;
+        float dd = length((puv - cp) * vec2(uImg.x / uImg.y, 1.0));
+        gl_FragColor = vec4(toSRGB(mix(uBg, mix(uBg, a / 9.0, 0.4), exp(-dd * 3.0))), 1.0); return;
+      }
       vec2 P = vec2(puv.x * uImg.x, (1.0 - puv.y) * uImg.y);
       vec3 photo = texture2D(uPhoto, puv).rgb, col = photo;
       vec4 m = maskAt(puv);
@@ -659,11 +676,12 @@ const EditShader = {
       if (m.g > best) { w = 1; best = m.g; }
       if (m.b > best) { w = 2; best = m.b; }
       if (m.a > best) { w = 3; best = m.a; }
-      mat3 H = uH[0]; vec2 sz = uSz[0]; vec4 pc = uPc[0]; float has = uHas.x;
-      if (w == 1) { H = uH[1]; sz = uSz[1]; pc = uPc[1]; has = uHas.y; }
-      else if (w == 2) { H = uH[2]; sz = uSz[2]; pc = uPc[2]; has = uHas.z; }
-      else if (w == 3) { H = uH[3]; sz = uSz[3]; pc = uPc[3]; has = uHas.w; }
-      if (cov > 0.002 && has > 0.5) {
+      mat3 H = uH[0]; vec2 sz = uSz[0]; vec4 pc = uPc[0]; float has = uHas.x, rev = uRev.x;
+      if (w == 1) { H = uH[1]; sz = uSz[1]; pc = uPc[1]; has = uHas.y; rev = uRev.y; }
+      else if (w == 2) { H = uH[2]; sz = uSz[2]; pc = uPc[2]; has = uHas.z; rev = uRev.z; }
+      else if (w == 3) { H = uH[3]; sz = uSz[3]; pc = uPc[3]; has = uHas.w; rev = uRev.w; }
+      bool before = vUv.x > uSplit;   // right of the compare line: the room as it is
+      if (cov > 0.002 && has > 0.5 && !before) {
         vec3 q = H * vec3(P, 1.0); vec2 uv = q.xy / q.z * sz;
         float k = floor(uv.x / pc.x), s = fract(uv.x / pc.x);
         float row = clamp(floor(uv.y / pc.y), 0.0, pc.z - 1.0);
@@ -673,10 +691,13 @@ const EditShader = {
         vec2 st = vec2(clamp(s, 0.004, 0.996), clamp(t, 0.002, 0.998));
         vec3 tex;
         if (w == 0) tex = texture2D(uF0, st).rgb; else if (w == 1) tex = texture2D(uF1, st).rgb; else if (w == 2) tex = texture2D(uF2, st).rgb; else tex = texture2D(uF3, st).rgb;
-        col = mix(photo, tex * texture2D(uClean, puv).rgb / uRef, cov);
+        // a new finish goes up column by column, each one fading in with a short glow
+        float pk = (k + 0.5) * pc.x / max(sz.x, 0.01), al = clamp((rev * 1.3 - pk) / 0.3, 0.0, 1.0);
+        tex *= 1.0 + 0.5 * al * (1.0 - al);
+        col = mix(photo, tex * texture2D(uClean, puv).rgb / uRef, cov * al);
       }
       float fm = fmAt(puv);
-      if (fm > 0.002 && uFHas > 0.5) col = mix(col, planks(P) * texture2D(uFL, puv).rgb / uFRef, fm);
+      if (fm > 0.002 && uFHas > 0.5 && !before) col = mix(col, planks(P) * texture2D(uFL, puv).rgb / uFRef, fm);
       // focus: what is not selected steps back, the selected walls breathe and get a gold edge traced from the mask
       vec4 ax = maskAt(puv + vec2(uPx.x, 0.0)) - maskAt(puv - vec2(uPx.x, 0.0)), ay = maskAt(puv + vec2(0.0, uPx.y)) - maskAt(puv - vec2(0.0, uPx.y));
       float fx = fmAt(puv + vec2(uPx.x, 0.0)) - fmAt(puv - vec2(uPx.x, 0.0)), fy = fmAt(puv + vec2(0.0, uPx.y)) - fmAt(puv - vec2(0.0, uPx.y));
@@ -690,6 +711,17 @@ const EditShader = {
       float ea = max(max(max(length(vec2(ax.r, ay.r)), length(vec2(ax.g, ay.g))), max(length(vec2(ax.b, ay.b)), length(vec2(ax.a, ay.a)))), length(vec2(fx, fy)));
       col = mix(col, uGold * 1.3, smoothstep(0.15, 0.55, ea) * band);
       col += uGold * 0.16 * max(cov, fm) * band;
+      // light mood: evening = warm and lower, lamps keep their glow; bright = a lifted, airy day
+      if (uMood > 0.5 && uMood < 1.5) {
+        float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
+        vec2 vq = vUv - 0.5;
+        col = col * vec3(1.05, 0.9, 0.72) * (0.62 + 0.5 * smoothstep(0.35, 0.9, l)) * mix(1.0, 0.72, smoothstep(0.2, 0.75, length(vq * vec2(1.0, 1.3))));
+      } else if (uMood > 1.5) {
+        col = pow(col * 1.12 + 0.012, vec3(0.94)) * vec3(1.0, 1.0, 1.03);
+      }
+      // before / after line
+      float lw = uPx.x * 1.2 / max(uWin.z, 1e-4), dl = abs(vUv.x - uSplit);
+      if (uSplit < 1.5) col = mix(col, vec3(1.0), 1.0 - smoothstep(lw * 0.5, lw * 1.5, dl));
       gl_FragColor = vec4(toSRGB(col), 1.0);
     }`
 };
@@ -697,7 +729,7 @@ const editPass = new ShaderPass(EditShader); editPass.enabled = false;
 composer.insertPass(editPass, composer.passes.indexOf(grainPass));
 const EU = editPass.uniforms;
 
-const ED = { open: false, room: null, def: null, fix: -1, zoom: 1, zoomGoal: 1, rooms: {}, sel: new Set(), applied: false, dirty: false, c: [0, 0], sc: 1, win: new THREE.Vector4(), goal: new THREE.Vector4(), scan: 2, recent: [], dragging: false, boot: false };
+const ED = { rev: [1, 1, 1, 1], split: 2, mood: 0, open: false, room: null, def: null, fix: -1, zoom: 1, zoomGoal: 1, rooms: {}, sel: new Set(), applied: false, dirty: false, c: [0, 0], sc: 1, win: new THREE.Vector4(), goal: new THREE.Vector4(), scan: 2, recent: [], dragging: false, boot: false };
 const edEl = $('#ed'), edStage = $('#edStage'), edPinsEl = $('#edPins'), edPanel = $('#edPanel');
 const piecesOf = (wl, it) => Math.ceil(wl.w / (it.w / 100) - 1e-6) * Math.max(1, Math.ceil(wl.h / (it.h / 100) - 1e-6));
 const tOf = (r, i) => (i === FL ? r.floor : r.walls[i]);   // a selection index -> wall or floor
@@ -736,9 +768,16 @@ function edUniforms() {
   EU.uFOn.value = fl ? 1 : 0; EU.uFHas.value = ftx ? 1 : 0; EU.uFSel.value = fl && ED.sel.has(FL) ? 1 : 0;
   if (fl) { EU.uFM.value = fl.mask; EU.uFL.value = fl.clean; EU.uFRef.value.copy(fl.ref); EU.uFH.value.copy(fl.Hinv); EU.uFSz.value.set(fl.w, fl.d); }
   if (ftx) { EU.uFT.value = ftx; EU.uFP.value.set(f.pw / 100, f.pl / 100, f.stag, f.dir ? 1 : 0); EU.uFTs.value.set(f.tw / 100, f.th / 100); }
-  EU.uPhoto.value = r.photo; EU.uMask.value = r.mask; EU.uClean.value = r.clean; EU.uRef.value.copy(r.ref); EU.uImg.value.set(r.W, r.H);
+  if (!r.amb && r.photo.image) r.amb = ambOf(r.photo.image, r.W, r.H);
+  EU.uAmb.value = r.amb || r.photo; EU.uPhoto.value = r.photo; EU.uMask.value = r.mask; EU.uClean.value = r.clean; EU.uRef.value.copy(r.ref); EU.uImg.value.set(r.W, r.H);
 }
 const thumb = (it) => (it ? (it.th ? ` style="--c:url('${it.th}')"` : ` style="--c:${it.c}"`) : '');   // a wall product shows its photo, a floor its colour
+// a tiny, blurred copy of the photo: the glow beside it (downscaled in steps so it averages instead of aliasing)
+function ambOf(img, W, H) {
+  let src = img;
+  for (const w of [256, 64, 24]) { const c = document.createElement('canvas'); c.width = w; c.height = Math.max(2, Math.round(w * H / W)); const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, c.width, c.height); src = c; }
+  const t = new THREE.CanvasTexture(src); t.colorSpace = THREE.SRGBColorSpace; t.generateMipmaps = false; t.minFilter = t.magFilter = THREE.LinearFilter; return t;
+}
 function edUI() {
   const r = ED.room, fl = hasFloor(r) ? r.floor : null, ws = wallSel(), all = ws.length === r.walls.length, onFloor = ED.sel.has(FL);
   const pin = (t, i) => (t.anchor ? `<button type="button" class="pin${ED.touched ? '' : ' ping'}" data-wall="${i}" aria-pressed="${ED.sel.has(i)}"><i${thumb(t.item)}>${t.item ? '' : '+'}</i>${t.name}</button>` : '');
@@ -784,6 +823,11 @@ function edUI() {
   $('#edMeta').textContent = lines.length ? (pieces ? fill(T.edMeta, { q: fmt(pieces), u: slatsOnly ? T.unitsSlat : T.units, a: fmt(area, 1) }) : fmt(area, 1) + ' ' + T.edFloorUnit) + (req && total ? ' ' + T.edReq : '') : '';
   const msg = [T.edMsg, ...lines, total ? fill(T.edMsgTotal, { t: fmt(total) + ' ₪' }) : ''].filter(Boolean).join('\n');
   $('#edWa').href = 'https://wa.me/' + E.wa + '?text=' + encodeURIComponent(msg);
+  ED.msg = msg;
+  // presentation tools: before / after line, light mood, share the picture
+  $('#edTools').innerHTML = `<button type="button" class="chip plain" data-ed-compare aria-pressed="${ED.split < 1.5}">${T.edCompare}</button>` +
+    [T.edDay, T.edEve, T.edBright].map((n, i) => `<button type="button" class="chip plain" data-ed-mood="${i}" aria-pressed="${ED.mood === i}">${n}</button>`).join('') +
+    `<button type="button" class="chip plain" data-ed-share>${T.edShare}</button>`;
 }
 let toastT = 0;
 function toast(s) { const el = $('#edToast'); el.textContent = s; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 1800); }
@@ -847,11 +891,11 @@ function edSelect(i) {
 async function edApply(it) {
   const r = ED.room; let targets = wallSel();
   if (!targets.length) { targets = r.walls.map((_, i) => i); toast(T.edAllApplied); if (ED.sel.has(FL)) ED.sel = new Set(targets); }
-  for (const i of targets) r.walls[i].item = it;
+  for (const i of targets) { r.walls[i].item = it; if (it) ED.rev[i] = 0; }
   if (it && !E.quick.some((q) => q.id === it.id)) ED.recent = [it, ...ED.recent.filter((x) => x.id !== it.id)].slice(0, 4);
   ED.applied = true; ED.dirty = true; ED.touched = true; tap(0.45);
   edUniforms(); edUI();
-  if (it && !faceTex[it.id]) { try { await faceOf(it.id); } catch (e) { /* keep the photo */ } if (ED.open) edUniforms(); }
+  if (it && !faceTex[it.id]) { try { await faceOf(it.id); } catch (e) { /* keep the photo */ } for (const i of targets) ED.rev[i] = 0; if (ED.open) edUniforms(); }
 }
 async function edApplyFloor(f) {
   const r = ED.room; if (!hasFloor(r)) return;
@@ -895,7 +939,32 @@ document.addEventListener('click', (e) => {
   if (fb) { edApplyFloor(FBYID[fb.dataset.floor] || null); return; }
   if (e.target.closest('[data-ed-none]')) { if (ED.sel.has(FL)) edApplyFloor(null); else edApply(null); return; }
   if (e.target.closest('[data-ed-more]')) openSheet();
+  if (e.target.closest('[data-ed-compare]')) { ED.split = ED.split < 1.5 ? 2 : 0.5; tap(0.3); edUI(); return; }
+  const md = e.target.closest('[data-ed-mood]'); if (md) { ED.mood = +md.dataset.edMood; tap(0.3); edUI(); return; }
+  if (e.target.closest('[data-ed-share]')) edShare();
 });
+// before / after: drag the line
+{
+  const sp = $('#edSplit'); let on = false;
+  const move = (e) => { if (on) ED.split = clamp(e.clientX / innerWidth, 0.02, 0.98); };
+  sp.addEventListener('pointerdown', (e) => { on = true; try { sp.setPointerCapture(e.pointerId); } catch (er) { /* fine */ } move(e); e.stopPropagation(); });
+  sp.addEventListener('pointermove', move);
+  sp.addEventListener('pointerup', () => { on = false; }); sp.addEventListener('pointercancel', () => { on = false; });
+}
+// share the picture: the current composition without the selection glow (phone share sheet, else a download)
+async function edShare() {
+  const keep = [EU.uFocus.value, EU.uScan.value, EU.uSplit.value];
+  EU.uFocus.value = 0; EU.uScan.value = 3; EU.uSplit.value = 2;
+  composer.render(0);
+  const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.9));
+  [EU.uFocus.value, EU.uScan.value, EU.uSplit.value] = keep;
+  if (!blob) return;
+  const file = new File([blob], 'hipui-israel.jpg', { type: 'image/jpeg' });
+  try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: ED.msg || '' }); return; } }
+  catch (er) { if (er && er.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'hipui-israel.jpg'; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
 $('#edBack').addEventListener('click', () => edClose());
 let drag = null;
 edStage.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, c: [...ED.c], moved: false }; try { edStage.setPointerCapture(e.pointerId); } catch (er) { /* fine */ } });
@@ -917,6 +986,10 @@ function edFrame(dt, time) {
   ED.scan = reduced ? 2 : Math.min(2, (time - ED.t0) * 0.95 - 0.3);
   EU.uScan.value = ED.scan;
   EU.uFocus.value = lerp(EU.uFocus.value, ED.sel.size ? 1 : 0, 1 - Math.exp(-dt * 9));
+  for (let i = 0; i < 4; i++) ED.rev[i] = reduced ? 1 : Math.min(1, ED.rev[i] + dt / 0.9);
+  EU.uRev.value.set(ED.rev[0], ED.rev[1], ED.rev[2], ED.rev[3]);
+  EU.uSplit.value = ED.split; EU.uMood.value = ED.mood;
+  const sp = $('#edSplit'); if (sp) { sp.hidden = ED.split > 1.5; sp.style.left = (ED.split * 100).toFixed(2) + '%'; }
   const lim = innerWidth >= 900 ? innerHeight : ED.stage.sh;
   for (const b of edPinsEl.children) {
     const wl = tOf(ED.room, +b.dataset.wall), [X, Y] = toScreen(wl.anchor[0], wl.anchor[1]);
@@ -1056,8 +1129,9 @@ function frame() {
   RU.uMix.value = mix; RU.uCount.value = state.count;
   const gc = Math.floor(state.count), tc = state.count - gc, pcur = tc > 0.0001 && gc < lay.total ? pieceAt(gc) : null;
   if (pcur) {
-    const e = Math.pow(1 - tc, 2.2), lift = 0.28 * e, dv = 0.85 * e, wl = SR.walls[pcur.wi], x0 = pcur.k * lay.SW, y0 = pcur.row * lay.SL + dv;
-    RU.uPiece.value.set(x0, x0 + lay.SW, y0, y0 + lay.SL); RU.uAnim.value.set(pcur.wi, e, smooth(clamp(tc / 0.12)), lift); RU.uGc.value = gc;
+    // design.anim: lift (off the wall and down), drop (falls into place), fade (appears in place)
+    const e = Math.pow(1 - tc, 2.2), lift = ANIM === 'fade' ? 0 : ANIM === 'drop' ? 0.05 * e : 0.28 * e, dv = ANIM === 'fade' ? 0 : ANIM === 'drop' ? 1.7 * e : 0.85 * e, wl = SR.walls[pcur.wi], x0 = pcur.k * lay.SW, y0 = pcur.row * lay.SL + dv;
+    RU.uPiece.value.set(x0, x0 + lay.SW, y0, y0 + lay.SL); RU.uAnim.value.set(pcur.wi, e, ANIM === 'fade' ? smooth(tc) : smooth(clamp(tc / 0.12)), lift); RU.uGc.value = gc;
     RU.uHL.value.copy(liftedInv(wl.pose, lift + 0.02)); RU.uSzC.value.set(wl.w, wl.h);
   } else RU.uAnim.value.z = 0;
   roomPass.enabled = mix > 0.001;

@@ -38,7 +38,7 @@ ex. `"cat": "stone", "match": "אבן גמיש"`) ; le produit garde son univers
 | Confirmation `/order/` + Mes commandes `/orders/` | Numéro HI-AAMMJJ-XXXX, récapitulatif, impression, renvoi WhatsApp (historique gardé dans le navigateur du client) |
 | Contact | WhatsApp, téléphone, adresse, horaires, Google Maps intégré, boutons Maps / Waze |
 | Pages légales | Conditions générales, confidentialité, livraison/retours (loi israélienne 14 jours), déclaration d'accessibilité (IS 5568) |
-| Studio mur `/experience/` | Page immersive : la lame 035 en 3D en direct (three.js, profil réel, texture réelle), puis le produit choisi posé pièce par pièce sur les 3 murs d'une vraie photo (Unsplash), avec compteur pièces / m² / prix. Tous les produits qui ont une face à l'échelle (`data/face-dims.json`) sont proposés. Liens « Voir sur le mur » sur les fiches et aperçu avant/après à l'accueil |
+| Studio mur `/experience/` | Page immersive : le produit choisi posé pièce par pièce sur les murs de vraies photos de pièces (12 pièces, ou la photo du visiteur), avec compteur pièces / m² / prix. Tous les produits qui ont une face à l'échelle (`data/face-dims.json`) sont proposés. Liens « Voir sur le mur » sur les fiches et aperçu avant/après à l'accueil |
 | Calculateur, guide | Calcul du nombre de lames (+ ajout direct au panier), contenu SEO |
 
 Studio mur, fichiers : `templates/experience.html` (page), `data/content-exp.json` (textes he/fr/en), `scripts/experience.ps1` (génération),
@@ -47,7 +47,7 @@ Les mesures de la photo viennent de `scripts/room-prep.ps1` ; `scripts/RoomShot.
 
 **Mur par mur** (bouton dans le studio, lien direct `experience/#walls`) : la photo passe en plein écran, chaque mur est touchable,
 on en sélectionne un ou plusieurs et on leur donne un revêtement ; total et message WhatsApp détaillés par mur. Bouton « Pièces » :
-le studio, 6 vraies pièces (`src/assets/exp/rooms/<id>/` : photo, masque des murs R/G/B, lumière, `room.json` avec les 4 coins de chaque
+le studio, 12 vraies pièces (`src/assets/exp/rooms/<id>/` : photo, masque des murs R/G/B, lumière, `room.json` avec les 4 coins de chaque
 mur ; crédits dans `CREDITS.txt`) et **« Ma photo »** : la photo du visiteur est analysée dans son navigateur par
 `src/assets/js/experience-detect.js` (IA de segmentation SegFormer + profondeur Depth Anything via transformers.js, ~30 Mo téléchargés
 une seule fois, rien n'est envoyé) : murs, angles, ligne du sol et du plafond, lumière. « Ajuster les coins » permet de corriger
@@ -58,6 +58,24 @@ dans le même détecteur, copier les fichiers dans `rooms/<id>/` et ajouter l'id
 (ex. `"035 20025"` ou juste `"108"`), `storyRoom` = vraie pièce du défilement, `rooms` = pièces proposées. Un lien peut aussi
 choisir le modèle : `experience/?ref=108`. Le visiteur peut essayer sa propre photo : bouton « Essayer avec ma photo »
 (accueil, barre du studio, fin de page) ou lien `experience/#photo`.
+
+**Changer le design en une ligne (`data/experience.json` > `design`)** : `theme` = `dark` (sombre, par défaut), `light` (clair)
+ou `warm` (brun chaud) ; `anim` = façon dont les lames arrivent dans le défilement : `lift` (se soulève puis se pose), `drop`
+(tombe en place), `fade` (apparaît en fondu) ; `speed` = vitesse du défilement (1 normal, 1.5 plus rapide, 0.7 plus lent).
+Pour essayer sans rien modifier : ajouter à l'adresse `?theme=light`, `?anim=drop`, `?speed=1.4` (cumulables :
+`experience/?theme=warm&anim=fade`). Les couleurs de chaque thème sont des variables CSS en haut de `templates/experience.html`
+(`--bg`, `--ink`, `--accent`… dans `:root`, `:root[data-theme="light"]`, `:root[data-theme="warm"]`) : un nouveau thème = un bloc de plus.
+
+**Outils de présentation (Mur par mur)** : « Avant / après » (une ligne à faire glisser sépare le mur habillé du mur d'origine),
+lumière « Jour / Soir / Lumineux » (étalonnage de toute la photo, utile en showroom), « Partager » (image JPG de la pièce habillée,
+partage natif sur téléphone, téléchargement sur ordinateur). Chaque nouveau revêtement monte colonne par colonne.
+
+**Qualité du détourage (détecteur et pièces préparées)** : les verticales suivent le point de fuite vertical de la photo (les lames ne
+penchent plus quand la photo est prise un peu en plongée ou contre-plongée), les objets devant les murs sont détourés net par
+Segment Anything (SlimSAM), les bords plafond / sol / angles sont des droites exactes quand la ligne est vue, et fenêtres, portes,
+cadres et écrans deviennent des rectangles en perspective calés sur le bord du cadre. Les pièces préparées se refont avec l'outil
+d'export (SegFormer b5 + SAM), puis copie de `mask.png`, `light.png`, `thumb.jpg`, `room.json` dans `rooms/<id>/` (garder la clé
+`floor` existante de `room.json`).
 
 **Mode démo (fonctions cachées du site public)** : ouvrir une page du studio avec `?demo=1` (ex. `experience/?demo=1#walls`)
 active le mode démo **sur cet appareil** (mémorisé dans le navigateur, `localStorage['hipui-demo']`) ; `?demo=0` le retire. Une
