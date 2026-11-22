@@ -663,13 +663,15 @@ foreach ($lang in $Langs) {
   foreach ($s in $L.steps.items) { $n++; $steps += '<li class="reveal"><span class="num">0' + $n + '</span><h3>' + (Enc $s[0]) + '</h3><p>' + (Enc $s[1]) + '</p></li>' }
   # Hero: a real room dressed while scrolling (src/assets/js/home-hero.js, settings in data/experience.json > home)
   $hc = $ExpCfg.home
-  $reel = [ordered]@{ room = [string]$hc.room; assets = (AssetUrl 'exp/'); bg = '#161411'; faces = @($hc.faces | ForEach-Object { [ordered]@{ img = (AssetUrl ('img/' + [string]$_.img)); w = [double]$_.w; h = [double]$_.h } }) }
+  $reel = [ordered]@{ plate = [ordered]@{ w = [double]$hc.plate.w; h = [double]$hc.plate.h }; faces = @($hc.faces | ForEach-Object { [ordered]@{ id = [string]$_.id; img = (AssetUrl ('img/' + [string]$_.img)); w = [double]$_.w; h = [double]$_.h } }); scenes = @($hc.scenes | ForEach-Object { [ordered]@{ base = (AssetUrl ('img/home/scenes/' + [string]$_.id + '/')); faces = @($_.faces) } }) }
   $reelJson = (To-Json $reel).Replace("'", '&#39;')
   $logoName = [string]$hc.logo
-  $hero = '<section class="hero hero-reel" data-hero data-reel=''' + $reelJson + ''' style="--photo:url(' + (AssetUrl ('exp/rooms/' + [string]$hc.room + '/photo.jpg')) + ')"><div class="reel-stage"><canvas class="reel-canvas" aria-hidden="true"></canvas><div class="reel-scrim" aria-hidden="true"></div>' +
+  $letters = ''; $li = 0; foreach ($ch in $logoName.ToCharArray()) { if ($ch -eq ' ') { $letters += '<i class="sp"></i>' } else { $letters += '<b style="--i:' + $li + '">' + (Enc ([string]$ch)) + '</b>' }; $li++ }
+  $letters = '<span class="rl-word" style="--n:' + $li + '">' + $letters + '</span>'
+  $hero = '<section class="hero hero-reel" data-hero data-reel=''' + $reelJson + ''' style="--photo:url(' + (AssetUrl ('img/home/scenes/' + [string]$hc.scenes[0].id + '/photo.jpg')) + ')"><div class="reel-stage"><canvas class="reel-canvas" aria-hidden="true"></canvas><div class="reel-scrim" aria-hidden="true"></div>' +
     '<div class="wrap hero-content"><p class="kicker">' + (Enc $L.hero.kicker) + '</p><h1>' + (Enc $L.hero.h1) + '<span class="h1-tag">' + (Enc $L.tagline) + '</span></h1><p class="lead">' + (Enc $L.hero.lead) + '</p>' +
     '<div class="ctas"><a class="btn btn-light" href="' + (Href $L 'catalog/') + '">' + (Enc $L.hero.cta) + $Icons.arrow + '</a><a class="btn btn-ghost" href="#studio">' + (Enc $L.hero.cta2) + '</a></div><ul class="stats">' + $stats + '</ul></div>' +
-    '<div class="reel-logo"><div class="rl-3d" aria-hidden="true"><span class="rl-mark"><i></i><i></i><i></i><i></i></span><span class="rl-name" data-t="' + (Enc $logoName) + '">' + (Enc $logoName) + '</span></div><p class="rl-tag">' + (Enc $L.tagline) + '</p>' +
+    '<div class="reel-logo"><div class="rl-3d" aria-hidden="true"><span class="rl-name" dir="rtl" lang="he">' + $letters + '</span></div><p class="rl-tag">' + (Enc $L.tagline) + '</p>' +
     '<div class="ctas"><a class="btn btn-light" href="' + (Href $L 'catalog/') + '">' + (Enc $L.hero.cta) + $Icons.arrow + '</a><a class="btn btn-ghost" href="' + (Href $L 'experience/') + '">' + (Enc $L.hero.cta2) + '</a></div></div>' +
     '<div class="scroll-cue" aria-hidden="true"></div></div>' +
     '<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.min.js" } }</script><script type="module" src="' + (AssetUrl ('js/home-hero.js?v=' + $Ver)) + '"></script></section>'

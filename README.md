@@ -29,7 +29,7 @@ ex. `"cat": "stone", "match": "אבן גמיש"`) ; le produit garde son univers
 
 | Page | Rôle |
 |---|---|
-| Accueil | Animation au défilement sur une vraie pièce (r23, vue large) : nos plaques de travertin KIR-090 viennent se coller une à une sur le grand mur, puis nos lames chêne 035 se posent sur le mur de côté, avec la lumière de la photo et les meubles devant ; à la fin, le nom חיפוי ישראל apparaît en relief doré. Réglages dans data/experience.json > home (pièce, modèles, nom), moteur src/assets/js/home-hero.js, plaque refaite aux vraies proportions par scripts/home-plate.ps1. Puis univers, matières, studio, sélection, FAQ, showroom + carte |
+| Accueil | Visite au défilement de 4 vraies pièces en travertin (src/assets/img/home/scenes/) : murs nus au départ, les plaques viennent se coller une à une, la caméra suit chaque plaque, lames chêne 035 sur le mur de côté de la salle de bain ; à la fin le nom חיפוי ישראל arrive lettre par lettre depuis le fond de l écran. Réglages : data/experience.json > home ; moteur src/assets/js/home-hero.js |
 | Catalogue | Tous les produits regroupés par famille (variantes), filtres type / aspect / couleur, recherche, tri par prix |
 | 14 pages catégories / 8 pages « aspects » | Une page = un mot-clé (lames acoustiques, effet bois, marbre, travertin…) |
 | Fiches produit | Plaque entière en perspective + loupe, photo réelle, variantes, prix TTC live, stock live, quantité, ajout au panier |

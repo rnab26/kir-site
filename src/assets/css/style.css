@@ -706,3 +706,23 @@ body.has-buybar .site-footer { padding-bottom: 96px; }
 .rl-mark { display: inline-flex; gap: clamp(5px, .7vw, 9px); align-items: stretch; height: clamp(54px, 9vw, 120px); filter: drop-shadow(0 3px 0 #6b4723) drop-shadow(0 20px 22px rgba(0,0,0,.55)); }
 .rl-mark i { width: clamp(7px, 1vw, 13px); border-radius: 99px; background: linear-gradient(180deg, #f6e6c8, #c99a5e 55%, #9a6a35); }
 .rl-mark i:nth-child(2), .rl-mark i:nth-child(4) { margin-top: 12%; }
+/* end title: clean and current (no gold extrusion): white letters that come into focus, a thin oak line under them */
+.rl-3d { transform: none; gap: clamp(14px, 2vw, 22px); }
+.rl-name { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: #fbf7f0; font-weight: 500;
+  font-size: clamp(46px, 8.4vw, 118px); letter-spacing: calc(.01em + (1 - var(--logo, 0)) * .3em);
+  filter: blur(calc((1 - var(--logo, 0)) * 10px)); text-shadow: 0 2px 30px rgba(0,0,0,.45); }
+.rl-mark { height: clamp(40px, 6.4vw, 86px); filter: drop-shadow(0 10px 18px rgba(0,0,0,.45)); transform: translateY(calc((1 - var(--logo, 0)) * 24px)); }
+.rl-mark i { width: clamp(5px, .7vw, 9px); background: linear-gradient(180deg, #f3e3c6, #c89a63); }
+.reel-logo::after { content: ""; order: 2; width: calc(var(--logo, 0) * min(220px, 40vw)); height: 1px; background: #c89a63; margin: -4px auto 0; }
+.rl-tag { order: 3; letter-spacing: .12em; text-transform: uppercase; font-size: clamp(12px, 1.1vw, 14px); }
+.reel-logo .ctas { order: 4; }
+.reel-scrim { background: radial-gradient(ellipse at 50% 50%, rgba(14,12,10,.15), rgba(14,12,10,.55) 75%), linear-gradient(to top, rgba(14,12,10,.8) 0%, rgba(14,12,10,0) 45%);
+  opacity: calc(.25 + .75 * max(var(--intro, 1), var(--logo, 0))); }
+/* the name: each letter flies in from deep behind the screen and lands facing us */
+.rl-name { letter-spacing: .02em; filter: none; perspective: 700px; perspective-origin: 50% 50%; }
+.rl-word { display: inline-flex; transform-style: preserve-3d; }
+.rl-word b { display: inline-block; font-weight: 500;
+  --t: clamp(0, calc((var(--logo, 0) * (var(--n, 10) + 5) - var(--i, 0)) / 5), 1);
+  transform: translate3d(0, calc((1 - var(--t)) * -6vh), calc((1 - var(--t)) * -2600px)) rotateY(calc((1 - var(--t)) * 28deg)) rotateX(calc((1 - var(--t)) * -12deg));
+  opacity: clamp(0, calc(var(--t) * 2.2), 1); filter: blur(calc((1 - var(--t)) * 5px)); text-shadow: 0 calc(var(--t) * 3px) calc(8px + var(--t) * 22px) rgba(0,0,0,.5); }
+.rl-word .sp { display: inline-block; width: .32em; }

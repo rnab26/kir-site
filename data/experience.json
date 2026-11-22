@@ -1,14 +1,113 @@
 {
-  "_help": "home = animation de la page d accueil : room = piece, faces = modele du grand mur puis du mur de cote (img dans src/assets/img/, w et h en cm), logo = nom affiche en relief a la fin. Studio mur : storyModel = reference du modele pose dans la piece au chargement (colonne reference du Sheet, ex. \"035 20025\" ou juste \"108\"). storyRoom = piece du defilement (dossier src/assets/exp/rooms/<id>). rooms = pieces proposees dans le bouton Pieces, dans l'ordre. features = fonctions visibles sur le site public (true) ; les autres n'apparaissent qu'en mode demo (lien ?demo=1, ?demo=0 pour en sortir). design = theme (dark, light, warm), anim (lift : la lame se souleve puis se pose, drop : elle tombe en place, fade : elle apparait), speed (1 normal, 1.5 plus rapide, 0.7 plus lent) ; floors = sols de demonstration (largeur pw et longueur pl de latte en cm, stag = decalage des rangees : 0.5 quinconce, 0.33 tiers, -1 au hasard ; tex = image dans src/assets/exp/floor/ qui couvre tw x th cm, fil du bois dans la hauteur de l'image ; p = prix au m2 ou null).",
-  "design": { "theme": "dark", "anim": "lift", "speed": 1 },
-  "home": { "room": "r23", "logo": "חיפוי ישראל", "faces": [ { "ref": "KIR-090", "img": "home/plate-kir090.jpg", "w": 122, "h": 280 }, { "ref": "035 20025", "img": "face/167taG-eCAzs7iVtevdNEv8-igUc9lnU4.jpg", "w": 20, "h": 290 } ] },
+  "_help": "home = animation de la page d accueil : scenes = pieces visitees dans l ordre (dossiers src/assets/img/home/scenes/<id> : photo, masque, lumiere, room.json), faces = modele pose sur un mur (par numero de mur dans scenes[].faces), sinon la plaque revele le revetement de la photo, plate = taille des plaques en cm, logo = nom qui arrive lettre par lettre. Studio mur : storyModel = reference du modele pose dans la piece au chargement (colonne reference du Sheet, ex. \"035 20025\" ou juste \"108\"). storyRoom = piece du defilement (dossier src/assets/exp/rooms/<id>). rooms = pieces proposees dans le bouton Pieces, dans l'ordre. features = fonctions visibles sur le site public (true) ; les autres n'apparaissent qu'en mode demo (lien ?demo=1, ?demo=0 pour en sortir). design = theme (dark, light, warm), anim (lift : la lame se souleve puis se pose, drop : elle tombe en place, fade : elle apparait), speed (1 normal, 1.5 plus rapide, 0.7 plus lent) ; floors = sols de demonstration (largeur pw et longueur pl de latte en cm, stag = decalage des rangees : 0.5 quinconce, 0.33 tiers, -1 au hasard ; tex = image dans src/assets/exp/floor/ qui couvre tw x th cm, fil du bois dans la hauteur de l'image ; p = prix au m2 ou null).",
+  "design": {
+    "theme": "dark",
+    "anim": "lift",
+    "speed": 1
+  },
+  "home": {
+    "logo": "חיפוי ישראל",
+    "plate": {
+      "w": 122,
+      "h": 280
+    },
+    "faces": [
+      {
+        "id": "oak",
+        "ref": "035 20025",
+        "img": "face/167taG-eCAzs7iVtevdNEv8-igUc9lnU4.jpg",
+        "w": 20,
+        "h": 290
+      }
+    ],
+    "scenes": [
+      {
+        "id": "h1"
+      },
+      {
+        "id": "h3"
+      },
+      {
+        "id": "h4",
+        "faces": [
+          "oak"
+        ]
+      },
+      {
+        "id": "h2"
+      }
+    ]
+  },
   "storyModel": "035 20025",
   "storyRoom": "n04",
-  "rooms": ["n04", "n06", "n05", "n20", "r23", "r24", "r04", "r02", "r01", "r07", "r27", "r13"],
-  "features": { "floor": false },
+  "rooms": [
+    "n04",
+    "n06",
+    "n05",
+    "n20",
+    "r23",
+    "r24",
+    "r04",
+    "r02",
+    "r01",
+    "r07",
+    "r27",
+    "r13"
+  ],
+  "features": {
+    "floor": false
+  },
   "floors": [
-    { "id": "demo-oak", "n": { "he": "אלון טבעי", "fr": "Chêne naturel", "en": "Natural oak" }, "r": "DEMO-1", "c": "#c39a6b", "pw": 19, "pl": 150, "stag": -1, "tex": "oak.jpg", "tw": 60, "th": 240, "p": null },
-    { "id": "demo-smoked", "n": { "he": "אלון מעושן", "fr": "Chêne fumé", "en": "Smoked oak" }, "r": "DEMO-2", "c": "#6e5038", "pw": 22, "pl": 220, "stag": 0.33, "tex": "smoked.jpg", "tw": 60, "th": 240, "p": null },
-    { "id": "demo-white", "n": { "he": "אלון מולבן", "fr": "Chêne blanchi", "en": "Whitewashed oak" }, "r": "DEMO-3", "c": "#d6c8b3", "pw": 14, "pl": 90, "stag": 0.5, "tex": "white.jpg", "tw": 60, "th": 240, "p": null }
+    {
+      "id": "demo-oak",
+      "n": {
+        "he": "אלון טבעי",
+        "fr": "Chêne naturel",
+        "en": "Natural oak"
+      },
+      "r": "DEMO-1",
+      "c": "#c39a6b",
+      "pw": 19,
+      "pl": 150,
+      "stag": -1,
+      "tex": "oak.jpg",
+      "tw": 60,
+      "th": 240,
+      "p": null
+    },
+    {
+      "id": "demo-smoked",
+      "n": {
+        "he": "אלון מעושן",
+        "fr": "Chêne fumé",
+        "en": "Smoked oak"
+      },
+      "r": "DEMO-2",
+      "c": "#6e5038",
+      "pw": 22,
+      "pl": 220,
+      "stag": 0.33,
+      "tex": "smoked.jpg",
+      "tw": 60,
+      "th": 240,
+      "p": null
+    },
+    {
+      "id": "demo-white",
+      "n": {
+        "he": "אלון מולבן",
+        "fr": "Chêne blanchi",
+        "en": "Whitewashed oak"
+      },
+      "r": "DEMO-3",
+      "c": "#d6c8b3",
+      "pw": 14,
+      "pl": 90,
+      "stag": 0.5,
+      "tex": "white.jpg",
+      "tw": 60,
+      "th": 240,
+      "p": null
+    }
   ]
 }
