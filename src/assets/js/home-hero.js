@@ -41,12 +41,14 @@ async function start(sec) {
       const o = { M, H: inv(M), sz: [w.w, w.h], pc: [pw, ph, rows, cols], n: cols * rows, start: n0, face: fc };
       n0 += o.n; return o;
     });
-    return { meta, photo, mask, light, walls, total: n0 };
+    let src = photo.image; for (const w of [256, 64, 16]) { const c = document.createElement('canvas'); c.width = w; c.height = Math.max(2, Math.round(w * meta.H / meta.W)); const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(src, 0, 0, c.width, c.height); src = c; }
+    const amb = new THREE.CanvasTexture(src); amb.colorSpace = THREE.SRGBColorSpace; amb.generateMipmaps = false; amb.minFilter = amb.magFilter = THREE.LinearFilter;
+    return { meta, photo, mask, light, walls, total: n0, amb };
   }));
 
   const m3 = () => new THREE.Matrix3();
   const U = {
-    uPhoto: { value: null }, uMask: { value: null }, uLight: { value: null }, uFace: { value: null },
+    uPhoto: { value: null }, uAmb: { value: null }, uMask: { value: null }, uLight: { value: null }, uFace: { value: null },
     uRef: { value: new THREE.Vector3(1, 1, 1) }, uImg: { value: new THREE.Vector2(1, 1) }, uWin: { value: new THREE.Vector4(0, 0, 1, 1) }, uN: { value: 1 },
     uH: { value: [m3(), m3(), m3()] }, uM: { value: [m3(), m3(), m3()] }, uSz: { value: [new THREE.Vector2(), new THREE.Vector2(), new THREE.Vector2()] },
     uPc: { value: [new THREE.Vector4(), new THREE.Vector4(), new THREE.Vector4()] }, uCnt: { value: new THREE.Vector3() }, uMode: { value: new THREE.Vector3() },
@@ -56,7 +58,7 @@ async function start(sec) {
     uniforms: U,
     vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
     fragmentShader: `
-      uniform sampler2D uPhoto, uMask, uLight, uFace; uniform vec3 uRef, uBg, uCnt, uMode; uniform vec2 uImg, uRes; uniform vec4 uWin;
+      uniform sampler2D uPhoto, uMask, uLight, uFace, uAmb; uniform vec3 uRef, uBg, uCnt, uMode; uniform vec2 uImg, uRes; uniform vec4 uWin;
       uniform mat3 uH[3], uM[3]; uniform vec2 uSz[3]; uniform vec4 uPc[3]; uniform float uN, uFade, uGlow, uTime; varying vec2 vUv;
       vec3 toSRGB(vec3 c){ c = max(c, 0.0); return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c)); }
       vec2 toPuv(vec2 P){ return vec2(P.x / uImg.x, 1.0 - P.y / uImg.y); }
@@ -90,6 +92,11 @@ async function start(sec) {
       }
       void main(){
         vec2 puv = uWin.xy + vUv * uWin.zw;
+        if (puv.x < 0.0 || puv.x > 1.0 || puv.y < 0.0 || puv.y > 1.0) {   // above / below the photo: the room blurred, darker toward the edge
+          vec2 cu = 0.5 + (vUv - 0.5) * vec2(min(1.0, uRes.x / uRes.y * uImg.y / uImg.x), min(1.0, uRes.y / uRes.x * uImg.x / uImg.y));
+          vec3 a = texture2D(uAmb, clamp(cu, 0.02, 0.98)).rgb * 0.62; float ed = min(abs(puv.y), abs(puv.y - 1.0));
+          gl_FragColor = vec4(toSRGB(mix(a, uBg, uFade)), 1.0); return;
+        }
         vec2 P = vec2(puv.x * uImg.x, (1.0 - puv.y) * uImg.y);
         vec3 photo = texture2D(uPhoto, puv).rgb, col = photo;
         vec4 m = texture2D(uMask, puv); float c0 = m.r, c1 = m.g * step(1.5, uN), c2 = m.b * step(2.5, uN);
@@ -116,7 +123,7 @@ async function start(sec) {
   function use(i) {
     if (i === cur) return; cur = i;
     const s = scenes[i];
-    U.uPhoto.value = s.photo; U.uMask.value = s.mask; U.uLight.value = s.light; U.uRef.value.set(...s.meta.ref); U.uImg.value.set(s.meta.W, s.meta.H); U.uN.value = s.walls.length;
+    U.uPhoto.value = s.photo; U.uAmb.value = s.amb; U.uMask.value = s.mask; U.uLight.value = s.light; U.uRef.value.set(...s.meta.ref); U.uImg.value.set(s.meta.W, s.meta.H); U.uN.value = s.walls.length;
     s.walls.forEach((w, k) => { U.uH.value[k].set(...w.H); U.uM.value[k].set(...w.M); U.uSz.value[k].set(...w.sz); U.uPc.value[k].set(...w.pc); });
     const fw = s.walls.find((w) => w.face); U.uFace.value = fw ? fw.face.t : s.photo;
     U.uMode.value.set(...[0, 1, 2].map((k) => (s.walls[k] && s.walls[k].face ? 1 : 0)));
@@ -155,10 +162,13 @@ async function start(sec) {
     tx = lerp(tx, 0.5, back); ty = lerp(lerp(ty, 0.5, 0.6), 0.5, back);
     if (lp < 0.02) { fx = tx; fy = ty; } else { fx = lerp(fx, tx, 1 - Math.exp(-dt * 2.2)); fy = lerp(fy, ty, 1 - Math.exp(-dt * 2.2)); }
     const W = canvas.width, H = canvas.height, asp = W / H, pa = s.meta.W / s.meta.H;
-    const zoom = lerp(1.32, 1.0, smooth(0.0, 1.0, lp) * 0.6 + back * 0.4);
+    const zoom = lerp(1.07, 1.0, smooth(0.0, 1.0, lp) * 0.6 + back * 0.4);   // gentle: a slow drift, not a close-up
     let ww = 1, wh = 1; if (asp < pa) ww = asp / pa; else wh = pa / asp;
     ww /= zoom; wh /= zoom;
-    U.uWin.value.set(clamp(fx - ww / 2, 0, 1 - ww), clamp(fy - wh / 2, 0, 1 - wh), ww, wh);
+    // a phone held upright sees at least 90 % of the photo width; above and below, a blurred copy of the room (no empty band)
+    if (ww < 0.9) { wh *= 0.9 / ww; ww = 0.9; }
+    if (wh < 0.84) { ww *= 0.84 / wh; wh = 0.84; }   // wide screens: most of the photo height (blurred room at the sides)
+    U.uWin.value.set(ww > 1 ? 0.5 - ww / 2 : clamp(fx - ww / 2, 0, 1 - ww), wh > 1 ? 0.5 - wh / 2 : clamp(fy - wh / 2, 0, 1 - wh), ww, wh);
     U.uTime.value = (now - t0) / 1000;
     renderer.render(scene3, cam);
   }
