@@ -32,7 +32,8 @@ body { margin: 0; background: var(--bg); color: var(--ink); font: 400 1.0625rem/
 .callout b { color: var(--oak); font-weight: 700; }
 
 .top { position: fixed; z-index: 5; top: 0; inset-inline: 0; display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: calc(env(safe-area-inset-top, 0px) + 14px) max(16px, env(safe-area-inset-right, 0px)) 14px max(16px, env(safe-area-inset-left, 0px)); pointer-events: none; }
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) max(16px, env(safe-area-inset-right, 0px)) 14px max(16px, env(safe-area-inset-left, 0px)); pointer-events: none;
+  background: linear-gradient(to bottom, rgba(var(--bg-rgb), .92) 0%, rgba(var(--bg-rgb), .6) 60%, rgba(var(--bg-rgb), 0) 100%); }
 .brand { font: 500 1.05rem/1 var(--serif); pointer-events: auto; color: var(--ink); text-decoration: none; display: inline-flex; align-items: center; gap: .6em; }
 .brand span { color: var(--muted); font: 400 .78rem/1 var(--sans); letter-spacing: .14em; }
 .tools { display: flex; gap: 8px; pointer-events: auto; }
@@ -121,7 +122,10 @@ h2 { font-size: clamp(2.2rem, 4.8vw, 4.2rem); line-height: 1.02; }
 .btn-main:hover { background: #fff; }
 .btn:not(.btn-main):hover { background: rgba(var(--ink-rgb), .08); }
 .contact { display: grid; gap: 4px; color: var(--ink-2); font-size: .95rem; }
-.contact bdi { font-variant-numeric: tabular-nums; user-select: all; }
+.contact bdi { font-variant-numeric: tabular-nums; }
+.contact a { color: inherit; text-decoration: underline; text-decoration-color: rgba(var(--ink-rgb), .3); text-underline-offset: 3px; padding: 4px 0; }
+.contact a:hover { text-decoration-color: var(--oak); }
+.contact .lk { color: var(--oak); font-size: .8em; font-weight: 600; white-space: nowrap; }
 .credit { color: var(--muted); font-size: .78rem; max-width: 46ch; }
 .loading { position: fixed; z-index: 3; inset-inline-end: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(env(safe-area-inset-bottom, 0px) + 22px); color: var(--muted); font-size: .8rem; letter-spacing: .12em; transition: opacity .6s; }
 .loading.done { opacity: 0; }
@@ -313,8 +317,8 @@ html.ed-on .story, html.ed-on .top, html.ed-on .dock, html.ed-on #labels, html.e
         <a class="btn" id="siteLink" href="{{home}}">{{ctaPage}}</a>
       </div>
       <div class="contact">
-        <span>{{ctaAddress}}</span>
-        <span>{{ctaPhone}} <bdi>{{phone}}</bdi></span>
+        <a href="{{waze}}" target="_blank" rel="noopener">{{ctaAddress}} <span class="lk">Waze ↗</span></a>
+        <a href="https://wa.me/{{waNum}}" target="_blank" rel="noopener">{{ctaPhone}} <bdi>{{phone}}</bdi> <span class="lk">WhatsApp ↗</span></a>
       </div>
       <p class="credit">{{credit}}</p>
     </div>
