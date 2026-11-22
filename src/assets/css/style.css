@@ -673,3 +673,36 @@ body.has-buybar .site-footer { padding-bottom: 96px; }
 .ba input[type="range"] { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: ew-resize; }
 .ba input[type="range"]:focus-visible + .ba-line, .ba:focus-within .ba-line::after { outline: 2px solid var(--brass); outline-offset: 2px; }
 @media (max-width: 860px) { .exp-grid { grid-template-columns: 1fr; } }
+
+/* ---------- Home: a real room dressed while scrolling (home-hero.js) ---------- */
+.hero.hero-reel { display: block; height: 330vh; min-height: 0; padding: 0; background: #161411; overflow: visible; }
+.reel-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; display: flex; align-items: flex-end;
+  padding: calc(var(--header) + 40px) 0 clamp(48px, 8vh, 96px); background: #161411 var(--photo) center / cover no-repeat; }
+.reel-on .reel-stage { background-image: none; }
+.reel-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 0; }
+.reel-scrim { position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(to top, rgba(14,12,10,.86) 0%, rgba(14,12,10,.45) 34%, rgba(14,12,10,0) 62%), linear-gradient(to bottom, rgba(14,12,10,.55), rgba(14,12,10,0) 22%);
+  opacity: calc(.35 + .65 * max(var(--intro, 1), var(--logo, 0))); }
+.hero-reel .hero-content { z-index: 2; opacity: var(--intro, 1); transform: translateY(calc((1 - var(--intro, 1)) * -40px)); pointer-events: auto; }
+.reel-on .hero-content { pointer-events: calc(var(--intro, 1)); }
+.hero-reel .scroll-cue { z-index: 2; opacity: var(--intro, 1); }
+/* the name in relief at the end: carved letters lit from the top, standing up from the floor of the frame */
+.reel-logo { position: absolute; z-index: 3; inset: 0; display: grid; place-content: center; justify-items: center; gap: 18px; text-align: center; padding: 0 16px;
+  opacity: var(--logo, 0); pointer-events: none; perspective: 900px; }
+.reel-logo .ctas { pointer-events: auto; justify-content: center; transform: translateY(calc((1 - var(--logo, 0)) * 30px)); }
+.rl-3d { display: flex; align-items: center; gap: clamp(12px, 2vw, 24px); transform-style: preserve-3d;
+  transform: rotateX(calc((1 - var(--logo, 0)) * 68deg)) translateY(calc((1 - var(--logo, 0)) * 60px)) scale(calc(.86 + .14 * var(--logo, 0))); transform-origin: 50% 100%; }
+.rl-3d img { width: clamp(48px, 7vw, 92px); height: auto; filter: drop-shadow(0 18px 24px rgba(0,0,0,.55)); }
+.rl-name { position: relative; font: 600 clamp(54px, 10vw, 138px)/1 var(--serif, serif); letter-spacing: .01em; white-space: nowrap;
+  background: linear-gradient(180deg, #f6e6c8 0%, #d8b27c 46%, #a8773f 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 1px 0 #8a5f30) drop-shadow(0 2px 0 #7a522a) drop-shadow(0 3px 0 #6b4723) drop-shadow(0 4px 0 #5c3c1d) drop-shadow(0 22px 26px rgba(0,0,0,.6)); }
+.rl-tag { color: rgba(241,234,223,.9); font-size: clamp(16px, 1.6vw, 20px); text-shadow: 0 1px 14px rgba(0,0,0,.6); }
+.reel-off .reel-logo { display: none; }
+@media (max-width: 760px) {
+  .hero.hero-reel { height: 300vh; }
+  .reel-stage { padding-bottom: 28px; }
+}
+@media (prefers-reduced-motion: reduce) { .hero.hero-reel { height: auto; } .reel-stage { position: relative; } }
+.rl-mark { display: inline-flex; gap: clamp(5px, .7vw, 9px); align-items: stretch; height: clamp(54px, 9vw, 120px); filter: drop-shadow(0 3px 0 #6b4723) drop-shadow(0 20px 22px rgba(0,0,0,.55)); }
+.rl-mark i { width: clamp(7px, 1vw, 13px); border-radius: 99px; background: linear-gradient(180deg, #f6e6c8, #c99a5e 55%, #9a6a35); }
+.rl-mark i:nth-child(2), .rl-mark i:nth-child(4) { margin-top: 12%; }

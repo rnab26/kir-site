@@ -661,10 +661,18 @@ foreach ($lang in $Langs) {
   foreach ($s in $L.stats) { $stats += '<li><strong>' + (Enc (Fill ([string]$s[0]) @{ count = $Fams.Count; cats = $Sections.Count })) + '</strong><span>' + (Enc $s[1]) + '</span></li>' }
   $steps = ''; $n = 0
   foreach ($s in $L.steps.items) { $n++; $steps += '<li class="reveal"><span class="num">0' + $n + '</span><h3>' + (Enc $s[0]) + '</h3><p>' + (Enc $s[1]) + '</p></li>' }
-  $hero = '<section class="hero" data-hero style="--tex:url(' + (TexUrl $Tax.lookCover.travertine) + ')"><div class="hero-wall" aria-hidden="true"><div class="hw-tex"></div><div class="hw-flutes"></div><div class="hw-light"></div><div class="hw-vignette"></div></div>' +
-    '<div class="hero-tiles" aria-hidden="true"><span style="--img:url(' + (PackUrl $Tax.lookCover.marble) + ')"></span><span style="--img:url(' + (PackUrl $Tax.lookCover.wood) + ')"></span><span style="--img:url(' + (PackUrl $Tax.lookCover.black) + ')"></span></div>' +
+  # Hero: a real room dressed while scrolling (src/assets/js/home-hero.js, settings in data/experience.json > home)
+  $hc = $ExpCfg.home
+  $reel = [ordered]@{ room = [string]$hc.room; assets = (AssetUrl 'exp/'); bg = '#161411'; faces = @($hc.faces | ForEach-Object { [ordered]@{ img = (AssetUrl ('img/' + [string]$_.img)); w = [double]$_.w; h = [double]$_.h } }) }
+  $reelJson = (To-Json $reel).Replace("'", '&#39;')
+  $logoName = [string]$hc.logo
+  $hero = '<section class="hero hero-reel" data-hero data-reel=''' + $reelJson + ''' style="--photo:url(' + (AssetUrl ('exp/rooms/' + [string]$hc.room + '/photo.jpg')) + ')"><div class="reel-stage"><canvas class="reel-canvas" aria-hidden="true"></canvas><div class="reel-scrim" aria-hidden="true"></div>' +
     '<div class="wrap hero-content"><p class="kicker">' + (Enc $L.hero.kicker) + '</p><h1>' + (Enc $L.hero.h1) + '<span class="h1-tag">' + (Enc $L.tagline) + '</span></h1><p class="lead">' + (Enc $L.hero.lead) + '</p>' +
-    '<div class="ctas"><a class="btn btn-light" href="' + (Href $L 'catalog/') + '">' + (Enc $L.hero.cta) + $Icons.arrow + '</a><a class="btn btn-ghost" href="#studio">' + (Enc $L.hero.cta2) + '</a></div><ul class="stats">' + $stats + '</ul></div><div class="scroll-cue" aria-hidden="true"></div></section>'
+    '<div class="ctas"><a class="btn btn-light" href="' + (Href $L 'catalog/') + '">' + (Enc $L.hero.cta) + $Icons.arrow + '</a><a class="btn btn-ghost" href="#studio">' + (Enc $L.hero.cta2) + '</a></div><ul class="stats">' + $stats + '</ul></div>' +
+    '<div class="reel-logo"><div class="rl-3d" aria-hidden="true"><span class="rl-mark"><i></i><i></i><i></i><i></i></span><span class="rl-name" data-t="' + (Enc $logoName) + '">' + (Enc $logoName) + '</span></div><p class="rl-tag">' + (Enc $L.tagline) + '</p>' +
+    '<div class="ctas"><a class="btn btn-light" href="' + (Href $L 'catalog/') + '">' + (Enc $L.hero.cta) + $Icons.arrow + '</a><a class="btn btn-ghost" href="' + (Href $L 'experience/') + '">' + (Enc $L.hero.cta2) + '</a></div></div>' +
+    '<div class="scroll-cue" aria-hidden="true"></div></div>' +
+    '<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.min.js" } }</script><script type="module" src="' + (AssetUrl ('js/home-hero.js?v=' + $Ver)) + '"></script></section>'
   $body = $hero +
     '<section class="universes" id="universes"><div class="wrap">' + (SectionHead (T $L 'sectionsTitle') (T $L 'sectionsLead') (P $L.nav 'catalog')) + (SectionTiles $L) + '</div></section>' +
     '<section class="materials"><div class="wrap">' + (SectionHead $L.materialsTitle $L.materialsLead (P $L.nav 'looks')) + (LookTiles $L) + '</div></section>' +

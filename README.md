@@ -29,7 +29,7 @@ ex. `"cat": "stone", "match": "אבן גמיש"`) ; le produit garde son univers
 
 | Page | Rôle |
 |---|---|
-| Accueil | Mur rainuré « éclairé à la souris », matières, studio, sélection, FAQ, bloc « venez au showroom » + carte |
+| Accueil | Animation au défilement sur une vraie pièce (r23, vue large) : nos plaques de travertin KIR-090 viennent se coller une à une sur le grand mur, puis nos lames chêne 035 se posent sur le mur de côté, avec la lumière de la photo et les meubles devant ; à la fin, le nom חיפוי ישראל apparaît en relief doré. Réglages dans data/experience.json > home (pièce, modèles, nom), moteur src/assets/js/home-hero.js, plaque refaite aux vraies proportions par scripts/home-plate.ps1. Puis univers, matières, studio, sélection, FAQ, showroom + carte |
 | Catalogue | Tous les produits regroupés par famille (variantes), filtres type / aspect / couleur, recherche, tri par prix |
 | 14 pages catégories / 8 pages « aspects » | Une page = un mot-clé (lames acoustiques, effet bois, marbre, travertin…) |
 | Fiches produit | Plaque entière en perspective + loupe, photo réelle, variantes, prix TTC live, stock live, quantité, ajout au panier |

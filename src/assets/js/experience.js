@@ -838,7 +838,7 @@ function edView() {
   if (W >= 900) { if (p.left > W / 2) sw = p.left - 12; else { sx0 = p.right + 12; sw = W - sx0; } }
   else sh = Math.max(120, p.top);
   let cover = Math.max(sw / r.W, sh / r.H);
-  if (sw / (cover * r.W) < 0.64) cover = sw / (0.64 * r.W);   // on a phone keep most of the photo width in view
+  if (sw / (cover * r.W) < 0.86) cover = sw / (0.86 * r.W);   // on a phone keep most of the photo width in view
   const sc = cover * ED.zoom, hw = sw / 2 / sc, hh = sh / 2 / sc;
   ED.cover = cover;
   if (ED.fix < 0) {
@@ -1136,11 +1136,11 @@ function frame() {
   } else RU.uAnim.value.z = 0;
   roomPass.enabled = mix > 0.001;
   renderPass.enabled = bloom.enabled = outPass.enabled = mix < 0.999;
-  // framing: cover the screen, but on a phone keep at least 64 % of the photo's width in view (the photo is then shorter than the
+  // framing: cover the screen, but on a phone keep at least 86 % of the photo's width in view (the photo is then shorter than the
   // screen and sits a little above the middle, the rest stays dark), and follow the piece being laid only gently
-  const asp = innerWidth / innerHeight, pa = SR.W / SR.H, zoom = 1 + 0.08 * (1 - mix);
+  const asp = innerWidth / innerHeight, pa = SR.W / SR.H, zoom = 1 + 0.03 * (1 - mix);
   let ww = 1, wh = 1; if (asp < pa) ww = asp / pa; else wh = pa / asp;
-  if (ww < 0.64) { wh = 0.64 / ww; ww = 0.64; }
+  if (ww < 0.86) { wh = 0.86 / ww; ww = 0.86; }
   ww /= zoom; wh /= zoom;
   const follow = ww < 0.98 && state.count < lay.total - 0.01 ? pieceImageX(Math.min(lay.total - 1, Math.floor(state.count))) : 0.5;
   state.pan = lerp(state.pan, lerp(0.5, follow, 0.7), 1 - Math.exp(-dt * 1.6));
