@@ -1,4 +1,6 @@
-# Generates src/assets/img/logo.png (512x512) and src/assets/img/og.jpg (1200x630 share image).
+# Generates src/assets/img/og.jpg (1200x630 share image) with the brand logo.
+# logo.png (512x512 app icon) and logo-mark.png (round mark, transparent) are NOT drawn here since 24/11/2026:
+# they come from the validated logo, Hipouy/logo/hi-carte/exports (favicon-512.png, marque-pour-fond-sombre-1024.png).
 # Windows only (System.Drawing). Re-run when the brand changes. Keep this file ASCII-only.
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.Drawing
@@ -16,14 +18,6 @@ function RoundRect($g, $brush, [float]$x, [float]$y, [float]$w, [float]$h, [floa
   $g.FillPath($brush, $p)
 }
 
-# Logo
-$bmp = New-Object Drawing.Bitmap 512, 512
-$g = [Drawing.Graphics]::FromImage($bmp); $g.SmoothingMode = 'AntiAlias'
-$g.Clear([Drawing.Color]::FromArgb(27, 25, 22))
-$xs = @(112, 196, 280, 364); $k = 0
-foreach ($x in $xs) { $y = if ($k % 2) { 128 } else { 96 }; RoundRect $g (Brass $x 56) $x $y 56 320 28; $k++ }
-$g.Dispose(); $bmp.Save((Join-Path $img 'logo.png'), [Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose()
-
 # OG image: textures as vertical slats + brand
 $W = 1200; $H = 630
 $bmp = New-Object Drawing.Bitmap $W, $H
@@ -40,8 +34,7 @@ for ($x = 0; $x -lt $W; $x += 40) {
 }
 $ov = New-Object Drawing.Drawing2D.LinearGradientBrush((New-Object Drawing.PointF(0, 0)), (New-Object Drawing.PointF(0, $H)), [Drawing.Color]::FromArgb(70, 22, 20, 17), [Drawing.Color]::FromArgb(235, 22, 20, 17))
 $g.FillRectangle($ov, 0, 0, $W, $H)
-$xs = @(80, 104, 128, 152); $k = 0
-foreach ($x in $xs) { $y = if ($k % 2) { 392 } else { 380 }; RoundRect $g (Brass $x 16) $x $y 16 92 8; $k++ }
+$mk = [Drawing.Image]::FromFile((Join-Path $img 'logo-mark.png')); $g.DrawImage($mk, 62, 352, 116, 116); $mk.Dispose()
 $fontBig = New-Object Drawing.Font('Segoe UI', 80, [Drawing.FontStyle]::Bold)
 $fontMid = New-Object Drawing.Font('Georgia', 32, [Drawing.FontStyle]::Bold)
 $fontSm = New-Object Drawing.Font('Segoe UI', 24, [Drawing.FontStyle]::Regular)
@@ -58,4 +51,4 @@ $enc = [Drawing.Imaging.ImageCodecInfo]::GetImageEncoders() | Where-Object { $_.
 $ep = New-Object Drawing.Imaging.EncoderParameters 1
 $ep.Param[0] = New-Object Drawing.Imaging.EncoderParameter([Drawing.Imaging.Encoder]::Quality, [long]84)
 $bmp.Save((Join-Path $img 'og.jpg'), $enc, $ep); $bmp.Dispose()
-'OK logo.png + og.jpg'
+'OK og.jpg'

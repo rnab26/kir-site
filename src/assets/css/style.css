@@ -62,9 +62,14 @@ section { padding-block: clamp(56px, 9vw, 120px); }
 .home .site-header.scrolled { background: rgba(27,25,22,.78); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
 .header-inner { height: 100%; display: flex; align-items: center; gap: 24px; }
 .logo { display: inline-flex; align-items: center; gap: 12px; text-decoration: none; }
-.logo-mark { display: inline-flex; gap: 3px; height: 30px; align-items: stretch; }
-.logo-mark i { width: 5px; border-radius: 3px; background: linear-gradient(90deg, #7a5a36, #c9a274 55%, #8a6a45); }
-.logo-mark i:nth-child(2), .logo-mark i:nth-child(4) { transform: translateY(4px); }
+/* Logo HI (I = map of Israel), validated 24/11/2026; gold darker on light backgrounds, lighter on dark ones */
+.logo { --logo-gold: #a07a34; }
+.home .site-header .logo, .logo-light { --logo-gold: #d9bd7e; }
+.logo-mark { width: 46px; height: 46px; flex: none; }
+.logo-mark .g-s { stroke: var(--logo-gold); } .logo-mark .g-f { fill: var(--logo-gold); }
+.logo .logo-name { font-family: "Bellefair", var(--serif); font-weight: 400; font-size: 1.3em; display: inline-flex; align-items: flex-start; gap: .26em; }
+.logo-isr { display: inline-flex; align-items: flex-start; color: var(--logo-gold); }
+.logo-yod { height: .62em; width: auto; margin-top: .07em; margin-inline-end: .07em; fill: currentColor; }
 .logo-text { font: 700 1.45rem/1 var(--serif); letter-spacing: .12em; display: flex; flex-direction: column; }
 .logo-text small { font: 600 .58rem/1.4 var(--sans); letter-spacing: .32em; text-transform: uppercase; opacity: .7; }
 .nav { display: flex; gap: 6px; margin-inline-start: auto; }
@@ -558,6 +563,7 @@ a.add { text-decoration: none; color: inherit; }
   .langs a { min-width: 30px; padding: 0 6px; }
   .logo-text small { display: none; }
   .logo-text { font-size: 1.05rem; }
+  .logo-mark { width: 38px; height: 38px; }
 }
 @media print { .wa-float, .a11y-btn, .a11y-panel, .lang-bar, .langs { display: none !important; } }
 
