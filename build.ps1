@@ -17,6 +17,12 @@ $SHEKEL = [string][char]0x20AA
 $TIMES = [string][char]0x00D7
 
 function Read-Json([string]$rel) { Get-Content -Raw -Encoding UTF8 -Path (Join-Path $Root $rel) | ConvertFrom-Json }
+# Logo HI (I = map of Israel) and the yod of the Hebrew name drawn as the map: templates/logo-*.svg, made by
+# Hipouy/logo/hi-carte/exports_web.py. Ink follows currentColor, gold comes from the CSS variable --logo-gold.
+function Read-Svg([string]$rel, [string]$cls) { ((Get-Content -Raw -Encoding UTF8 -Path (Join-Path $Root $rel)).Trim() -replace ' xmlns="http://www.w3.org/2000/svg"', '') -replace '^<svg ', ('<svg class="' + $cls + '" aria-hidden="true" focusable="false" ') }
+$LogoMark = Read-Svg 'templates/logo-mark.svg' 'logo-mark'
+$LogoYod = Read-Svg 'templates/logo-yod.svg' 'logo-yod'
+$IsraelHe = [string][char]0x05D9 + [char]0x05E9 + [char]0x05E8 + [char]0x05D0 + [char]0x05DC
 function Enc([object]$s) { if ($null -eq $s) { return '' }; [System.Net.WebUtility]::HtmlEncode([string]$s) }
 function P($obj, [string]$name) { if ($null -eq $obj) { return $null }; $x = $obj.PSObject.Properties[$name]; if ($x) { $x.Value } else { $null } }
 function Write-Out([string]$rel, [string]$text) {
@@ -355,8 +361,13 @@ $Icons = @{
 $LangLabel = @{ he = [string][char]0x05E2 + [char]0x05D1; en = 'EN'; fr = 'FR' }
 $LangName = @{ he = [string][char]0x05E2 + [char]0x05D1 + [char]0x05E8 + [char]0x05D9 + [char]0x05EA; en = 'English'; fr = 'Fran' + [char]0x00E7 + 'ais' }
 
+function BrandNameHtml($L) {
+  $n = Enc (BrandOf $L); $i = $n.IndexOf($IsraelHe)
+  if ($i -lt 0) { return $n }
+  '<span>' + $n.Substring(0, $i).Trim() + '</span><span class="logo-isr">' + $LogoYod + $IsraelHe.Substring(1) + '</span>' + $n.Substring($i + $IsraelHe.Length)
+}
 function LogoHtml($L, [string]$cls = 'logo') {
-  '<a class="' + $cls + '" href="' + (Href $L '') + '" aria-label="' + (Enc (BrandOf $L)) + '"><span class="logo-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="logo-text"><span class="logo-name">' + (Enc (BrandOf $L)) + '</span><small>' + (Enc (SiteBy 'tagByLang' $L)) + '</small></span></a>'
+  '<a class="' + $cls + '" href="' + (Href $L '') + '" aria-label="' + (Enc (BrandOf $L)) + '">' + $LogoMark + '<span class="logo-text"><span class="logo-name">' + (BrandNameHtml $L) + '</span><small>' + (Enc (SiteBy 'tagByLang' $L)) + '</small></span></a>'
 }
 function LangSwitch($L, [string]$path) {
   $s = '<div class="langs" role="group" aria-label="Language">'
@@ -459,7 +470,7 @@ function Page($L, [hashtable]$pg) {
   [void]$sb.Append('<meta property="og:type" content="' + $(if ($pg.ogType) { $pg.ogType } else { 'website' }) + '"><meta property="og:site_name" content="' + (Enc (BrandOf $L)) + '"><meta property="og:title" content="' + (Enc $title) + '"><meta property="og:description" content="' + (Enc $desc) + '"><meta property="og:url" content="' + $canon + '"><meta property="og:image" content="' + $og + '"><meta property="og:locale" content="' + $L.locale + '">')
   foreach ($lg in $Langs) { if ($lg -ne $L.lang) { [void]$sb.Append('<meta property="og:locale:alternate" content="' + (Lc $lg).locale + '">') } }
   [void]$sb.Append('<meta name="twitter:card" content="summary_large_image"><meta name="theme-color" content="#1b1916"><link rel="icon" href="' + $BasePath + '/favicon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="' + (AssetUrl 'img/logo.png') + '"><meta name="apple-mobile-web-app-title" content="' + (Enc (BrandOf $L)) + '"><meta name="mobile-web-app-capable" content="yes"><link rel="manifest" href="' + $BasePath + '/manifest.webmanifest">')
-  [void]$sb.Append('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://docs.google.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap">')
+  [void]$sb.Append('<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://docs.google.com"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Frank+Ruhl+Libre:wght@400;500;700&family=Bellefair&display=swap">')
   [void]$sb.Append('<link rel="stylesheet" href="' + (AssetUrl ('css/style.css?v=' + $Ver)) + '">' + $ld + '<script>try{var a=JSON.parse(localStorage.getItem("kir-a11y")||"{}");var d=document.documentElement;if(a.fs)d.style.fontSize=a.fs+"%";if(a.contrast)d.classList.add("a11y-contrast");if(a.links)d.classList.add("a11y-links");if(a.motion)d.classList.add("a11y-motion");}catch(e){}</script></head>')
   [void]$sb.Append('<body class="' + [string]$pg.cls + '"><a class="skip" href="#main">' + (Enc (T $L 'skip')) + '</a>')
   [void]$sb.Append((HeaderHtml $L $path))
@@ -868,7 +879,7 @@ foreach ($lang in $Langs) {
 $he = Lc 'he'; $fr = Lc 'fr'; $en = Lc 'en'
 $nfParts = ''
 foreach ($X in @($he, $en, $fr)) { $nfParts += '<div lang="' + $X.lang + '" dir="' + $X.dir + '" class="nf-lang"><h2>' + (Enc $X.notFound) + '</h2><p class="lead">' + (Enc $X.notFoundLead) + '</p><p><a class="btn btn-light" href="' + (Href $X 'catalog/') + '">' + (Enc (P $X.nav 'catalog')) + '</a></p></div>' }
-$nf = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>404 | ' + (Enc $Site.brandHe) + '</title><meta name="robots" content="noindex"><link rel="icon" href="' + $BasePath + '/favicon.svg"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Frank+Ruhl+Libre:wght@400;500;700&display=swap"><link rel="stylesheet" href="' + (AssetUrl ('css/style.css?v=' + $Ver)) + '"></head><body class="nf"><main class="nf-main band"><div class="band-flutes" aria-hidden="true"></div><div class="wrap"><a class="nf-logo" href="' + $BasePath + '/">' + (Enc $Site.brandHe) + ' &middot; ' + (Enc $Site.brand) + '</a><p class="kicker">404</p>' + $nfParts + '</div></main></body></html>'
+$nf = '<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>404 | ' + (Enc $Site.brandHe) + '</title><meta name="robots" content="noindex"><link rel="icon" href="' + $BasePath + '/favicon.svg"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700&family=Frank+Ruhl+Libre:wght@400;500;700&family=Bellefair&display=swap"><link rel="stylesheet" href="' + (AssetUrl ('css/style.css?v=' + $Ver)) + '"></head><body class="nf"><main class="nf-main band"><div class="band-flutes" aria-hidden="true"></div><div class="wrap"><a class="nf-logo" href="' + $BasePath + '/">' + (Enc $Site.brandHe) + ' &middot; ' + (Enc $Site.brand) + '</a><p class="kicker">404</p>' + $nfParts + '</div></main></body></html>'
 Write-Out '404.html' $nf
 
 # Client data (public fields only)
