@@ -287,6 +287,7 @@
       applyLiveToData(); cb(DATA);
     }).catch(function () { cb({}); });
   }
+  window.KIRcatalog = getData; // used by labels.js (price labels page): products with live Sheet prices
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function nameOf(p) { return p[K.lang] || p.he; }
   function prodUrl(p) { return productUrl(p.id, p.f); }
@@ -539,12 +540,13 @@
   if (K.live && window.fetch) {
     var LKEY = 'kir-live-v1', cached = null;
     try { cached = JSON.parse(sessionStorage.getItem(LKEY) || 'null'); } catch (e) {}
-    if (cached && Date.now() - cached.t < 120000) { LIVE = cached.d; applyLiveToPage(); }
+    var liveDone = function () { try { document.dispatchEvent(new Event('kir:live')); } catch (e) {} };
+    if (cached && Date.now() - cached.t < 120000) { LIVE = cached.d; applyLiveToPage(); liveDone(); }
     else fetch(K.live, { cache: 'no-store' }).then(function (r) { return r.ok ? r.text() : ''; }).then(function (txt) {
       if (!txt || txt.indexOf('img') !== 0) return;
       LIVE = parseCsv(txt);
       try { sessionStorage.setItem(LKEY, JSON.stringify({ t: Date.now(), d: LIVE })); } catch (e) {}
-      applyLiveToPage();
+      applyLiveToPage(); liveDone();
     }).catch(function () {});
   }
 
