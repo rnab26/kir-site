@@ -856,6 +856,12 @@ foreach ($lang in $Langs) {
   Page $L @{ path = 'cart/'; title = ($SP.cartTitle + ' | ' + (BrandOf $L)); desc = $SP.cartDesc; body = $body; cls = 'cart-page'; noindex = $true }
   $body = (Band (T $L 'checkout') $SP.checkoutTitle $SP.checkoutDesc -1 $L) + (CheckoutForm $L)
   Page $L @{ path = 'checkout/'; title = ($SP.checkoutTitle + ' | ' + (BrandOf $L)); desc = $SP.checkoutDesc; body = $body; cls = 'checkout-page'; noindex = $true }
+  # Price labels for the showroom (Hebrew only, not indexed, not in the sitemap): src/assets/js/labels.js
+  if ($lang -eq 'he') {
+    $lcats = [ordered]@{}; foreach ($c in $CatOrder) { $lcats[$c] = [string](P (CatOf $L $c) 'name') }
+    $body = (Band $SP.labelsKicker $SP.labelsTitle $SP.labelsDesc -1 $L) + '<section class="labels-sec"><div class="wrap" data-labels data-cats="' + (Enc (To-Json $lcats)) + '"><noscript><p>JavaScript</p></noscript></div></section><script src="' + (AssetUrl ('js/labels.js?v=' + $Ver)) + '" defer></script>'
+    Page $L @{ path = 'labels/'; title = ($SP.labelsTitle + ' | ' + (BrandOf $L)); desc = $SP.labelsDesc; body = $body; cls = 'labels-page'; noindex = $true; noalt = $true }
+  }
   $body = '<section class="order-sec"><div class="wrap narrow" data-order><noscript><p>JavaScript</p></noscript></div></section>'
   Page $L @{ path = 'order/'; title = ($SP.orderTitle + ' | ' + (BrandOf $L)); desc = $SP.orderTitle; body = $body; cls = 'order-page'; noindex = $true }
   $body = (Band (T $L 'orders') $SP.ordersTitle $SP.ordersDesc -1 $L) + '<section class="orders-sec"><div class="wrap narrow" data-orders></div></section>'
