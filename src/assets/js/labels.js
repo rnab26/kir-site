@@ -1,10 +1,12 @@
 /* Price labels for the showroom (page /labels/, Hebrew, not indexed): pick products, print A4 sheets.
    Logo, reference, size and price; prices = the site's prices (Sheet column "המחיר שלנו כולל מע״מ",
-   updated live by app.js). Choices are kept on this device (localStorage). Requested by Raphael 24/11/2026. */
+   updated live by app.js). Choices are kept on this device (localStorage). Requested by Raphael 24/11/2026;
+   100 x 50 mm cards (10 per A4, the default) added 25/11/2026. */
 (function () {
   'use strict';
   var KEY = 'kir-labels-v1';
   var SIZES = {
+    c10: { name: 'כרטיס — 100 × 50 מ״מ', per: 10, cols: 2, note: '10 בדף A4 (דף רגיל או בריסטול, חיתוך לפי הקווים)' },
     a7: { name: 'גדולה — 105 × 74 מ״מ', per: 8, cols: 2, note: '8 בדף A4 (גיליון מדבקות A7 או דף רגיל וחיתוך)' },
     s24: { name: 'קטנה — 70 × 37 מ״מ', per: 24, cols: 3, note: '24 בדף A4 (גיליון מדבקות 70×37)' }
   };
@@ -17,11 +19,13 @@
   function load() {
     var d = null; try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
     st = d && typeof d === 'object' ? d : {};
-    st.size = SIZES[st.size] ? st.size : 'a7';
+    // v2 (25/11/2026): the 10 x 5 cm card becomes the default, also for a device that had saved another size
+    if (st.v !== 2) { st.size = 'c10'; st.v = 2; }
+    st.size = SIZES[st.size] ? st.size : 'c10';
     st.sel = st.sel || {}; st.ovr = st.ovr || {};
     st.name = !!st.name; st.cut = st.cut !== false;
     st.skip = Math.max(0, parseInt(st.skip, 10) || 0); st.blank = Math.max(0, parseInt(st.blank, 10) || 0);
-    st.q = st.q || ''; st.c = st.c || '';
+    st.q = st.q || ''; st.c = st.c || ''; st.pf = st.pf === 'y' || st.pf === 'n' ? st.pf : '';
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
 
@@ -41,6 +45,7 @@
     if (k === 'p') return it.p != null ? String(it.p) : '';
     return '';
   }
+  function hasPrice(it) { return parseFloat(String(field(it, 'p')).replace(/[^\d.]/g, '')) > 0; }
   function priceHtml(p) {
     var n = parseFloat(String(p).replace(/[^\d.]/g, ''));
     return n > 0 ? '<bdi>' + nf.format(n) + '&nbsp;₪</bdi>' : '<span class="lbl-line"></span>';
@@ -94,6 +99,7 @@
   /* ---------- product picker ---------- */
   function matches(it) {
     if (st.c && it.c !== st.c) return false;
+    if (st.pf && hasPrice(it) !== (st.pf === 'y')) return false;
     var q = st.q.trim().toLowerCase(); if (!q) return true;
     return ((it.r || '') + ' ' + (it.he || '') + ' ' + (it.s || '')).toLowerCase().indexOf(q) >= 0;
   }
@@ -129,15 +135,16 @@
     var catOpts = '<option value="">כל הקטגוריות</option>' + Object.keys(cats).map(function (c) { return '<option value="' + esc(c) + '"' + (st.c === c ? ' selected' : '') + '>' + esc(cats[c]) + '</option>'; }).join('');
     root.innerHTML =
       '<div class="labels-ui">' +
-      '<fieldset class="lbl-set"><legend>גודל התווית</legend>' + opt('a7') + opt('s24') + '</fieldset>' +
+      '<fieldset class="lbl-set"><legend>גודל התווית</legend>' + opt('c10') + opt('a7') + opt('s24') + '</fieldset>' +
       '<div class="lbl-set lbl-opts">' +
       '<label class="lbl-check"><input type="checkbox" data-o="name"' + (st.name ? ' checked' : '') + '> להציג גם את שם המוצר</label>' +
       '<label class="lbl-check"><input type="checkbox" data-o="cut"' + (st.cut ? ' checked' : '') + '> קווי חיתוך (להדפסה על דף רגיל)</label>' +
       '<label class="lbl-num">תוויות ריקות לכתיבה ביד <input type="number" min="0" max="240" data-o="blank" value="' + st.blank + '"></label>' +
-      '<label class="lbl-num">לדלג על תוויות בתחילת הגיליון <input type="number" min="0" max="23" data-o="skip" value="' + st.skip + '"><small>לגיליון מדבקות שכבר השתמשו בחלקו</small></label>' +
+      '<label class="lbl-num">לדלג על תוויות בתחילת הגיליון <input type="number" min="0" max="' + (SIZES[st.size].per - 1) + '" data-o="skip" value="' + st.skip + '"><small>לגיליון מדבקות שכבר השתמשו בחלקו</small></label>' +
       '</div>' +
       '<div class="lbl-bar"><strong data-count aria-live="polite"></strong><button type="button" class="btn" data-print>הדפסה</button><button type="button" class="btn btn-ghost" data-clear>ניקוי הבחירה</button></div>' +
       '<div class="lbl-pick"><div class="lbl-filters"><input type="search" data-q placeholder="חיפוש לפי מק״ט או שם" value="' + esc(st.q) + '" aria-label="חיפוש מוצר"><select data-c aria-label="קטגוריה">' + catOpts + '</select>' +
+      '<select data-pf aria-label="מחיר"><option value="">עם ובלי מחיר</option><option value="y"' + (st.pf === 'y' ? ' selected' : '') + '>רק עם מחיר</option><option value="n"' + (st.pf === 'n' ? ' selected' : '') + '>רק בלי מחיר</option></select>' +
       '<span class="lbl-shown" data-shown></span><button type="button" class="btn btn-sm btn-ghost" data-all>תווית אחת לכל מוצר מוצג</button></div>' +
       '<ul class="lbl-list" data-list></ul></div>' +
       '<p class="lbl-toast" data-toast role="status" hidden></p>' +
@@ -151,6 +158,7 @@
       else if (t.dataset.o === 'blank') st.blank = Math.max(0, Math.min(240, parseInt(t.value, 10) || 0));
       else if (t.dataset.o === 'skip') st.skip = Math.max(0, Math.min(SIZES[st.size].per - 1, parseInt(t.value, 10) || 0));
       else if (t.matches('[data-c]')) { st.c = t.value; save(); renderList(); return; }
+      else if (t.matches('[data-pf]')) { st.pf = t.value; save(); renderList(); return; }
       else return;
       save(); renderSheets();
     });
