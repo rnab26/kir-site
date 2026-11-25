@@ -91,8 +91,13 @@ try {
         # each page as it opens, then (home) once more at the end of the scroll animation, where the logo and name stand
         foreach ($state in @('', ' (end of the animation)')) {
           if ($state) {
-            $rs = Send 'Runtime.evaluate' @{ expression = "(function(){var s=document.querySelector('[data-reel]');if(!s)return 'none';scrollTo(0,s.offsetTop+s.offsetHeight-innerHeight);return s.classList.contains('reel-on')?'on':'off'})()"; returnByValue = $true }
-            $st = [string]$rs.result.result.value
+            # the animation starts once three.js and the 4 rooms are loaded: a cold first visit can take longer than $Wait
+            $st = 'wait'
+            for ($t = 0; $t -lt 12 -and $st -eq 'wait'; $t++) {
+              if ($t) { Start-Sleep -Seconds 2 }
+              $rs = Send 'Runtime.evaluate' @{ expression = "(function(){var s=document.querySelector('[data-reel]');if(!s)return 'none';scrollTo(0,s.offsetTop+s.offsetHeight-innerHeight);return s.classList.contains('reel-on')?'on':(s.classList.contains('reel-off')?'off':'wait')})()"; returnByValue = $true }
+              $st = [string]$rs.result.result.value
+            }
             if ($st -eq 'none') { continue }
             if ($st -ne 'on') { $problems++; Write-Output ('PROBLEM  ' + $sc.name + '  ' + $lg.code + '  /' + $lg.prefix + $pg + '   the 3D animation did not start (WebGL / script error)'); continue }
             Start-Sleep -Seconds 3
