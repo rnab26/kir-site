@@ -815,6 +815,8 @@ body.has-buybar .site-footer { padding-bottom: 96px; }
 .lbl-empty { padding: 28px; text-align: center; color: var(--muted); border: 1px dashed var(--line-2); border-radius: 14px; }
 .sheets { --fit: 1; display: grid; gap: 18px; justify-items: center; }
 .sheet { zoom: var(--fit); width: 210mm; height: 297mm; background: #fff; box-shadow: 0 6px 24px rgba(0,0,0,.12); display: grid; overflow: hidden; color: #1b1916; }
+/* 100 x 50 mm cards: 2 x 5 = 200 x 250 mm, centred on the A4 (5 mm left/right, 23.5 mm top/bottom) */
+.sheet.sz-c10 { grid-template-columns: repeat(2, 100mm); grid-template-rows: repeat(5, 50mm); justify-content: center; align-content: center; }
 .sheet.sz-a7 { grid-template-columns: repeat(2, 105mm); grid-template-rows: repeat(4, 74.25mm); }
 .sheet.sz-s24 { grid-template-columns: repeat(3, 70mm); grid-template-rows: repeat(8, 37.125mm); }
 .lbl { --logo-gold: #a07a34; box-sizing: border-box; display: flex; flex-direction: column; overflow: hidden; }
@@ -833,6 +835,10 @@ body.has-buybar .site-footer { padding-bottom: 96px; }
 .lbl-price small { color: #6a6157; margin-inline-start: auto; }
 .lbl-line { display: inline-block; flex: 1; min-width: 20mm; border-bottom: .3mm solid #9a9188; height: 1em; }
 .lbl-price .v .lbl-line { width: 28mm; }
+.sz-c10 .lbl { padding: 4mm 5.5mm 3.5mm; } .sz-c10 .lbl-head { padding-bottom: 2mm; gap: 2mm; }
+.sz-c10 .lbl-head .logo-mark { width: 9.5mm; height: 9.5mm; } .sz-c10 .lbl-brand { font-size: 6.2mm; }
+.sz-c10 .lbl-title { font-size: 3mm; } .sz-c10 .lbl-row { font-size: 3.8mm; } .sz-c10 .lbl-price { font-size: 3.8mm; }
+.sz-c10 .lbl-price .v { font-size: 7.5mm; } .sz-c10 .lbl-price small { font-size: 2.6mm; }
 .sz-a7 .lbl { padding: 6mm 7mm 5mm; } .sz-a7 .lbl-head { padding-bottom: 2.5mm; }
 .sz-a7 .lbl-head .logo-mark { width: 12mm; height: 12mm; } .sz-a7 .lbl-brand { font-size: 7.5mm; }
 .sz-a7 .lbl-title { font-size: 3.6mm; } .sz-a7 .lbl-row { font-size: 4.4mm; } .sz-a7 .lbl-price { font-size: 4.4mm; }
@@ -846,7 +852,7 @@ body.has-buybar .site-footer { padding-bottom: 96px; }
   body.labels-page { background: #fff; }
   body.labels-page .site-header, body.labels-page .site-footer, body.labels-page footer, body.labels-page .band, body.labels-page .labels-ui, body.labels-page .skip,
   body.labels-page .wa-float, body.labels-page .a11y-btn, body.labels-page .a11y-panel, body.labels-page .lang-bar, body.labels-page .crumbs { display: none !important; }
-  body.labels-page .labels-sec, body.labels-page .labels-sec .wrap { padding: 0 !important; margin: 0 !important; max-width: none !important; }
+  body.labels-page .labels-sec, body.labels-page .labels-sec .wrap { padding: 0 !important; margin: 0 !important; max-width: none !important; width: auto !important; }
   .sheets { display: block; } .sheet { zoom: 1 !important; box-shadow: none; margin: 0; break-after: page; }
   .sheet:last-child { break-after: auto; }
   .sheet.cut .lbl-skip { outline: none; }
