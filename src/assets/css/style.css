@@ -711,7 +711,6 @@ body.has-buybar .site-footer { padding-bottom: 96px; }
 .reel-logo .ctas { pointer-events: auto; justify-content: center; transform: translateY(calc((1 - var(--logo, 0)) * 30px)); }
 .rl-3d { display: flex; align-items: center; gap: clamp(12px, 2vw, 24px); transform-style: preserve-3d;
   transform: rotateX(calc((1 - var(--logo, 0)) * 68deg)) translateY(calc((1 - var(--logo, 0)) * 60px)) scale(calc(.86 + .14 * var(--logo, 0))); transform-origin: 50% 100%; }
-.rl-3d img { width: clamp(48px, 7vw, 92px); height: auto; filter: drop-shadow(0 18px 24px rgba(0,0,0,.55)); }
 .rl-name { position: relative; font: 600 clamp(54px, 10vw, 138px)/1 var(--serif, serif); letter-spacing: .01em; white-space: nowrap;
   background: linear-gradient(180deg, #f6e6c8 0%, #d8b27c 46%, #a8773f 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
   filter: drop-shadow(0 1px 0 #8a5f30) drop-shadow(0 2px 0 #7a522a) drop-shadow(0 3px 0 #6b4723) drop-shadow(0 4px 0 #5c3c1d) drop-shadow(0 22px 26px rgba(0,0,0,.6)); }
@@ -734,16 +733,11 @@ body.has-buybar .site-footer { padding-bottom: 96px; }
   .hero-reel .stats span { display: block; font-size: .78rem; line-height: 1.25; }
 }
 @media (prefers-reduced-motion: reduce) { .hero.hero-reel { height: auto; } .reel-stage { position: relative; } }
-.rl-mark { display: inline-flex; gap: clamp(5px, .7vw, 9px); align-items: stretch; height: clamp(54px, 9vw, 120px); filter: drop-shadow(0 3px 0 #6b4723) drop-shadow(0 20px 22px rgba(0,0,0,.55)); }
-.rl-mark i { width: clamp(7px, 1vw, 13px); border-radius: 99px; background: linear-gradient(180deg, #f6e6c8, #c99a5e 55%, #9a6a35); }
-.rl-mark i:nth-child(2), .rl-mark i:nth-child(4) { margin-top: 12%; }
 /* end title: clean and current (no gold extrusion): white letters that come into focus, a thin oak line under them */
 .rl-3d { transform: none; gap: clamp(14px, 2vw, 22px); }
-.rl-name { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: #fbf7f0; font-weight: 500;
+.rl-name { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: #fbf7f0;
   font-size: clamp(46px, 8.4vw, 118px); letter-spacing: calc(.01em + (1 - var(--logo, 0)) * .3em);
   filter: blur(calc((1 - var(--logo, 0)) * 10px)); text-shadow: 0 2px 30px rgba(0,0,0,.45); }
-.rl-mark { height: clamp(40px, 6.4vw, 86px); filter: drop-shadow(0 10px 18px rgba(0,0,0,.45)); transform: translateY(calc((1 - var(--logo, 0)) * 24px)); }
-.rl-mark i { width: clamp(5px, .7vw, 9px); background: linear-gradient(180deg, #f3e3c6, #c89a63); }
 .reel-logo::after { content: ""; order: 2; width: calc(var(--logo, 0) * min(220px, 40vw)); height: 1px; background: #c89a63; margin: -4px auto 0; }
 .rl-tag { order: 3; letter-spacing: .12em; text-transform: uppercase; font-size: clamp(12px, 1.1vw, 14px); }
 .reel-logo .ctas { order: 4; }
@@ -757,6 +751,25 @@ body.has-buybar .site-footer { padding-bottom: 96px; }
   transform: translate3d(0, calc((1 - var(--t)) * -6vh), calc((1 - var(--t)) * -2600px)) rotateY(calc((1 - var(--t)) * 28deg)) rotateX(calc((1 - var(--t)) * -12deg));
   opacity: clamp(0, calc(var(--t) * 2.2), 1); filter: blur(calc((1 - var(--t)) * 5px)); text-shadow: 0 calc(var(--t) * 3px) calc(8px + var(--t) * 22px) rgba(0,0,0,.5); }
 .rl-word .sp { display: inline-block; width: .32em; }
+.rl-name, .rl-word b { font-family: "Bellefair", var(--serif); font-weight: 400; }
+/* as in the logo: Israel in gold, its yod = the map of Israel (.logo-yod sizes it like in the header) */
+.rl-word b.g { color: #dcc28a; }
+.rl-word b.y { display: inline-flex; align-items: flex-start; }
+/* the HI logo in relief (validated 24/11/2026): it flies in from deep behind the screen turning once on itself, its
+   thickness (12 darker slices behind the gold front) shows while it turns, then a glint sweeps over it every 5 s */
+.rl-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.rl-hi-wrap { --m: clamp(0, calc(var(--logo, 0) * 1.8), 1); --e: calc(1 - var(--m));
+  font-size: clamp(84px, 11vw, 140px); width: 1em; height: 1em; perspective: 700px; opacity: clamp(0, calc(var(--m) * 3), 1);
+  filter: drop-shadow(0 .08em .12em rgba(0,0,0,.55)); }
+.rl-hi { position: relative; width: 100%; height: 100%; transform-style: preserve-3d;
+  transform: translateY(calc(var(--e) * -3vh)) translateZ(calc(var(--e) * var(--e) * -1800px)) rotateY(calc(var(--e) * -360deg)) rotateX(calc(var(--e) * 12deg)); }
+.rl-l { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; transform: translateZ(calc(var(--k, 0) * -.0068em)); }
+.rl-edge { color: #6b4e22; color: color-mix(in srgb, #35260f calc(var(--k, 0) * 7%), #a07a38); --rh: color-mix(in srgb, #3f3a35 calc(var(--k, 0) * 7%), #b8ad9d); }
+.rl-front { color: #f4ecdd; }
+.rl-front .g-s { stroke: url(#rl-gold); } .rl-front .g-f { fill: url(#rl-gold); }
+.rl-glint { transform: translateZ(.004em); opacity: clamp(0, calc((var(--m) - .9) * 10), 1); }
+.rl-glint .g-s { stroke: url(#rl-shine); } .rl-glint path { fill: url(#rl-shine); }
+@media (prefers-reduced-motion: reduce) { .rl-glint { display: none; } }
 
 /* ===== Price labels (/labels/, labels.js): screen tool + A4 print sheets ===== */
 .labels-sec { padding-block: 24px 64px; }

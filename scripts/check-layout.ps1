@@ -58,7 +58,7 @@ $port = Get-Random -Minimum 9400 -Maximum 9800
 $prof = Join-Path $env:TEMP ('kir-check-' + $port)
 $chrome = @('C:\Program Files\Google\Chrome\Application\chrome.exe', 'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe', "$env:LOCALAPPDATA\Google\Chrome\Application\chrome.exe") | Where-Object { Test-Path $_ } | Select-Object -First 1
 if (-not $chrome) { throw 'Google Chrome not found' }
-$p = Start-Process -FilePath $chrome -ArgumentList @('--headless=new', '--hide-scrollbars', "--remote-debugging-port=$port", "--user-data-dir=$prof", 'about:blank') -PassThru
+$p = Start-Process -FilePath $chrome -ArgumentList @('--headless=new', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--hide-scrollbars', "--remote-debugging-port=$port", "--user-data-dir=$prof", 'about:blank') -PassThru
 $problems = 0
 try {
   $list = $null
@@ -88,16 +88,26 @@ try {
         $url = $Base.TrimEnd('/') + '/' + $lg.prefix + $pg
         [void](Send 'Page.navigate' @{ url = $url })
         Start-Sleep -Seconds $Wait
-        $res = Send 'Runtime.evaluate' @{ expression = $check; returnByValue = $true }
-        $issues = @($res.result.result.value)
-        if ($issues.Count -and $issues[0]) {
-          $problems += $issues.Count
-          $name = ($sc.name + '-' + $lg.code + '-' + ($pg -replace '[^a-z0-9]+', '_')).TrimEnd('_') + '.png'
-          $shot = Send 'Page.captureScreenshot' @{ format = 'png' }
-          [IO.File]::WriteAllBytes((Join-Path $outDir $name), [Convert]::FromBase64String($shot.result.data))
-          Write-Output ('PROBLEM  ' + $sc.name + '  ' + $lg.code + '  /' + $lg.prefix + $pg + '   (screenshot _check/' + $name + ')')
-          foreach ($x in $issues) { Write-Output ('   - ' + $x) }
-        } else { Write-Output ('ok       ' + $sc.name + '  ' + $lg.code + '  /' + $lg.prefix + $pg) }
+        # each page as it opens, then (home) once more at the end of the scroll animation, where the logo and name stand
+        foreach ($state in @('', ' (end of the animation)')) {
+          if ($state) {
+            $rs = Send 'Runtime.evaluate' @{ expression = "(function(){var s=document.querySelector('[data-reel]');if(!s)return 'none';scrollTo(0,s.offsetTop+s.offsetHeight-innerHeight);return s.classList.contains('reel-on')?'on':'off'})()"; returnByValue = $true }
+            $st = [string]$rs.result.result.value
+            if ($st -eq 'none') { continue }
+            if ($st -ne 'on') { $problems++; Write-Output ('PROBLEM  ' + $sc.name + '  ' + $lg.code + '  /' + $lg.prefix + $pg + '   the 3D animation did not start (WebGL / script error)'); continue }
+            Start-Sleep -Seconds 3
+          }
+          $res = Send 'Runtime.evaluate' @{ expression = $check; returnByValue = $true }
+          $issues = @($res.result.result.value)
+          if ($issues.Count -and $issues[0]) {
+            $problems += $issues.Count
+            $name = ($sc.name + '-' + $lg.code + '-' + ($pg -replace '[^a-z0-9]+', '_')).TrimEnd('_') + ($(if ($state) { '-end' } else { '' })) + '.png'
+            $shot = Send 'Page.captureScreenshot' @{ format = 'png' }
+            [IO.File]::WriteAllBytes((Join-Path $outDir $name), [Convert]::FromBase64String($shot.result.data))
+            Write-Output ('PROBLEM  ' + $sc.name + '  ' + $lg.code + '  /' + $lg.prefix + $pg + $state + '   (screenshot _check/' + $name + ')')
+            foreach ($x in $issues) { Write-Output ('   - ' + $x) }
+          } else { Write-Output ('ok       ' + $sc.name + '  ' + $lg.code + '  /' + $lg.prefix + $pg + $state) }
+        }
       }
     }
   }

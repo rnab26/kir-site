@@ -677,12 +677,35 @@ foreach ($lang in $Langs) {
   $reel = [ordered]@{ plate = [ordered]@{ w = [double]$hc.plate.w; h = [double]$hc.plate.h }; faces = @($hc.faces | ForEach-Object { [ordered]@{ id = [string]$_.id; img = (AssetUrl ('img/' + [string]$_.img)); w = [double]$_.w; h = [double]$_.h } }); scenes = @($hc.scenes | ForEach-Object { [ordered]@{ base = (AssetUrl ('img/home/scenes/' + [string]$_.id + '/')); faces = @($_.faces) } }) }
   $reelJson = (To-Json $reel).Replace("'", '&#39;')
   $logoName = [string]$hc.logo
-  $letters = ''; $li = 0; foreach ($ch in $logoName.ToCharArray()) { if ($ch -eq ' ') { $letters += '<i class="sp"></i>' } else { $letters += '<b style="--i:' + $li + '">' + (Enc ([string]$ch)) + '</b>' }; $li++ }
+  # the name as in the logo: Israel in gold, its yod drawn as the map of Israel (templates/logo-yod.svg)
+  $isrAt = $logoName.IndexOf($IsraelHe)
+  $letters = ''; $li = 0
+  foreach ($ch in $logoName.ToCharArray()) {
+    if ($ch -eq ' ') { $letters += '<i class="sp"></i>' }
+    else {
+      $inner = Enc ([string]$ch); $cls = ''
+      if ($isrAt -ge 0 -and $li -ge $isrAt -and $li -lt $isrAt + $IsraelHe.Length) { $cls = ' class="g"'; if ($li -eq $isrAt) { $cls = ' class="g y"'; $inner = $LogoYod } }
+      $letters += '<b' + $cls + ' style="--i:' + $li + '">' + $inner + '</b>'
+    }
+    $li++
+  }
   $letters = '<span class="rl-word" style="--n:' + $li + '">' + $letters + '</span>'
+  # the HI logo in relief: a gold front, 12 darker slices behind it (the thickness, seen while it turns) and a glint sweeping over it
+  $hiInner = $LogoMark -replace '^<svg[^>]*>', '' -replace '</svg>$', ''
+  $hiSym = ($hiInner -replace 'fill="currentColor"', 'style="fill:var(--rh)"') -replace 'class="g-s"', 'stroke="currentColor"' -replace 'class="g-f"', 'fill="currentColor"'
+  $hiLayers = ''
+  for ($k = 12; $k -ge 1; $k--) { $hiLayers += '<svg class="rl-l rl-edge" viewBox="0 0 300 300" style="--k:' + $k + '"><use href="#rl-hi-sym"/></svg>' }
+  $hiFront = $LogoMark -replace 'class="logo-mark"', 'class="rl-l rl-front"'
+  $hiGlint = $LogoMark -replace 'class="logo-mark"', 'class="rl-l rl-glint"'
+  $hiMark = '<div class="rl-hi-wrap"><svg class="rl-defs" width="0" height="0" aria-hidden="true" focusable="false"><defs>' +
+    '<linearGradient id="rl-gold" gradientUnits="userSpaceOnUse" x1="40" y1="20" x2="260" y2="280"><stop offset="0" stop-color="#B08A43"/><stop offset=".45" stop-color="#E6CF94"/><stop offset="1" stop-color="#A9823A"/></linearGradient>' +
+    '<linearGradient id="rl-shine" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="120" y2="60"><stop offset="0" stop-color="#fff8e6" stop-opacity="0"/><stop offset=".5" stop-color="#fff8e6" stop-opacity=".8"/><stop offset="1" stop-color="#fff8e6" stop-opacity="0"/>' +
+    '<animateTransform attributeName="gradientTransform" type="translate" values="-260 -130;380 190;380 190" keyTimes="0;.3;1" dur="5s" repeatCount="indefinite"/></linearGradient>' +
+    '<symbol id="rl-hi-sym" viewBox="0 0 300 300">' + $hiSym + '</symbol></defs></svg><div class="rl-hi">' + $hiLayers + $hiFront + $hiGlint + '</div></div>'
   $hero = '<section class="hero hero-reel" data-hero data-reel=''' + $reelJson + ''' style="--photo:url(' + (AssetUrl ('img/home/scenes/' + [string]$hc.scenes[0].id + '/photo.jpg')) + ')"><div class="reel-stage"><canvas class="reel-canvas" aria-hidden="true"></canvas><div class="reel-scrim" aria-hidden="true"></div>' +
     '<div class="wrap hero-content"><p class="kicker">' + (Enc $L.hero.kicker) + '</p><h1>' + (Enc $L.hero.h1) + '<span class="h1-tag">' + (Enc $L.tagline) + '</span></h1><p class="lead">' + (Enc $L.hero.lead) + '</p>' +
     '<div class="ctas"><a class="btn btn-light" href="' + (Href $L 'catalog/') + '">' + (Enc $L.hero.cta) + $Icons.arrow + '</a><a class="btn btn-ghost" href="#studio">' + (Enc $L.hero.cta2) + '</a></div><ul class="stats">' + $stats + '</ul></div>' +
-    '<div class="reel-logo"><div class="rl-3d" aria-hidden="true"><span class="rl-name" dir="rtl" lang="he">' + $letters + '</span></div><p class="rl-tag">' + (Enc $L.tagline) + '</p>' +
+    '<div class="reel-logo">' + $hiMark + '<div class="rl-3d" aria-hidden="true"><span class="rl-name" dir="rtl" lang="he">' + $letters + '</span></div><p class="rl-tag">' + (Enc $L.tagline) + '</p>' +
     '<div class="ctas"><a class="btn btn-light" href="' + (Href $L 'catalog/') + '">' + (Enc $L.hero.cta) + $Icons.arrow + '</a><a class="btn btn-ghost" href="' + (Href $L 'experience/') + '">' + (Enc $L.hero.cta2) + '</a></div></div>' +
     '<div class="scroll-cue" aria-hidden="true"></div></div>' +
     '<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.min.js" } }</script><script type="module" src="' + (AssetUrl ('js/home-hero.js?v=' + $Ver)) + '"></script></section>'
