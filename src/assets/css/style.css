@@ -835,6 +835,7 @@ body.has-buybar .site-footer { padding-bottom: 96px; }
 .lbl-price small { color: #6a6157; margin-inline-start: auto; }
 .lbl-line { display: inline-block; flex: 1; min-width: 20mm; border-bottom: .3mm solid #9a9188; height: 1em; }
 .lbl-price .v .lbl-line { width: 28mm; }
+.lbl-blank-p { display: inline-flex; align-items: baseline; } .lbl-blank-p .lbl-line { flex: none; } .lbl-blank-p .cur { font-size: .6em; margin-left: .25em; line-height: 1; }
 .sz-c10 .lbl { padding: 4mm 5.5mm 3.5mm; } .sz-c10 .lbl-head { padding-bottom: 2mm; gap: 2mm; }
 .sz-c10 .lbl-head .logo-mark { width: 9.5mm; height: 9.5mm; } .sz-c10 .lbl-brand { font-size: 6.2mm; }
 .sz-c10 .lbl-title { font-size: 3mm; } .sz-c10 .lbl-row { font-size: 3.8mm; } .sz-c10 .lbl-price { font-size: 3.8mm; }
@@ -888,7 +889,10 @@ body.has-buybar .site-footer { padding-bottom: 96px; }
 .sheet.ds-5 .lbl-row .k { font-size: .78em; }
 .sheet.ds-5 .lbl-ref .v { font-size: 1.5em; } .sheet.ds-5 .lbl-ref.lbl-long .v { font-size: 1.2em; }
 .sheet.ds-5 .lbl-size .v { font-size: 1.25em; }
-.sheet.ds-5 .lbl-price .v { font-size: 2.6em; } .sheet.ds-5 .lbl-price small { margin-top: .3em; }
+/* blank card: lines spread over the whole body (room to write), price line at the bottom, level with the size line */
+.sheet.ds-5 .lbl-blank .lbl-body { grid-template-areas: "ref ." "sz pr"; align-content: space-evenly; align-items: baseline; row-gap: 0; }
+.sheet.ds-5 .lbl-blank .lbl-price { flex-direction: row; align-self: baseline; align-items: baseline; }
+.sheet.ds-5 .lbl-price .v { font-size: 2.6em; } .sheet.ds-5 .lbl-price .v .lbl-line { width: 2.1em; } .sheet.ds-5 .lbl-blank .lbl-price .v .lbl-line { width: 2.6em; } .sheet.ds-5 .lbl-price small { margin-top: .3em; }
 @media print {
   @page { size: A4; margin: 0; }
   body.labels-page { background: #fff; }

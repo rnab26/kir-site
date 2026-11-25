@@ -62,7 +62,8 @@
   function hasPrice(it) { return parseFloat(String(field(it, 'p')).replace(/[^\d.]/g, '')) > 0; }
   function priceHtml(p) {
     var n = parseFloat(String(p).replace(/[^\d.]/g, ''));
-    return n > 0 ? '<bdi>' + nf.format(n) + '&nbsp;₪</bdi>' : '<span class="lbl-line"></span>';
+    // no price: a line to write it by hand, the shekel sign already printed
+    return n > 0 ? '<bdi>' + nf.format(n) + '&nbsp;₪</bdi>' : '<bdi dir="ltr" class="lbl-blank-p"><span class="lbl-line"></span><span class="cur">₪</span></bdi>';
   }
 
   /* ---------- the label itself: logo band on top, then reference / size / price over the full width ---------- */
@@ -74,7 +75,8 @@
   function labelHtml(it) {
     var r = it ? field(it, 'r') : '', s = it ? field(it, 's') : '', p = it ? field(it, 'p') : '';
     var v = function (x, ltr) { return x ? '<span class="v"' + (ltr ? ' dir="ltr"' : '') + '>' + esc(x) + '</span>' : '<span class="v lbl-line"></span>'; };
-    return '<div class="lbl">' + logoHtml + '<div class="lbl-body">' +
+    // a blank card (Raphael 25/11: a template for the printer, filled in by hand) gets more room per line
+    return '<div class="lbl' + (it ? '' : ' lbl-blank') + '">' + logoHtml + '<div class="lbl-body">' +
       (st.name && it ? '<div class="lbl-title">' + esc(it.he || '') + '</div>' : '') +
       '<div class="lbl-row lbl-ref' + (r.length > 13 ? ' lbl-long' : '') + '"><span class="k">' + esc(T.sku || 'מק״ט') + '</span>' + v(r, true) + '</div>' +
       '<div class="lbl-row lbl-size"><span class="k">מידות</span>' + v(s) + '</div>' +
