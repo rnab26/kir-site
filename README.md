@@ -156,6 +156,7 @@ powershell -ExecutionPolicy Bypass -File scripts/check-layout.ps1
 Il ouvre les pages principales en hébreu, anglais et français sur 4 écrans (téléphone court 384×700,
 téléphone étroit 360×640, téléphone 390×844, ordinateur 1366×768) et signale tout texte passé sous
 l'en-tête, coupé au bord de l'écran, ou des éléments d'en-tête qui se chevauchent ; capture dans `_check/`.
+Sur l'accueil, il contrôle aussi la fin de l'animation 3D (logo HI en relief + nom) et signale si l'animation ne démarre pas.
 `-Quick` = seulement les deux téléphones. On ne pousse pas tant qu'il signale un problème. `scripts/make-assets.ps1` régénère le logo et l'image de partage.
 
 ## Nom de domaine
