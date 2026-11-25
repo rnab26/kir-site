@@ -882,7 +882,12 @@ body.has-buybar .site-footer { padding-bottom: 96px; }
 .sheet.ds-3 .lbl-price { grid-area: pr; gap: .45em; }
 /* 5 price on the side */
 .sheet.ds-5 .lbl-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "t t" "ref pr" "sz pr"; align-content: center; row-gap: .7em; column-gap: 1em; }
-.sheet.ds-5 .lbl-price { grid-area: pr; flex-direction: column; align-items: center; justify-content: center; align-self: stretch; border-inline-start: .3mm solid var(--logo-gold); padding-inline-start: 1em; }
+.sheet.ds-5 .lbl-price { grid-area: pr; flex-direction: column; align-items: center; justify-content: center; align-self: stretch; }
+.sheet.ds .lbl-ref.lbl-long .v { font-size: 1.05em; }
+/* reference and size bigger (Raphael 25/11); a long reference (lbl-long, > 13 characters) gets a smaller size instead of a second line */
+.sheet.ds-5 .lbl-row .k { font-size: .78em; }
+.sheet.ds-5 .lbl-ref .v { font-size: 1.5em; } .sheet.ds-5 .lbl-ref.lbl-long .v { font-size: 1.2em; }
+.sheet.ds-5 .lbl-size .v { font-size: 1.25em; }
 .sheet.ds-5 .lbl-price .v { font-size: 2.6em; } .sheet.ds-5 .lbl-price small { margin-top: .3em; }
 @media print {
   @page { size: A4; margin: 0; }
