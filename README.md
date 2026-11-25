@@ -144,7 +144,19 @@ powershell -ExecutionPolicy Bypass -File build.ps1 -SiteUrl http://localhost:876
 powershell -ExecutionPolicy Bypass -File scripts/serve.ps1
 ```
 
-Puis ouvrez http://localhost:8765. Aucun Node/Python requis. `scripts/make-assets.ps1` régénère le logo et l'image de partage.
+Puis ouvrez http://localhost:8765. Aucun Node/Python requis.
+
+**Contrôle obligatoire après toute modification visuelle** (règle de Raphaël du 25/11/2026 : aucune
+superposition, surtout avec les traductions plus longues comme le français) :
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check-layout.ps1
+```
+
+Il ouvre les pages principales en hébreu, anglais et français sur 4 écrans (téléphone court 384×700,
+téléphone étroit 360×640, téléphone 390×844, ordinateur 1366×768) et signale tout texte passé sous
+l'en-tête, coupé au bord de l'écran, ou des éléments d'en-tête qui se chevauchent ; capture dans `_check/`.
+`-Quick` = seulement les deux téléphones. On ne pousse pas tant qu'il signale un problème. `scripts/make-assets.ps1` régénère le logo et l'image de partage.
 
 ## Nom de domaine
 
