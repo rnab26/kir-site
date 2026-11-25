@@ -30,12 +30,15 @@
     var d = null; try { d = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
     st = d && typeof d === 'object' ? d : {};
     // v2 (25/11/2026): the 10 x 5 cm card becomes the default, also for a device that had saved another size
-    if (st.v !== 2) { st.size = 'c10'; st.v = 2; }
+    if (!st.v || st.v < 2) { st.size = 'c10'; }
+    // v3 (25/11/2026): Raphael chose design 6 "price on the side" (ds 5), without "incl. VAT"
+    if (!st.v || st.v < 3) { st.ds = '5'; st.vat = false; st.v = 3; }
     st.size = SIZES[st.size] ? st.size : 'c10';
     st.sel = st.sel || {}; st.ovr = st.ovr || {};
     st.name = !!st.name; st.cut = st.cut !== false;
     st.skip = Math.max(0, parseInt(st.skip, 10) || 0); st.blank = Math.max(0, parseInt(st.blank, 10) || 0);
-    st.ds = DESIGNS.some(function (d) { return d[0] === st.ds; }) ? st.ds : '';
+    st.ds = DESIGNS.some(function (d) { return d[0] === st.ds; }) ? st.ds : '5';
+    st.vat = !!st.vat;
     st.q = st.q || ''; st.c = st.c || ''; st.pf = st.pf === 'y' || st.pf === 'n' ? st.pf : '';
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
@@ -73,9 +76,9 @@
     var v = function (x, ltr) { return x ? '<span class="v"' + (ltr ? ' dir="ltr"' : '') + '>' + esc(x) + '</span>' : '<span class="v lbl-line"></span>'; };
     return '<div class="lbl">' + logoHtml + '<div class="lbl-body">' +
       (st.name && it ? '<div class="lbl-title">' + esc(it.he || '') + '</div>' : '') +
-      '<div class="lbl-row lbl-ref"><span class="k">' + esc(T.sku || 'מק״ט') + '</span>' + v(r, true) + '</div>' +
+      '<div class="lbl-row lbl-ref' + (r.length > 13 ? ' lbl-long' : '') + '"><span class="k">' + esc(T.sku || 'מק״ט') + '</span>' + v(r, true) + '</div>' +
       '<div class="lbl-row lbl-size"><span class="k">מידות</span>' + v(s) + '</div>' +
-      '<div class="lbl-price"><span class="k">מחיר</span><span class="v">' + priceHtml(p) + '</span><small>' + esc(T.priceVat || 'כולל מע״מ') + '</small></div>' +
+      '<div class="lbl-price"><span class="k">מחיר</span><span class="v">' + priceHtml(p) + '</span>' + (st.vat ? '<small>' + esc(T.priceVat || 'כולל מע״מ') + '</small>' : '') + '</div>' +
       '</div></div>';
   }
   function queue() {
@@ -150,6 +153,7 @@
       '<fieldset class="lbl-set"><legend>עיצוב</legend>' + DESIGNS.map(function (d) { return '<label class="lbl-radio"><input type="radio" name="lds" value="' + d[0] + '"' + (st.ds === d[0] ? ' checked' : '') + '><span><b>' + d[1] + '</b><small>' + d[2] + '</small></span></label>'; }).join('') + '</fieldset>' +
       '<div class="lbl-set lbl-opts">' +
       '<label class="lbl-check"><input type="checkbox" data-o="name"' + (st.name ? ' checked' : '') + '> להציג גם את שם המוצר</label>' +
+      '<label class="lbl-check"><input type="checkbox" data-o="vat"' + (st.vat ? ' checked' : '') + '> לכתוב „כולל מע״מ” ליד המחיר</label>' +
       '<label class="lbl-check"><input type="checkbox" data-o="cut"' + (st.cut ? ' checked' : '') + '> קווי חיתוך (להדפסה על דף רגיל)</label>' +
       '<label class="lbl-num">תוויות ריקות לכתיבה ביד <input type="number" min="0" max="240" data-o="blank" value="' + st.blank + '"></label>' +
       '<label class="lbl-num">לדלג על תוויות בתחילת הגיליון <input type="number" min="0" max="' + (SIZES[st.size].per - 1) + '" data-o="skip" value="' + st.skip + '"><small>לגיליון מדבקות שכבר השתמשו בחלקו</small></label>' +
@@ -167,7 +171,7 @@
       var t = e.target;
       if (t.name === 'lsz') { st.size = t.value; var mx = SIZES[st.size].per - 1; if (st.skip > mx) st.skip = mx; $('[data-o="skip"]', root).max = mx; }
       else if (t.name === 'lds') st.ds = t.value;
-      else if (t.dataset.o === 'name' || t.dataset.o === 'cut') st[t.dataset.o] = t.checked;
+      else if (t.dataset.o === 'name' || t.dataset.o === 'cut' || t.dataset.o === 'vat') st[t.dataset.o] = t.checked;
       else if (t.dataset.o === 'blank') st.blank = Math.max(0, Math.min(240, parseInt(t.value, 10) || 0));
       else if (t.dataset.o === 'skip') st.skip = Math.max(0, Math.min(SIZES[st.size].per - 1, parseInt(t.value, 10) || 0));
       else if (t.matches('[data-c]')) { st.c = t.value; save(); renderList(); return; }
