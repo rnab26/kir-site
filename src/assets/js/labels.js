@@ -10,6 +10,16 @@
     a7: { name: 'גדולה — 105 × 74 מ״מ', per: 8, cols: 2, note: '8 בדף A4 (גיליון מדבקות A7 או דף רגיל וחיתוך)' },
     s24: { name: 'קטנה — 70 × 37 מ״מ', per: 24, cols: 3, note: '24 בדף A4 (גיליון מדבקות 70×37)' }
   };
+  // card designs (25/11/2026, Raphael: "propose several designs, e.g. price and reference on the same line");
+  // '' = the first design (separate lines). Each one is pure CSS on the same markup: .sheet.ds.ds-N in style.css
+  var DESIGNS = [
+    ['', 'קלאסי', 'מק״ט, מידות ומחיר בשורות נפרדות'],
+    ['1', 'שורה אחת', 'מק״ט ומחיר באותה שורה, המידות מתחת'],
+    ['2', 'מרכזי', 'הכול ממורכז, המחיר גדול באמצע'],
+    ['3', 'פס מחיר', 'פס בז׳ בתחתית עם מק״ט ומחיר'],
+    ['4', 'כותרת כהה', 'לוגו על רקע כהה, מק״ט ומחיר באותה שורה'],
+    ['5', 'מחיר בצד', 'מחיר גדול בצד, מק״ט ומידות לידו']
+  ];
   var root, cats = {}, items = [], byId = {}, st, loadErr = false, loaded = false;
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var T = (window.KIR && window.KIR.t) || {};
@@ -25,6 +35,7 @@
     st.sel = st.sel || {}; st.ovr = st.ovr || {};
     st.name = !!st.name; st.cut = st.cut !== false;
     st.skip = Math.max(0, parseInt(st.skip, 10) || 0); st.blank = Math.max(0, parseInt(st.blank, 10) || 0);
+    st.ds = DESIGNS.some(function (d) { return d[0] === st.ds; }) ? st.ds : '';
     st.q = st.q || ''; st.c = st.c || ''; st.pf = st.pf === 'y' || st.pf === 'n' ? st.pf : '';
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(st)); } catch (e) {} }
@@ -62,8 +73,8 @@
     var v = function (x, ltr) { return x ? '<span class="v"' + (ltr ? ' dir="ltr"' : '') + '>' + esc(x) + '</span>' : '<span class="v lbl-line"></span>'; };
     return '<div class="lbl">' + logoHtml + '<div class="lbl-body">' +
       (st.name && it ? '<div class="lbl-title">' + esc(it.he || '') + '</div>' : '') +
-      '<div class="lbl-row"><span class="k">' + esc(T.sku || 'מק״ט') + '</span>' + v(r, true) + '</div>' +
-      '<div class="lbl-row"><span class="k">מידות</span>' + v(s) + '</div>' +
+      '<div class="lbl-row lbl-ref"><span class="k">' + esc(T.sku || 'מק״ט') + '</span>' + v(r, true) + '</div>' +
+      '<div class="lbl-row lbl-size"><span class="k">מידות</span>' + v(s) + '</div>' +
       '<div class="lbl-price"><span class="k">מחיר</span><span class="v">' + priceHtml(p) + '</span><small>' + esc(T.priceVat || 'כולל מע״מ') + '</small></div>' +
       '</div></div>';
   }
@@ -81,7 +92,7 @@
     if (!total) { box.innerHTML = '<p class="lbl-empty">בחרו מוצרים מהרשימה (כפתור +) או הוסיפו תוויות ריקות לכתיבה ביד.</p>'; return; }
     var html = '', k = 0;
     for (var pg = 0; pg < pages; pg++) {
-      html += '<div class="sheet sz-' + st.size + (st.cut ? ' cut' : '') + '">';
+      html += '<div class="sheet sz-' + st.size + (st.ds ? ' ds ds-' + st.ds : '') + (st.cut ? ' cut' : '') + '">';
       for (var i = 0; i < z.per; i++, k++) {
         var idx = k - st.skip;
         html += (k < st.skip || idx >= total) ? '<div class="lbl lbl-skip"></div>' : labelHtml(q[idx]);
@@ -136,6 +147,7 @@
     root.innerHTML =
       '<div class="labels-ui">' +
       '<fieldset class="lbl-set"><legend>גודל התווית</legend>' + opt('c10') + opt('a7') + opt('s24') + '</fieldset>' +
+      '<fieldset class="lbl-set"><legend>עיצוב</legend>' + DESIGNS.map(function (d) { return '<label class="lbl-radio"><input type="radio" name="lds" value="' + d[0] + '"' + (st.ds === d[0] ? ' checked' : '') + '><span><b>' + d[1] + '</b><small>' + d[2] + '</small></span></label>'; }).join('') + '</fieldset>' +
       '<div class="lbl-set lbl-opts">' +
       '<label class="lbl-check"><input type="checkbox" data-o="name"' + (st.name ? ' checked' : '') + '> להציג גם את שם המוצר</label>' +
       '<label class="lbl-check"><input type="checkbox" data-o="cut"' + (st.cut ? ' checked' : '') + '> קווי חיתוך (להדפסה על דף רגיל)</label>' +
@@ -154,6 +166,7 @@
     root.addEventListener('change', function (e) {
       var t = e.target;
       if (t.name === 'lsz') { st.size = t.value; var mx = SIZES[st.size].per - 1; if (st.skip > mx) st.skip = mx; $('[data-o="skip"]', root).max = mx; }
+      else if (t.name === 'lds') st.ds = t.value;
       else if (t.dataset.o === 'name' || t.dataset.o === 'cut') st[t.dataset.o] = t.checked;
       else if (t.dataset.o === 'blank') st.blank = Math.max(0, Math.min(240, parseInt(t.value, 10) || 0));
       else if (t.dataset.o === 'skip') st.skip = Math.max(0, Math.min(SIZES[st.size].per - 1, parseInt(t.value, 10) || 0));

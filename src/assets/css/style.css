@@ -847,6 +847,43 @@ body.has-buybar .site-footer { padding-bottom: 96px; }
 .sz-s24 .lbl-head .logo-mark { width: 6.5mm; height: 6.5mm; } .sz-s24 .lbl-brand { font-size: 4.2mm; }
 .sz-s24 .lbl-title { font-size: 2.4mm; } .sz-s24 .lbl-row { font-size: 2.7mm; } .sz-s24 .lbl-price { font-size: 2.7mm; }
 .sz-s24 .lbl-price .v { font-size: 5mm; } .sz-s24 .lbl-price small { font-size: 2mm; }
+/* ----- card designs (labels.js DESIGNS): same markup, .sheet.ds.ds-N; sizes in em of the card's base size so they fit every format ----- */
+.sz-c10 .lbl { font-size: 3.8mm; } .sz-a7 .lbl { font-size: 4.4mm; } .sz-s24 .lbl { font-size: 2.7mm; }
+.sheet.ds .lbl-title { font-size: .8em; }
+.sheet.ds .lbl-row, .sheet.ds .lbl-price { font-size: 1em; min-width: 0; }
+.sheet.ds .lbl-ref .v { font-size: 1.2em; white-space: normal; text-overflow: clip; line-height: 1.15; } /* a long reference wraps, never cut */
+.sheet.ds .lbl-price .v .lbl-line { width: 2.6em; min-width: 0; } /* blank price line scales with the format */
+.sheet.ds .lbl-price .k { display: none; }
+.sheet.ds .lbl-price .v { font-size: 2.1em; line-height: 1; }
+.sheet.ds .lbl-price small { font-size: .68em; margin: 0; }
+/* 1 one line, 4 dark header: reference and price side by side, size underneath */
+.sheet.ds-1 .lbl-body, .sheet.ds-4 .lbl-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "t t" "ref pr" "sz vat"; align-content: space-evenly; align-items: baseline; column-gap: 1em; }
+.sheet.ds-1 .lbl-title, .sheet.ds-4 .lbl-title, .sheet.ds-3 .lbl-title, .sheet.ds-5 .lbl-title { grid-area: t; }
+.sheet.ds-1 .lbl-ref, .sheet.ds-4 .lbl-ref, .sheet.ds-3 .lbl-ref, .sheet.ds-5 .lbl-ref { grid-area: ref; }
+.sheet.ds-1 .lbl-size, .sheet.ds-4 .lbl-size, .sheet.ds-3 .lbl-size, .sheet.ds-5 .lbl-size { grid-area: sz; }
+.sheet.ds-1 .lbl-price, .sheet.ds-4 .lbl-price { display: contents; }
+.sheet.ds-1 .lbl-price .v, .sheet.ds-4 .lbl-price .v { grid-area: pr; }
+.sheet.ds-1 .lbl-price small, .sheet.ds-4 .lbl-price small { grid-area: vat; justify-self: end; }
+.sheet.ds-4 .lbl { padding: 0; }
+.sheet.ds-4 .lbl-head { background: #1d1a16; color: #f1eadf; padding: .55em 1.45em; }
+.sheet.ds-4 .lbl-head .logo-mark .g-s { stroke: #c9a55a; } .sheet.ds-4 .lbl-head .logo-mark .g-f { fill: #c9a55a; }
+.sheet.ds-4 .lbl-brand .logo-isr { color: #c9a55a; }
+.sheet.ds-4 .lbl-body { border-top: 0; padding: .3em 1.45em .8em; }
+/* 2 centred */
+.sheet.ds-2 .lbl-head { justify-content: center; }
+.sheet.ds-2 .lbl-body { border-top: 0; align-items: center; justify-content: center; gap: .45em; }
+.sheet.ds-2 .lbl-body::before { content: ""; width: 4.5em; border-top: .3mm solid var(--logo-gold); }
+.sheet.ds-2 .lbl-row, .sheet.ds-2 .lbl-price { justify-content: center; max-width: 100%; }
+.sheet.ds-2 .lbl-price { order: 2; gap: .5em; } .sheet.ds-2 .lbl-size { order: 3; font-size: .85em; }
+/* 3 price band at the bottom */
+.sheet.ds-3 .lbl { position: relative; padding-bottom: 0; }
+.sheet.ds-3 .lbl::after { content: ""; position: absolute; inset-inline: 0; bottom: 0; height: 3.3em; background: #efe5d3; }
+.sheet.ds-3 .lbl-body { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: auto 1fr 3.3em; grid-template-areas: "t t" "sz sz" "ref pr"; align-items: center; column-gap: 1em; }
+.sheet.ds-3 .lbl-price { grid-area: pr; gap: .45em; }
+/* 5 price on the side */
+.sheet.ds-5 .lbl-body { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "t t" "ref pr" "sz pr"; align-content: center; row-gap: .7em; column-gap: 1em; }
+.sheet.ds-5 .lbl-price { grid-area: pr; flex-direction: column; align-items: center; justify-content: center; align-self: stretch; border-inline-start: .3mm solid var(--logo-gold); padding-inline-start: 1em; }
+.sheet.ds-5 .lbl-price .v { font-size: 2.6em; } .sheet.ds-5 .lbl-price small { margin-top: .3em; }
 @media print {
   @page { size: A4; margin: 0; }
   body.labels-page { background: #fff; }
