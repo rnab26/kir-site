@@ -34,8 +34,9 @@ ex. `"cat": "stone", "match": "אבן גמיש"`) ; le produit garde son univers
 | 14 pages catégories / 8 pages « aspects » | Une page = un mot-clé (lames acoustiques, effet bois, marbre, travertin…) |
 | Fiches produit | Plaque entière en perspective + loupe, photo réelle, variantes, prix TTC live, stock live, quantité, ajout au panier |
 | Panier `/cart/` | Quantités, total TTC, articles sur commande signalés |
-| Commande `/checkout/` | Coordonnées, livraison ou retrait au showroom, envoi de la commande sur WhatsApp |
-| Confirmation `/order/` + Mes commandes `/orders/` | Numéro HI-AAMMJJ-XXXX, récapitulatif, impression, renvoi WhatsApp (historique gardé dans le navigateur du client) |
+| Demande de devis `/checkout/` | Coordonnées, livraison ou retrait au showroom, envoi de la demande sur WhatsApp (texte + lien vers le devis avec photos) ; aucune réservation, aucun paiement |
+| Devis `/order/` + Mes devis `/orders/` | Devis HI-AAMMJJ-XXXX avec photos : image à envoyer sur WhatsApp, impression / PDF, renvoi ; le lien `/order/#q=...` rouvre le devis complet chez vous (historique gardé dans le navigateur du client) |
+| Espace boutique `/pro/` (interne, non indexé, sans lien) | Saisie rapide par référence + quantité (ou liste collée), remise, livraison, devis client (image / PDF / WhatsApp au client), un bon de commande par fournisseur sans nos prix, historique avec statuts, réglages fournisseurs, sauvegarde et lien de réglages pour un autre appareil |
 | Contact | WhatsApp, téléphone, adresse, horaires, Google Maps intégré, boutons Maps / Waze |
 | Pages légales | Conditions générales, confidentialité, livraison/retours (loi israélienne 14 jours), déclaration d'accessibilité (IS 5568) |
 | Studio mur `/experience/` | Page immersive : le produit choisi posé pièce par pièce sur les murs de vraies photos de pièces (12 pièces, ou la photo du visiteur), avec compteur pièces / m² / prix. Tous les produits qui ont une face à l'échelle (`data/face-dims.json`) sont proposés. Liens « Voir sur le mur » sur les fiches et aperçu avant/après à l'accueil |
@@ -126,14 +127,24 @@ L'onglet « לאתר » se remplit tout seul par formules : ne pas le modifier �
 
 ## Commandes et paiement
 
-Pas de paiement en ligne pour l'instant : la commande arrive sur WhatsApp avec le détail (produits, quantités, total TTC,
-coordonnées, livraison ou retrait). Vous confirmez disponibilité, livraison et paiement avec le client.
+Pas de paiement ni de réservation en ligne (le stock est chez les fournisseurs) : le client envoie une **demande de devis**
+sur WhatsApp (produits, quantités, total TTC, coordonnées, lien vers le devis avec photos). Vous vérifiez la disponibilité
+chez les fournisseurs, puis confirmez livraison et paiement avec le client.
+
+**Espace boutique `/pro/`** (`src/assets/js/pro.js` + `quote.js`, textes `data/content-pro.json`) : pour faire un devis en
+boutique et le bon de commande de chaque fournisseur. Chaque produit porte un **code fournisseur neutre** (`S1`, `S2`…) :
+colonne `sup` du Sheet (onglet « לאתר ») ou de `products.json`, sinon `defaultSupplier` de `data/site.json`. Le nom et le
+WhatsApp du fournisseur derrière chaque code ne sont **jamais publiés** : ils se règlent dans `/pro/` > Réglages et restent
+dans le navigateur de l'appareil (sauvegarde en fichier, ou « lien de réglages » pour un autre appareil). Notre code interne
+= code fournisseur + référence du fournisseur sans espaces (ex. `S1-08220325`), il ne remplace pas la référence du fournisseur.
+Réglages du devis dans `data/site.json` : `vatRate` (TVA, %), `quoteValidityDays`, `businessId` (n° d'entreprise imprimé
+sur le devis s'il est rempli), `defaultSupplier`.
 Pour ajouter un paiement par carte plus tard (Grow/Meshulam, PayPlus, Tranzila…), il suffira de remplacer l'étape WhatsApp
 de `/checkout/` par le lien de paiement du prestataire.
 
 ## Textes et traductions
 
-- `data/content.json` (hébreu + français), `data/content-en.json` (anglais), `data/content-shop.json` (panier, commande, pages légales, accessibilité).
+- `data/content.json` (hébreu + français), `data/content-en.json` (anglais), `data/content-shop.json` (panier, demande de devis, pages légales, accessibilité), `data/content-pro.json` (devis, bons de commande, espace `/pro/`).
 - Noms de produits : français dans `products.json` (`fr`), anglais généré par règles depuis l'hébreu (`data/he-en.json`) — on peut forcer un nom avec `"en"` dans `products.json`.
 - Les pages légales sont des modèles : à faire relire (nom légal, numéro d'entreprise ע.מ/ח.פ, délais).
 

@@ -40,6 +40,7 @@ $Site = Read-Json 'data/site.json'
 $Content = Read-Json 'data/content.json'
 $Content | Add-Member -NotePropertyName en -NotePropertyValue (Read-Json 'data/content-en.json') -Force
 $Shop = Read-Json 'data/content-shop.json'
+$ProTx = Read-Json 'data/content-pro.json'  # quote document texts (doc) + internal /pro/ page texts (pro)
 $HeEn = Read-Json 'data/he-en.json'
 $Tax = Read-Json 'data/taxonomy.json'
 $Raw = @(Read-Json 'data/products.json' | ForEach-Object { $_ })  # PS 5.1 emits JSON arrays as one object: unroll
@@ -132,7 +133,7 @@ foreach ($p in $Raw) {
   $fl = ($p.c -eq 'slat' -or $p.c -eq 'flex') -and ($he -match ([string][char]0x05DE + [char]0x05D7 + [char]0x05D5 + [char]0x05E8 + [char]0x05E5 + '|' + [char]0x05E1 + [char]0x05E8 + [char]0x05D2 + [char]0x05DC + [char]0x05D9 + [char]0x05DD))
   [void]$Items.Add([pscustomobject]@{
     idx = $i; slug = $slug; ref = $ref; hasSku = [bool]$skuRaw; c = [string]$p.c; he = $he; fr = [string]$p.fr; en = $(if ($p.PSObject.Properties['en'] -and $p.en) { [string]$p.en } else { EnName $he })
-    s = $s; f = [string]$p.f; p = $p.p; oos = [bool]$p.oos; img = [string]$p.img
+    s = $s; f = [string]$p.f; p = $p.p; oos = [bool]$p.oos; img = [string]$p.img; sup = [string](P $p 'sup')
     iw = $(if ($d) { $d.w } else { 400 }); ih = $(if ($d) { $d.h } else { 500 })
     looks = $looks; colors = $colors; mat = $mat; w = $w; l = $l; ppm2 = $ppm2; fl = [bool]$fl
   })
@@ -440,6 +441,19 @@ function Widgets($L) {
   $wa + $a11y
 }
 
+# Quote documents (quote.js): shop facts for every page, texts of the 3 languages on the shop pages only
+$ShopPre = [ordered]@{}; foreach ($lg in $Langs) { $ShopPre[$lg] = [string](Lc $lg).prefix }
+$ShopCfg = [ordered]@{
+  vat = $(if ($null -ne $Site.vatRate) { $Site.vatRate } else { 18 }); days = $(if ($Site.quoteValidityDays) { $Site.quoteValidityDays } else { 14 })
+  biz = [string]$Site.businessId; def = $(if ($Site.defaultSupplier) { [string]$Site.defaultSupplier } else { 'S1' })
+  brands = $Site.brandByLang; addrs = $Site.addressByLang; phone = [string]$Site.phoneDisplay; pre = $ShopPre
+}
+function DocScripts() {
+  $docs = [ordered]@{}
+  foreach ($lg in $Langs) { $docs[$lg] = P (P $ProTx $lg) 'doc' }
+  '<script>window.KIRdoc=' + (To-Json $docs) + ';</script><script src="' + (AssetUrl ('js/quote.js?v=' + $Ver)) + '" defer></script>'
+}
+
 function Page($L, [hashtable]$pg) {
   $path = [string]$pg.path
   $title = [string]$pg.title; $desc = [string]$pg.desc
@@ -457,7 +471,7 @@ function Page($L, [hashtable]$pg) {
   $cfg = [ordered]@{
     lang = $L.lang; base = $BasePath; prefix = [string]$L.prefix; wa = $Wa; brand = (BrandOf $L); v = $Ver; phone = [string]$Site.phoneDisplay
     data = (AssetUrl ('data/products.json?v=' + $Ver)); live = [string]$Site.sheetCsvUrl
-    langs = @($Langs); t = $t
+    langs = @($Langs); t = $t; shop = $ShopCfg
   }
   $sb = New-Object Text.StringBuilder
   [void]$sb.Append('<!doctype html><html lang="' + $L.lang + '" dir="' + $L.dir + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">')
@@ -877,17 +891,22 @@ foreach ($lang in $Langs) {
   $SP = P (P $Shop $lang) 'pages'
   $body = (Band (T $L 'cart') $SP.cartTitle $SP.cartDesc -1 $L) + '<section class="cart-sec"><div class="wrap cart-grid"><div class="cart-items" data-cart><noscript><p>JavaScript</p></noscript></div><aside class="cart-summary" data-cart-summary aria-live="polite"></aside></div></section>'
   Page $L @{ path = 'cart/'; title = ($SP.cartTitle + ' | ' + (BrandOf $L)); desc = $SP.cartDesc; body = $body; cls = 'cart-page'; noindex = $true }
-  $body = (Band (T $L 'checkout') $SP.checkoutTitle $SP.checkoutDesc -1 $L) + (CheckoutForm $L)
+  $body = (Band (T $L 'checkout') $SP.checkoutTitle $SP.checkoutDesc -1 $L) + (CheckoutForm $L) + (DocScripts)
   Page $L @{ path = 'checkout/'; title = ($SP.checkoutTitle + ' | ' + (BrandOf $L)); desc = $SP.checkoutDesc; body = $body; cls = 'checkout-page'; noindex = $true }
+  # Shop counter (internal, not linked, not indexed): quote by reference, purchase orders per supplier, history
+  $proT = P (P $ProTx $lang) 'pro'
+  $body = (Band $proT.kicker $proT.title $proT.desc -1 $L) + '<section class="pro-sec"><div class="wrap" data-pro><noscript><p>JavaScript</p></noscript></div></section>' +
+    '<script>window.KIRproT=' + (To-Json $proT) + ';</script>' + (DocScripts) + '<script src="' + (AssetUrl ('js/pro.js?v=' + $Ver)) + '" defer></script>'
+  Page $L @{ path = 'pro/'; title = ($proT.title + ' | ' + (BrandOf $L)); desc = $proT.desc; body = $body; cls = 'pro-page'; noindex = $true }
   # Price labels for the showroom (Hebrew only, not indexed, not in the sitemap): src/assets/js/labels.js
   if ($lang -eq 'he') {
     $lcats = [ordered]@{}; foreach ($c in $CatOrder) { $lcats[$c] = [string](P (CatOf $L $c) 'name') }
     $body = (Band $SP.labelsKicker $SP.labelsTitle $SP.labelsDesc -1 $L) + '<section class="labels-sec"><div class="wrap" data-labels data-cats="' + (Enc (To-Json $lcats)) + '"><noscript><p>JavaScript</p></noscript></div></section><script src="' + (AssetUrl ('js/labels.js?v=' + $Ver)) + '" defer></script>'
     Page $L @{ path = 'labels/'; title = ($SP.labelsTitle + ' | ' + (BrandOf $L)); desc = $SP.labelsDesc; body = $body; cls = 'labels-page'; noindex = $true; noalt = $true }
   }
-  $body = '<section class="order-sec"><div class="wrap narrow" data-order><noscript><p>JavaScript</p></noscript></div></section>'
+  $body = '<section class="order-sec"><div class="wrap narrow" data-order><noscript><p>JavaScript</p></noscript></div></section>' + (DocScripts)
   Page $L @{ path = 'order/'; title = ($SP.orderTitle + ' | ' + (BrandOf $L)); desc = $SP.orderTitle; body = $body; cls = 'order-page'; noindex = $true }
-  $body = (Band (T $L 'orders') $SP.ordersTitle $SP.ordersDesc -1 $L) + '<section class="orders-sec"><div class="wrap narrow" data-orders></div></section>'
+  $body = (Band (T $L 'orders') $SP.ordersTitle $SP.ordersDesc -1 $L) + '<section class="orders-sec"><div class="wrap narrow" data-orders></div></section>' + (DocScripts)
   Page $L @{ path = 'orders/'; title = ($SP.ordersTitle + ' | ' + (BrandOf $L)); desc = $SP.ordersDesc; body = $body; cls = 'orders-page'; noindex = $true }
   # former quote-list address -> cart
   $redir = '<!doctype html><html lang="' + $L.lang + '"><head><meta charset="utf-8"><meta name="robots" content="noindex"><link rel="canonical" href="' + (Abs $L 'cart/') + '"><meta http-equiv="refresh" content="0; url=' + (Href $L 'cart/') + '"></head><body><a href="' + (Href $L 'cart/') + '">' + (Enc (T $L 'cart')) + '</a></body></html>'
@@ -914,7 +933,9 @@ Write-Out '404.html' $nf
 # Client data (public fields only)
 $pub = New-Object System.Collections.ArrayList
 foreach ($it in $Items) {
-  [void]$pub.Add([ordered]@{ id = $it.slug; f = $FamOf[$it.slug].slug; r = $it.ref; c = $it.c; he = $it.he; fr = $it.fr; en = $it.en; s = $it.s; w = $it.w; l = $it.l; p = $it.p; img = $it.img; oos = $it.oos; fl = $it.fl })
+  $po = [ordered]@{ id = $it.slug; f = $FamOf[$it.slug].slug; r = $it.ref; c = $it.c; he = $it.he; fr = $it.fr; en = $it.en; s = $it.s; w = $it.w; l = $it.l; p = $it.p; img = $it.img; oos = $it.oos; fl = $it.fl }
+  if ($it.sup) { $po.sup = $it.sup }  # neutral supplier code (S1, S2...); names and phones live only in the /pro/ settings of each device
+  [void]$pub.Add($po)
 }
 Write-Out 'assets/data/products.json' (ConvertTo-Json -InputObject @($pub) -Depth 5 -Compress)
 

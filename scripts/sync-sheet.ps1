@@ -68,6 +68,8 @@ function Translate([string]$he) {
 
 $out = New-Object System.Collections.ArrayList; $srcmap = New-Object System.Collections.ArrayList
 $newSnap = [ordered]@{}; $added = 0; $updated = 0
+# optional column 'sup' = neutral supplier code (S1, S2...); the sheet is the source of truth when the column exists
+$hasSup = [bool]($rows[0].PSObject.Properties['sup'])
 foreach ($r in $rows) {
   $id = $r.img.Trim()
   $sig = [ordered]@{ sku = [string]$r.sku; cat = [string]$r.cat; desc = [string]$r.desc; size = [string]$r.size; finish = [string]$r.finish; price = [string]$r.price; notes = [string]$r.notes; stock = [string]$r.stock; hide = [string]$r.hide }
@@ -88,11 +90,16 @@ foreach ($r in $rows) {
     if (FieldChanged 'hide') { $v = ($sig.hide -eq 'TRUE'); if ($v -ne $o.hide) { $o.hide = $v; $changed = $true } }
     if (FieldChanged 'cat') { $v = CatOf $sig.cat $sig.desc; if ($v -ne $o.c) { $o.c = $v; $changed = $true } }
     if (FieldChanged 'desc') { if ($sig.desc.Trim() -ne $o.he) { $o.he = $sig.desc.Trim(); $o.fr = Translate $o.he; $o.frAuto = $true; $changed = $true } }
+    $sv = if ($hasSup) { ([string]$r.sup).Trim().ToUpper() } else { [string](P $old 'sup') }
+    if ($sv) { $o.sup = $sv }
+    if ([string]$sv -ne [string](P $old 'sup')) { $changed = $true }
     if ($changed) { $updated++ }
     [void]$out.Add($o)
   } else {
     $he = $sig.desc.Trim()
-    [void]$out.Add([ordered]@{ sku = (NormSku $sig.sku); c = (CatOf $sig.cat $he); he = $he; fr = (Translate $he); s = (NormSize $sig.size); f = (NormFinish $sig.finish); p = (NormPrice $sig.price); oos = (StockOos $sig); img = $id; frAuto = $true; hide = ($sig.hide -eq 'TRUE') })
+    $no = [ordered]@{ sku = (NormSku $sig.sku); c = (CatOf $sig.cat $he); he = $he; fr = (Translate $he); s = (NormSize $sig.size); f = (NormFinish $sig.finish); p = (NormPrice $sig.price); oos = (StockOos $sig); img = $id; frAuto = $true; hide = ($sig.hide -eq 'TRUE') }
+    if ($hasSup -and ([string]$r.sup).Trim()) { $no.sup = ([string]$r.sup).Trim().ToUpper() }
+    [void]$out.Add($no)
     $added++
   }
   [void]$srcmap.Add([string]$r.src)
@@ -106,6 +113,7 @@ $lines = foreach ($o in $out) {
   if ($o.Contains('frAuto') -and $o.frAuto) { $l += ',"frAuto":true' }
   if ($o.Contains('hide') -and $o.hide) { $l += ',"hide":true' }
   if ($o.Contains('en') -and $o.en) { $l += ',"en":' + (J $o.en) }
+  if ($o.Contains('sup') -and $o.sup) { $l += ',"sup":' + (J $o.sup) }
   $l + '}'
 }
 $newText = "[`n" + ($lines -join ",`n") + "`n]`n"
