@@ -17,7 +17,7 @@ $root = Split-Path -Parent $PSScriptRoot
 $outDir = Join-Path $root '_check'; if (-not (Test-Path $outDir)) { New-Item -ItemType Directory $outDir | Out-Null }
 
 $prod = Get-ChildItem (Join-Path $root '_site/p') -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
-$pages = @('', 'catalog/', 'contact/', 'experience/', 'cart/')
+$pages = @('', 'catalog/', 'contact/', 'experience/', 'cart/', 'checkout/', 'pro/')
 if ($prod) { $pages += ('p/' + $prod.Name + '/') }
 $langs = @(@{ code = 'he'; prefix = '' }, @{ code = 'en'; prefix = 'en/' }, @{ code = 'fr'; prefix = 'fr/' })
 # short phone = what is left of a phone screen under the browser bars; the case Raphael reported

@@ -352,6 +352,8 @@
     return L.join('\n');
   }
   function waUrl(text) { return 'https://wa.me/' + K.wa + '?text=' + encodeURIComponent(text); }
+  // quote request message: full text + a link that reopens the quote with photos (quote.js); plain list as fallback
+  function quoteMsg(o, D) { var Q = window.KIRquote; return Q ? Q.quoteText(o, o.lang || K.lang, 'request', Q.linkFor(o)) : orderText(o, D); }
 
   var co = $('[data-checkout]'), coSum = $('[data-checkout-summary]');
   if (co) {
@@ -380,13 +382,13 @@
         var o = {
           id: 'HI-' + String(d.getFullYear()).slice(2) + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' + Math.random().toString(36).slice(2, 6).toUpperCase(),
           date: d.toISOString(), lang: K.lang, total: S.total, quote: S.quote,
-          items: S.list.map(function (x) { return { id: x.p.id, f: x.p.f, n: nameOf(x.p), r: x.p.r, s: x.p.s, q: x.q, p: x.p.p, img: x.p.img }; }),
+          items: S.list.map(function (x) { return { id: x.p.id, f: x.p.f, n: nameOf(x.p), nm: { he: x.p.he, fr: x.p.fr, en: x.p.en }, r: x.p.r, s: x.p.s, q: x.q, p: x.p.p, img: x.p.img }; }),
           c: { name: co.name.value.trim(), phone: co.phone.value.trim(), email: co.email.value.trim(), city: co.city.value.trim(), address: co.address.value.trim(), delivery: co.delivery.value, contact: co.contact.value, notes: co.notes.value.trim() }
         };
         var orders = load(OKEY, []); orders.unshift(o); save(OKEY, orders.slice(0, 30));
         try { localStorage.setItem('kir-customer', JSON.stringify({ name: o.c.name, phone: o.c.phone, email: o.c.email, city: o.c.city, address: o.c.address })); } catch (e2) {}
         cart = {}; save(KEY, cart); refresh();
-        var url = waUrl(orderText(o, D));
+        var url = waUrl(quoteMsg(o, D));
         window.open(url, '_blank', 'noopener');
         location.href = pageUrl('order/') + '?id=' + encodeURIComponent(o.id);
       });
@@ -397,14 +399,45 @@
     var h = '<article class="order-card"><header><strong>' + esc(T.orderNo) + ' <bdi>' + esc(o.id) + '</bdi></strong><span>' + new Date(o.date).toLocaleString(K.lang === 'he' ? 'he-IL' : K.lang === 'fr' ? 'fr-FR' : 'en-GB') + '</span></header>';
     h += '<ul class="mini">' + o.items.map(function (x) { return '<li><a href="' + productUrl(x.id, x.f) + '">' + esc(x.n) + '</a> × ' + x.q + '<b>' + (x.p != null ? money(x.p * x.q) : '—') + '</b></li>'; }).join('') + '</ul>';
     h += '<p class="sum-total"><span>' + esc(T.total) + '</span><b>' + money(o.total) + '</b></p><p class="badge-status">' + esc(T.statusSent) + '</p>';
-    if (full) h += '<div class="qactions"><a class="btn btn-wa" target="_blank" rel="noopener" href="' + waUrl(orderText(o)) + '">' + esc(T.resend) + '</a><button class="btn" type="button" onclick="window.print()">' + esc(T.print) + '</button></div>';
+    if (full) h += '<div class="qactions"><a class="btn btn-wa" target="_blank" rel="noopener" href="' + waUrl(quoteMsg(o)) + '">' + esc(T.resend) + '</a><a class="btn" href="' + pageUrl('order/') + '?id=' + encodeURIComponent(o.id) + '">' + esc(T.viewQuote || T.print) + '</a></div>';
     return h + '</article>';
   }
   var ob = $('[data-order]');
   if (ob) {
-    var oid = new URLSearchParams(location.search).get('id'); var all = load(OKEY, []);
-    var o = all.filter(function (x) { return x.id === oid; })[0] || all[0];
-    ob.innerHTML = o ? '<div class="thanks"><p class="kicker">✓</p><h1>' + esc(T.orderThanks) + '</h1><p class="lead">' + esc(T.orderNext) + '</p></div>' + orderCard(o, true) + '<p><a class="link" href="' + pageUrl('orders/') + '">' + esc(T.orders) + '</a></p>' : '<p class="lead">' + esc(T.noOrders) + '</p>';
+    var QQ = window.KIRquote;
+    // the quote as a document: photos, totals, image to share, print / PDF
+    var docBlock = function (o, withThanks, fromLink) {
+      var h = '';
+      if (withThanks) h += '<div class="thanks"><p class="kicker">✓</p><h1>' + esc(T.orderThanks) + '</h1><p class="lead">' + esc(T.orderNext) + '</p></div>';
+      if (fromLink) h += '<p class="kicker">' + esc(QQ.tr(K.lang).qFromLink) + '</p>';
+      if (o.missing) h += '<p class="note err">' + esc(String(QQ.tr(K.lang).qMissing).replace('{n}', o.missing)) + '</p>';
+      h += '<div class="order-doc" data-doc-wrap>' + QQ.html(QQ.quoteModel(o, o.lang || K.lang)) + QQ.actionsHtml(true) + '</div>';
+      if (withThanks) h += '<div class="qactions"><a class="btn btn-wa" target="_blank" rel="noopener" href="' + waUrl(quoteMsg(o)) + '">' + esc(T.resend) + '</a><a class="link" href="' + pageUrl('orders/') + '">' + esc(T.orders) + '</a></div>';
+      ob.innerHTML = h;
+      QQ.actions($('[data-doc-actions]', ob), function () { return QQ.quoteModel(o, o.lang || K.lang); }, 'devis-' + o.id, function () { return quoteMsg(o); });
+    };
+    var hq = (location.hash || '').indexOf('#q=') === 0 ? location.hash.slice(3) : '';
+    if (hq && QQ) {
+      var lo = QQ.unpack(hq);
+      if (!lo) ob.innerHTML = '<p class="lead">' + esc(QQ.tr(K.lang).qBadLink) + '</p>';
+      else getData(function (D) {
+        var miss = 0;
+        lo.items = lo.items.map(function (x) {
+          var p = D[x.id]; if (!p) { miss++; return null; }
+          return { id: p.id, f: p.f, n: nameOf(p), nm: { he: p.he, fr: p.fr, en: p.en }, r: p.r, s: p.s, q: x.q, p: x.p, img: p.img };
+        }).filter(Boolean);
+        lo.missing = miss;
+        docBlock(lo, false, true);
+        var proOk = false; try { proOk = !!localStorage.getItem('kir-pro-cfg-v1'); } catch (e) {}
+        if (proOk) { var a = document.createElement('p'); a.innerHTML = '<a class="btn btn-dark" href="' + pageUrl('pro/') + '#q=' + hq + '">' + esc(QQ.tr(K.lang).qOpenPro) + '</a>'; ob.appendChild(a); }
+      });
+    } else {
+      var oid = new URLSearchParams(location.search).get('id'); var all = load(OKEY, []);
+      var o = all.filter(function (x) { return x.id === oid; })[0] || all[0];
+      if (!o) ob.innerHTML = '<p class="lead">' + esc(T.noOrders) + '</p>';
+      else if (QQ) docBlock(o, true, false);
+      else ob.innerHTML = '<div class="thanks"><p class="kicker">✓</p><h1>' + esc(T.orderThanks) + '</h1><p class="lead">' + esc(T.orderNext) + '</p></div>' + orderCard(o, true);
+    }
   }
   var obl = $('[data-orders]');
   if (obl) { var list = load(OKEY, []); obl.innerHTML = list.length ? list.map(function (x) { return orderCard(x, true); }).join('') : '<p class="lead">' + esc(T.noOrders) + '</p><p><a class="btn" href="' + pageUrl('catalog/') + '">' + esc(T.viewAll) + '</a></p>'; }
@@ -504,7 +537,7 @@
   }
   function applyLiveToData() {
     if (!LIVE || !DATA) return;
-    Object.keys(DATA).forEach(function (id) { var p = DATA[id], r = LIVE[p.img]; if (!r) return; var v = liveRow(r); p.p = v.p; p.oos = v.oos; p.hide = v.hide; });
+    Object.keys(DATA).forEach(function (id) { var p = DATA[id], r = LIVE[p.img]; if (!r) return; var v = liveRow(r); p.p = v.p; p.oos = v.oos; p.hide = v.hide; if (r.sup && String(r.sup).trim()) p.sup = String(r.sup).trim(); });
   }
   function priceHtml(p) {
     return p != null ? '<span class="price"><bdi>' + nf.format(p) + '&nbsp;₪</bdi><small>' + (T.priceVat || '') + '</small></span>' : '<span class="price price-req">' + (T.onRequest || '') + '</span>';
