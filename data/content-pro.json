@@ -40,7 +40,7 @@
       "privateNote": "ההגדרות וההיסטוריה נשמרות רק במכשיר הזה. שום דבר מכאן לא מתפרסם באתר.",
       "suppliers": "ספקים", "supHelp": "לכל מוצר באתר יש קוד ספק נייטרלי (S1, S2…). כאן מגדירים מי הספק מאחורי כל קוד ואת מספר הוואטסאפ שלו.", "supAdd": "הוספת ספק", "supDefault": "ספק ברירת מחדל (מוצרים בלי קוד)",
       "sup_code": "קוד", "sup_name": "שם הספק", "sup_wa": "וואטסאפ", "sup_contact": "איש קשר", "sup_notes": "הערות", "codeBad": "קוד לא תקין או קיים כבר", "confirmSupDel": "למחוק את הספק {name}?",
-      "poLang": "שפת ההזמנות לספקים", "validDays": "תוקף ההצעה (ימים)", "staffName": "שם הנציג על ההצעה", "quoteNote": "הערה קבועה על כל הצעה",
+      "poLang": "שפת ההזמנות לספקים", "validDays": "תוקף ההצעה בימים (0 = ללא תאריך)", "staffName": "שם הנציג על ההצעה", "quoteNote": "הערה קבועה על כל הצעה",
       "dataTitle": "גיבוי ומעבר בין מכשירים", "dataHelp": "שומרים קובץ גיבוי, או מעתיקים קישור הגדרות ופותחים אותו במכשיר השני.", "exportAll": "שמירת גיבוי", "importAll": "טעינת גיבוי", "cfgLink": "העתקת קישור הגדרות",
       "exported": "קובץ הגיבוי נשמר.", "confirmImport": "לטעון את ההגדרות ו־{n} הצעות מהקובץ? הצעות קיימות נשמרות.", "imported": "נטען", "importBad": "הקובץ לא מתאים.", "cfgLinkOk": "הקישור הועתק. פתחו אותו במכשיר השני.",
       "confirmCfg": "לטעון {n} ספקים והגדרות מהקישור?", "badLink": "הקישור פגום.", "alreadyHist": "ההצעה הזאת כבר בהיסטוריה: נפתחה.", "loadedReq": "בקשה של {name} נטענה"
@@ -86,7 +86,7 @@
       "privateNote": "Les réglages et l'historique restent uniquement sur cet appareil. Rien d'ici n'est publié sur le site.",
       "suppliers": "Fournisseurs", "supHelp": "Chaque produit du site porte un code fournisseur neutre (S1, S2…). Ici, vous indiquez quel fournisseur se cache derrière chaque code, avec son WhatsApp.", "supAdd": "Ajouter un fournisseur", "supDefault": "Fournisseur par défaut (produits sans code)",
       "sup_code": "Code", "sup_name": "Nom du fournisseur", "sup_wa": "WhatsApp", "sup_contact": "Contact", "sup_notes": "Remarques", "codeBad": "Code invalide ou déjà utilisé", "confirmSupDel": "Supprimer le fournisseur {name} ?",
-      "poLang": "Langue des bons de commande", "validDays": "Validité du devis (jours)", "staffName": "Nom du conseiller sur le devis", "quoteNote": "Remarque ajoutée à chaque devis",
+      "poLang": "Langue des bons de commande", "validDays": "Validité du devis en jours (0 = sans date limite)", "staffName": "Nom du conseiller sur le devis", "quoteNote": "Remarque ajoutée à chaque devis",
       "dataTitle": "Sauvegarde et changement d'appareil", "dataHelp": "Enregistrez un fichier de sauvegarde, ou copiez un lien de réglages et ouvrez-le sur l'autre appareil.", "exportAll": "Enregistrer une sauvegarde", "importAll": "Charger une sauvegarde", "cfgLink": "Copier le lien de réglages",
       "exported": "Fichier de sauvegarde enregistré.", "confirmImport": "Charger les réglages et {n} devis du fichier ? Les devis déjà présents sont conservés.", "imported": "Chargé", "importBad": "Ce fichier ne convient pas.", "cfgLinkOk": "Lien copié. Ouvrez-le sur l'autre appareil.",
       "confirmCfg": "Charger {n} fournisseur(s) et les réglages depuis ce lien ?", "badLink": "Lien abîmé.", "alreadyHist": "Ce devis est déjà dans l'historique : il est ouvert.", "loadedReq": "Demande de {name} chargée"
@@ -132,7 +132,7 @@
       "privateNote": "Settings and history stay on this device only. Nothing here is published on the site.",
       "suppliers": "Suppliers", "supHelp": "Each product on the site carries a neutral supplier code (S1, S2…). Here you say which supplier is behind each code, with its WhatsApp.", "supAdd": "Add a supplier", "supDefault": "Default supplier (products without a code)",
       "sup_code": "Code", "sup_name": "Supplier name", "sup_wa": "WhatsApp", "sup_contact": "Contact", "sup_notes": "Notes", "codeBad": "Invalid or already used code", "confirmSupDel": "Delete supplier {name}?",
-      "poLang": "Purchase order language", "validDays": "Quote validity (days)", "staffName": "Advisor name on the quote", "quoteNote": "Note added to every quote",
+      "poLang": "Purchase order language", "validDays": "Quote validity in days (0 = no expiry date)", "staffName": "Advisor name on the quote", "quoteNote": "Note added to every quote",
       "dataTitle": "Backup and changing device", "dataHelp": "Save a backup file, or copy a settings link and open it on the other device.", "exportAll": "Save a backup", "importAll": "Load a backup", "cfgLink": "Copy the settings link",
       "exported": "Backup file saved.", "confirmImport": "Load the settings and {n} quote(s) from the file? Existing quotes are kept.", "imported": "Loaded", "importBad": "This file does not fit.", "cfgLinkOk": "Link copied. Open it on the other device.",
       "confirmCfg": "Load {n} supplier(s) and the settings from this link?", "badLink": "Damaged link.", "alreadyHist": "This quote is already in the history: it is open.", "loadedReq": "Request from {name} loaded"

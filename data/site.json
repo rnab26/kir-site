@@ -28,7 +28,7 @@
   "currency": "ILS",
   "vatIncluded": true,
   "vatRate": 18,
-  "quoteValidityDays": 14,
-  "businessId": "",
+  "quoteValidityDays": 30,
+  "businessId": "342677309",
   "defaultSupplier": "S1"
 }
