@@ -444,7 +444,7 @@ function Widgets($L) {
 # Quote documents (quote.js): shop facts for every page, texts of the 3 languages on the shop pages only
 $ShopPre = [ordered]@{}; foreach ($lg in $Langs) { $ShopPre[$lg] = [string](Lc $lg).prefix }
 $ShopCfg = [ordered]@{
-  vat = $(if ($null -ne $Site.vatRate) { $Site.vatRate } else { 18 }); days = $(if ($Site.quoteValidityDays) { $Site.quoteValidityDays } else { 14 })
+  vat = $(if ($null -ne $Site.vatRate) { $Site.vatRate } else { 18 }); days = $(if ($null -ne $Site.quoteValidityDays) { $Site.quoteValidityDays } else { 30 })
   biz = [string]$Site.businessId; def = $(if ($Site.defaultSupplier) { [string]$Site.defaultSupplier } else { 'S1' })
   brands = $Site.brandByLang; addrs = $Site.addressByLang; phone = [string]$Site.phoneDisplay; pre = $ShopPre
 }

@@ -23,7 +23,7 @@
   }
 
   var cfg = load(LS.cfg, null) || {};
-  cfg = { sups: cfg.sups || [{ code: (S.def || 'S1'), name: '', wa: '', contact: '', notes: '' }], def: cfg.def || S.def || 'S1', days: cfg.days || +S.days || 14,
+  cfg = { sups: cfg.sups || [{ code: (S.def || 'S1'), name: '', wa: '', contact: '', notes: '' }], def: cfg.def || S.def || 'S1', days: cfg.days != null ? +cfg.days : (S.days != null ? +S.days : 30),
     staff: cfg.staff || '', note: cfg.note || '', poLang: cfg.poLang || 'he' };
   function saveCfg() { save(LS.cfg, cfg); }
   var orders = load(LS.orders, []);
@@ -389,7 +389,7 @@
       '<button class="btn" type="button" data-supadd>' + esc(t('supAdd')) + '</button>' +
       '<div class="pro-grid2 pro-cfg2"><label class="fld"><span>' + esc(t('supDefault')) + '</span><select data-def></select></label>' +
       '<label class="fld"><span>' + esc(t('poLang')) + '</span><select data-polang>' + ['he', 'fr', 'en'].map(function (l) { return '<option value="' + l + '"' + (cfg.poLang === l ? ' selected' : '') + '>' + esc(t('lang_' + l)) + '</option>'; }).join('') + '</select></label>' +
-      '<label class="fld"><span>' + esc(t('validDays')) + '</span><input type="number" min="1" max="365" data-days value="' + esc(cfg.days) + '" inputmode="numeric"></label>' +
+      '<label class="fld"><span>' + esc(t('validDays')) + '</span><input type="number" min="0" max="365" data-days value="' + esc(cfg.days) + '" inputmode="numeric"></label>' +
       '<label class="fld"><span>' + esc(t('staffName')) + '</span><input type="text" data-staff value="' + esc(cfg.staff) + '"></label></div>' +
       '<label class="fld"><span>' + esc(t('quoteNote')) + '</span><textarea rows="2" data-qnote>' + esc(cfg.note) + '</textarea></label>' +
       '<h3>' + esc(t('dataTitle')) + '</h3><p class="note">' + esc(t('dataHelp')) + '</p>' +
@@ -404,7 +404,7 @@
     });
     on('[data-def]', 'change', function (e) { cfg.def = e.target.value; saveCfg(); toast(t('savedOk')); renderTop(); });
     on('[data-polang]', 'change', function (e) { cfg.poLang = e.target.value; saveCfg(); toast(t('savedOk')); });
-    on('[data-days]', 'change', function (e) { cfg.days = Math.max(1, Math.min(365, parseInt(e.target.value, 10) || 14)); e.target.value = cfg.days; saveCfg(); toast(t('savedOk')); });
+    on('[data-days]', 'change', function (e) { var v = parseInt(e.target.value, 10); cfg.days = isNaN(v) ? 0 : Math.max(0, Math.min(365, v)); e.target.value = cfg.days; saveCfg(); toast(t('savedOk')); });
     on('[data-staff]', 'change', function (e) { cfg.staff = e.target.value.trim(); saveCfg(); toast(t('savedOk')); });
     on('[data-qnote]', 'change', function (e) { cfg.note = e.target.value.trim(); saveCfg(); toast(t('savedOk')); });
     var msg = $('[data-cfgmsg]', pane);

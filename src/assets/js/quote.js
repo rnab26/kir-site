@@ -55,7 +55,7 @@
   }
   function quoteModel(o, lang) {
     lang = lang || o.lang || K.lang || 'he';
-    var t = tr(lang), T = totals(o), days = +o.days || +S.days || 14;
+    var t = tr(lang), T = totals(o), days = (o.days != null && o.days !== '') ? +o.days : (S.days != null ? +S.days : 30);
     var tot = [];
     if (T.disc || T.deliv) tot.push([t.qSubtotal, money(T.sub, lang)]);
     if (T.disc) tot.push([t.qDiscount + (o.disc.pct ? ' ' + (+o.disc.v) + '%' : ''), ltr('− ' + money(T.disc, lang))]);
@@ -66,7 +66,8 @@
     if (T.quote) notes.push('+ ' + T.quote + ' ' + (t.quoteItems || ''));
     if (o.c && o.c.notes) notes.push((t.qNotes || '') + ' : ' + o.c.notes);
     if (o.note) notes.push(o.note);
-    var meta = [[t.qDate, fmtDate(o.date, lang)], [t.qValid, fmtDate(addDays(o.date, days), lang)]];
+    var meta = [[t.qDate, fmtDate(o.date, lang)]];
+    if (days > 0) meta.push([t.qValid, fmtDate(addDays(o.date, days), lang)]);  // 0 = no expiry date on the quote
     if (o.staff) meta.push([t.qSeller, o.staff]);
     return {
       kind: 'quote', lang: lang, dir: lang === 'he' ? 'rtl' : 'ltr', head: head(lang), title: t.qTitle, number: o.id, meta: meta,
