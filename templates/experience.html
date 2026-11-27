@@ -165,6 +165,14 @@ html.ed-on .story, html.ed-on .top, html.ed-on .dock, html.ed-on #labels, html.e
 .ed-sum .btn { min-height: 46px; padding: 0 18px; font-size: .92rem; flex: none; }
 .ed-panel.fixing .ed-label, .ed-panel.fixing .ed-row, .ed-panel.fixing .ed-sum { display: none; }
 .ed-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.ed-meas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 8px; padding: 8px 10px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid var(--line); }
+.ed-meas[hidden] { display: none; }
+.ed-mf { display: grid; gap: 3px; align-content: end; font: 600 .7rem/1.15 var(--sans); color: var(--muted); min-width: 0; }
+.ed-mf[hidden] { display: none; }
+.ed-mi { display: flex; align-items: center; gap: 4px; color: var(--ink-2); font-weight: 600; }
+.ed-mf input, .ed-mf select { width: 100%; min-width: 0; min-height: 38px; padding: 4px 8px; border-radius: 10px; border: 1px solid var(--line); background: rgba(0,0,0,.25); color: var(--ink); font: 600 .95rem/1 var(--sans); }
+.ed-mnote { grid-column: 1 / -1; margin: 0; font-size: .7rem; line-height: 1.3; color: var(--muted); }
+.ed-panel.fixing .ed-meas { display: none; }
 .ed-fixbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font: 600 .84rem/1 var(--sans); color: var(--ink-2); }
 .ed-fixbar b { min-width: 4.2em; text-align: center; color: var(--ink); font: 600 .95rem/1 var(--sans); }
 .ed-fixbar .go { margin-inline-start: auto; }
@@ -358,7 +366,13 @@ html.ed-on .story, html.ed-on .top, html.ed-on .dock, html.ed-on #labels, html.e
   <div class="ed-panel" id="edPanel">
     <div class="ed-head"><p class="ed-hint" id="edHint"></p><button class="chip plain" type="button" id="edFixBtn" hidden>{{edFix}}</button></div>
     <div class="ed-fixbar" id="edFixBar" hidden><span>{{edHeight}}</span><button class="chip plain" type="button" data-h="-1" aria-label="−">−</button><b id="edH"></b><button class="chip plain" type="button" data-h="1" aria-label="+">+</button><button class="go" type="button" id="edDone">{{edDone}}</button></div>
-    <div class="ed-label">{{edWallsL}}</div>
+    <div class="ed-meas" id="edMeas" hidden>
+<label class="ed-mf"><span>{{edMeasH}}</span><span class="ed-mi"><input type="number" id="edMeasH" min="1.8" max="8" step="0.01" inputmode="decimal" dir="ltr"> m</span></label>
+<label class="ed-mf" id="edMeasWL" hidden><span id="edMeasWT"></span><span class="ed-mi"><input type="number" id="edMeasW" min="0.3" max="40" step="0.01" inputmode="decimal" dir="ltr"> m</span></label>
+<label class="ed-mf"><span>{{edWaste}}</span><select id="edWaste"><option value="0">0 %</option><option value="5">5 %</option><option value="10">10 %</option><option value="15">15 %</option></select></label>
+<p class="ed-mnote" id="edMeasNote"></p>
+</div>
+<div class="ed-label">{{edWallsL}}</div>
     <div class="ed-row" id="edWalls"></div>
     <div class="ed-label">{{edMatsL}}</div>
     <div class="ed-row" id="edMats"></div>

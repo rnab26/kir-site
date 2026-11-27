@@ -93,15 +93,16 @@ const cross3 = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], 
 // ---------------------------------------------------------------- crisp object outlines (Segment Anything)
 // Every patch of non-wall pixels that touches a wall (furniture, lamps, frames, curtains, plants) gets one SAM prompt at its
 // most inner point; the best SAM mask that is neither tiny nor mostly wall is cut out of the walls with a 1 px feather.
-async function samObjects(raw, lab, cls, AW, AH, MW, MH) {
+async function samObjects(raw, lab, cls, AW, AH, MW, MH, opt = {}, objLike = null, frontCut = null) {
   const { Tensor } = lib, N = AW * AH;
   const isObj = (i) => lab[i] < 0 && cls[i] !== C_FLOOR && cls[i] !== C_CEIL && cls[i] !== C_RUG && cls[i] !== C_SKY;
   const comp = new Int32Array(N).fill(-1), kept = [];
   for (let s0 = 0; s0 < N; s0++) {
     if (comp[s0] >= 0 || !isObj(s0)) continue;
-    const px = [], st = [s0]; comp[s0] = s0; let touch = 0;
+    const px = [], st = [s0]; comp[s0] = s0; let touch = 0, bx0 = AW, by0 = AH, bx1 = 0, by1 = 0;
     while (st.length) {
       const j = st.pop(); px.push(j); const x = j % AW, y = (j / AW) | 0;
+      if (x < bx0) bx0 = x; if (x > bx1) bx1 = x; if (y < by0) by0 = y; if (y > by1) by1 = y;
       for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
         const xx = x + dx, yy = y + dy; if (xx < 0 || yy < 0 || xx >= AW || yy >= AH) continue;
         const k = yy * AW + xx; if (lab[k] >= 0) touch++; else if (comp[k] < 0 && isObj(k)) { comp[k] = s0; st.push(k); }
@@ -111,7 +112,8 @@ async function samObjects(raw, lab, cls, AW, AH, MW, MH) {
     // most inner point: chamfer distance inside the patch
     const set = new Set(px), dist = new Map(); let best = px[0], bd = -1;
     for (const j of px) { const x = j % AW, y = (j / AW) | 0; let m = 99; for (let r = 1; r < 12 && m === 99; r++) { if (!set.has(j - r) || !set.has(j + r) || !set.has(j - r * AW) || !set.has(j + r * AW) || x - r < 0 || x + r >= AW) m = r; } dist.set(j, m); if (m > bd) { bd = m; best = j; } }
-    kept.push({ area: px.length, ix: best % AW, iy: (best / AW) | 0 });
+    let nf = 0; if (frontCut) for (const j of px) nf += frontCut[j];
+    kept.push({ area: px.length, ix: best % AW, iy: (best / AW) | 0, box: [bx0, by0, bx1 + 1, by1 + 1], front: nf > px.length * 0.5 });
   }
   if (!kept.length) return null;
   kept.sort((a, b) => b.area - a.area);
@@ -120,21 +122,33 @@ async function samObjects(raw, lab, cls, AW, AH, MW, MH) {
   const obj = new Uint8Array(MW * MH), px2 = (OW * OH) / N;
   for (const c of kept.slice(0, 40)) {
     const x = (c.ix + 0.5) / AW * OW, y = (c.iy + 0.5) / AH * OH;
-    const input_points = new Tensor('float32', new Float32Array([x * rs[1] / OW, y * rs[0] / OH]), [1, 1, 1, 2]);
-    const input_labels = new Tensor('int64', new BigInt64Array([1n]), [1, 1, 1]);
+    // point + box prompt: the box corners are SAM's point labels 2 (top left) and 3 (bottom right); the box keeps the whole object
+    const pt = [x * rs[1] / OW, y * rs[0] / OH], lb = [1n];
+    // box prompts tested on 8 cluttered rooms (27/11/2026): they made specks on plain walls around frames, so off by default
+    const useBox = opt.samBox === true && c.area < N * 0.03;
+    if (useBox) {
+      const m = 0.04 * Math.max(AW, AH), b = c.box, X = (v) => clamp((v / AW) * OW, 0, OW) * rs[1] / OW, Y = (v) => clamp((v / AH) * OH, 0, OH) * rs[0] / OH;
+      pt.push(X(b[0] - m), Y(b[1] - m), X(b[2] + m), Y(b[3] + m)); lb.push(2n, 3n);
+    }
+    const input_points = new Tensor('float32', new Float32Array(pt), [1, 1, lb.length, 2]);
+    const input_labels = new Tensor('int64', new BigInt64Array(lb), [1, 1, lb.length]);
     const out = await sam.model({ ...emb, input_points, input_labels });
     const masks = await sam.proc.post_process_masks(out.pred_masks, inputs.original_sizes, inputs.reshaped_input_sizes);
     const m = masks[0], md = m.data, plane = OW * OH, ious = out.iou_scores.data;
-    let pick = -1, ps = -1;
+    let pick = -1, ps = -1; const inBox = [0, 0, 0], lookObj = [0, 0, 0];
     for (let k = 0; k < 3; k++) {
       let area = 0, onWall = 0;
       for (let i = k * plane, e = (k + 1) * plane, q = 0; i < e; i += 3, q += 3) {
         if (!md[i]) continue; area += 3;
         const gx = Math.min(AW - 1, ((q % OW) / OW * AW) | 0), gy = Math.min(AH - 1, (((q / OW) | 0) / OH * AH) | 0);
         if (lab[gy * AW + gx] >= 0) onWall += 3;
+        if (objLike) lookObj[k] += objLike[q];
+        if (useBox && gx >= c.box[0] - 0.06 * AW && gx < c.box[2] + 0.06 * AW && gy >= c.box[1] - 0.06 * AW && gy < c.box[3] + 0.06 * AW) inBox[k] += 3;
       }
       const ca = c.area * px2;
       if (area < ca * 0.3 || area > ca * 8 || onWall > area * 0.55) continue;
+      if (useBox && inBox[k] < area * 0.85) continue;   // a box prompt must give an object inside its box, never the wall around it
+      if (c.front && objLike && lookObj[k] / (area / 3) < 0.15) continue;   // a depth-cut patch must hold something that does not look like the wall
       if (ious[k] > ps) { ps = ious[k]; pick = k; }
     }
     if (pick < 0) continue;
@@ -314,6 +328,12 @@ export async function analyze(source, onProgress = () => {}, opt = {}) {
   const T = opt.times || {}; let tt = performance.now();
   onProgress('seg', 0);
   const inp = await seg.proc(raw), out = await seg.model(inp), lg = out.logits, [, NC, LH, LW] = lg.dims, L = lg.data;
+  if (opt.segFlip) {   // test-time flip: the mirrored photo's scores, mirrored back and averaged, steady the object outlines
+    const fc = document.createElement('canvas'); fc.width = big.width; fc.height = big.height;
+    const fx = fc.getContext('2d'); fx.translate(fc.width, 0); fx.scale(-1, 1); fx.drawImage(big, 0, 0);
+    const o2 = await seg.model(await seg.proc(RawImage.fromCanvas(fc))), L2 = o2.logits.data;
+    for (let c = 0; c < NC; c++) { const o = c * LH * LW; for (let y = 0; y < LH; y++) { const r = o + y * LW; for (let x = 0; x < LW; x++) L[r + x] = (L[r + x] + L2[r + LW - 1 - x]) / 2; } }
+  }
   T.seg = performance.now() - tt; tt = performance.now();
   onProgress('depth', 0);
   const ds = opt.depthIn || 518, dsc = Math.min(1, ds / Math.max(big.width, big.height)), dcv = document.createElement('canvas');
@@ -419,6 +439,71 @@ export async function analyze(source, onProgress = () => {}, opt = {}) {
     const x = pts.x[i], y = pts.y[i]; let k = 0;
     while (k < corners.length && Math.sign(corners[k].L[0] * x + corners[k].L[1] * y + corners[k].L[2]) !== corners[k].s) k++;
     lab[i] = k;
+  }
+  // in front of the wall: what the segmentation took for wall but stands clearly closer than the wall plane (a sofa back, a
+  // lamp shade, a plant or a chair against a pale wall) leaves the wall, so the mask and the object outlines (SAM) cut it out.
+  // Inverse depth grows towards the camera; the threshold follows how flat this photo's walls really are (median residual).
+  const frontCut = new Uint8Array(N);
+  if (opt.front !== false) {
+    const res = new Float32Array(N), abs = [];
+    for (let i = 0; i < N; i++) if (lab[i] >= 0) { const p = planes[lab[i]]; res[i] = disp[i] - (p[0] * pts.x[i] + p[1] * pts.y[i] + p[2]); abs.push(Math.abs(res[i])); }
+    abs.sort((a, b) => a - b);
+    const mad = abs[(abs.length / 2) | 0] || 0, lim = Math.max(opt.frontMin || 0.03, mad * (opt.frontK || 6));
+    // the residual is averaged over wall cells first (normalised box blur): depth noise around an edge (an open door, a plant)
+    // must not become a lattice of tiny cut-outs; a real object in front gives a broad, smooth bump
+    const wv = new Float32Array(N), rv = new Float32Array(N);
+    for (let i = 0; i < N; i++) if (lab[i] >= 0) { wv[i] = 1; rv[i] = res[i]; }
+    const wb = boxBlur(wv, AW, AH, 2), rb = boxBlur(rv, AW, AH, 2);
+    // only where the segmentation hesitated: a plain wall beside an open door is sure to be wall (depth bleeds there)
+    const fr = new Uint8Array(N); for (let i = 0; i < N; i++) if (lab[i] >= 0 && pwall[i] < (opt.frontP || 0.9) && wb[i] > 0.3 && rb[i] / wb[i] > lim && res[i] > lim * 0.6) fr[i] = 1;
+    // opening (erode then dilate, 1 cell) drops depth speckle; only solid patches count
+    const er = new Uint8Array(N), op = new Uint8Array(N);
+    for (let y = 1; y < AH - 1; y++) for (let x = 1; x < AW - 1; x++) { const i = y * AW + x; er[i] = fr[i] & fr[i - 1] & fr[i + 1] & fr[i - AW] & fr[i + AW]; }
+    for (let y = 1; y < AH - 1; y++) for (let x = 1; x < AW - 1; x++) { const i = y * AW + x; op[i] = (er[i] | er[i - 1] | er[i + 1] | er[i - AW] | er[i + AW]) & fr[i]; }
+    const seen = new Uint8Array(N), minA = Math.max(12, N * 0.0015); let cut = 0;
+    for (let s = 0; s < N; s++) {
+      if (!op[s] || seen[s]) continue;
+      const st = [s], px = []; seen[s] = 1;
+      while (st.length) { const j = st.pop(); px.push(j); const x = j % AW; for (const k of [j - 1, j + 1, j - AW, j + AW]) { if (k < 0 || k >= N || seen[k] || !op[k] || (k === j - 1 && x === 0) || (k === j + 1 && x === AW - 1)) continue; seen[k] = 1; st.push(k); } }
+      if (px.length < minA) continue;
+      let x0 = AW, x1 = 0, y0 = AH, y1 = 0;
+      for (const j of px) { const x = j % AW, y = (j / AW) | 0; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+      if (px.length < (x1 - x0 + 1) * (y1 - y0 + 1) * 0.35) continue;   // a sparse lattice is noise, an object is solid
+      for (const j of px) { lab[j] = -1; frontCut[j] = 1; cut++; }
+    }
+    T.front = cut; T.frontLim = Math.round(lim * 1000) / 1000;
+  }
+  // specks: a few cells the segmentation hesitated on (a soft shadow, a reflection) inside one wall are wall again, otherwise
+  // the cut-out becomes a lattice of little holes. Real objects are bigger than this and stay cut out.
+  if (opt.fillHoles !== false) {
+    const seen = new Uint8Array(N), maxA = opt.holeMax || 12; let filled = 0;
+    for (let s = 0; s < N; s++) {
+      if (lab[s] >= 0 || seen[s]) continue;
+      const st = [s], px = []; seen[s] = 1; let nb = -2, border = false;
+      while (st.length) {
+        const j = st.pop(); px.push(j); const x = j % AW, y = (j / AW) | 0;
+        if (x === 0 || y === 0 || x === AW - 1 || y === AH - 1) border = true;
+        for (const k of [j - 1, j + 1, j - AW, j + AW]) {
+          if (k < 0 || k >= N || (k === j - 1 && x === 0) || (k === j + 1 && x === AW - 1)) continue;
+          if (lab[k] >= 0) { if (nb === -2) nb = lab[k]; else if (nb !== lab[k]) nb = -1; continue; }
+          if (!seen[k]) { seen[k] = 1; st.push(k); }
+        }
+      }
+      if (px.length > maxA || border || nb < 0 || px.some((j) => cls[j] === C_FLOOR || cls[j] === C_CEIL || cls[j] === C_RUG)) continue;
+      for (const j of px) lab[j] = nb; filled += px.length;
+    }
+    for (let pass = 0; pass < 2; pass++) {
+      const add = [];
+      for (let y = 1; y < AH - 1; y++) for (let x = 1; x < AW - 1; x++) {
+        const i = y * AW + x; if (lab[i] >= 0 || cls[i] === C_FLOOR || cls[i] === C_CEIL || cls[i] === C_RUG) continue;
+        const cnt = {}; let best = -1, bn = 0;
+        for (const k of [i - AW - 1, i - AW, i - AW + 1, i - 1, i + 1, i + AW - 1, i + AW, i + AW + 1]) { const l = lab[k]; if (l < 0) continue; cnt[l] = (cnt[l] || 0) + 1; if (cnt[l] > bn) { bn = cnt[l]; best = l; } }
+        if (bn >= 7) add.push(i, best);
+      }
+      for (let a = 0; a < add.length; a += 2) lab[add[a]] = add[a + 1];
+      filled += add.length / 2;
+    }
+    T.holes = filled;
   }
   // final walls, ordered left to right
   let walls = [];
@@ -600,11 +685,16 @@ export async function analyze(source, onProgress = () => {}, opt = {}) {
   if (sam && opt.sam !== false) {   // crisp outlines: what Segment Anything calls an object is cut out of every wall
     onProgress('cut', 0);
     try {
-      const objM = await samObjects(raw, lab, cls, AW, AH, MW, MH);
+      const objM = await samObjects(raw, lab, cls, AW, AH, MW, MH, opt, obj, frontCut);
       if (objM) {
         const fo = new Float32Array(MW * MH); for (let i = 0; i < fo.length; i++) fo[i] = objM[i];
         const ff = boxBlur(fo, MW, MH, 1);
-        for (let i = 0; i < MW * MH; i++) { const keep = 1 - ff[i]; if (keep < 0.999) for (let k = 0; k < out2.length; k++) mask[i * 4 + k] = Math.round(mask[i * 4 + k] * keep); }
+        // safety: object outlines never eat most of a wall (a mask that took the wall for an object is ignored on that wall)
+        const before = new Float64Array(4), after = new Float64Array(4);
+        for (let i = 0; i < MW * MH; i += 2) for (let k = 0; k < out2.length; k++) { const m = mask[i * 4 + k]; before[k] += m; after[k] += m * (1 - ff[i]); }
+        const ok = [0, 1, 2, 3].map((k) => after[k] >= before[k] * 0.6);
+        for (let i = 0; i < MW * MH; i++) { const keep = 1 - ff[i]; if (keep < 0.999) for (let k = 0; k < out2.length; k++) if (ok[k]) mask[i * 4 + k] = Math.round(mask[i * 4 + k] * keep); }
+        T.samKept = ok.slice(0, out2.length).map(Number).join('');
       }
     } catch (e) { console.warn('SAM step skipped', e); }
     T.sam = performance.now() - tt;

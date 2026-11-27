@@ -731,7 +731,12 @@ const EU = editPass.uniforms;
 
 const ED = { rev: [1, 1, 1, 1], split: 2, mood: 0, open: false, room: null, def: null, fix: -1, zoom: 1, zoomGoal: 1, rooms: {}, sel: new Set(), applied: false, dirty: false, c: [0, 0], sc: 1, win: new THREE.Vector4(), goal: new THREE.Vector4(), scan: 2, recent: [], dragging: false, boot: false };
 const edEl = $('#ed'), edStage = $('#edStage'), edPinsEl = $('#edPins'), edPanel = $('#edPanel');
-const piecesOf = (wl, it) => Math.ceil(wl.w / (it.w / 100) - 1e-6) * Math.max(1, Math.ceil(wl.h / (it.h / 100) - 1e-6));
+// quantities: the wall's real width when the visitor typed it (wl.mw), else the width seen on the photo; the height is the
+// room's height (typed or estimated, it also sets the drawing scale). Slats and panels stand up: one column per piece
+// width, ceil(height / piece length) pieces per column, plus the cutting margin (data/experience.json > waste, % ).
+const dimsOf = (wl) => ({ w: wl.mw || wl.w, h: wl.h, exact: !!(wl.mw && ED.room && ED.room.mh) });
+const wasteOf = () => (ED.room && ED.room.waste != null ? ED.room.waste : (E.waste != null ? +E.waste : 5));
+const piecesOf = (wl, it) => { const d = dimsOf(wl); return Math.ceil(Math.ceil(d.w / (it.w / 100) - 1e-6) * Math.max(1, Math.ceil(d.h / (it.h / 100) - 1e-6)) * (1 + wasteOf() / 100) - 1e-6); };
 const tOf = (r, i) => (i === FL ? r.floor : r.walls[i]);   // a selection index -> wall or floor
 const hasFloor = (r) => !!(r && r.floor && FLOORS.length);
 const wallSel = () => [...ED.sel].filter((i) => i !== FL);
@@ -797,7 +802,8 @@ function edUI() {
   }
   const hint = $('#edHint');
   const one = ED.sel.size === 1 && !onFloor ? r.walls[[...ED.sel][0]] : null;
-  const dims = one ? ' · ' + fill(T.edDims, { w: fmt(one.w, 1), h: fmt(one.h, 2) }) : onFloor ? ' · ' + fill(T.edFloorDims, { w: fmt(fl.w, 1), d: fmt(fl.d, 1) }) : '';
+  const od = one ? dimsOf(one) : null;
+  const dims = one ? ' · ' + fill(T.edDims, { w: fmt(od.w, od.exact || one.mw ? 2 : 1), h: fmt(od.h, 2) }) : onFloor ? ' · ' + fill(T.edFloorDims, { w: fmt(fl.w, 1), d: fmt(fl.d, 1) }) : '';
   hint.textContent = ED.fix >= 0 ? T.edFixHint + dims : onFloor ? fill(T.edFloorPick, { w: T.edFloor }) + dims : ED.sel.size ? fill(T.edPick, { w: [...ED.sel].sort().map((i) => r.walls[i].name).join(', ') }) + dims : T.edHint;
   $('#edFixBtn').hidden = !one || ED.fix >= 0;
   $('#edFixBar').hidden = ED.fix < 0;
@@ -805,15 +811,16 @@ function edUI() {
   $('#edH').textContent = fmt(r.walls[0].h, 2) + ' ' + (T.edDims.split('{h}')[1] || 'm').trim();
   hint.classList.toggle('wait', ED.sel.size > 0 && !ED.applied);
   // total, size and the WhatsApp message with one line per wall (and one for the floor)
-  let total = 0, pieces = 0, area = 0, req = false, slatsOnly = true;
+  let total = 0, pieces = 0, area = 0, req = false, slatsOnly = true, exact = true;
   const lines = [];
   for (const wl of r.walls) {
     const it = wl.item; if (!it) continue;
-    const n = piecesOf(wl, it), u = it.k === 'slats' ? T.unitsSlat : T.units;
-    pieces += n; area += wl.w * wl.h; if (it.k !== 'slats') slatsOnly = false;
+    const n = piecesOf(wl, it), u = it.k === 'slats' ? T.unitsSlat : T.units, d = dimsOf(wl);
+    pieces += n; area += d.w * d.h; if (it.k !== 'slats') slatsOnly = false; if (!d.exact) exact = false;
     if (it.p != null) total += n * it.p; else req = true;
-    lines.push(fill(T.edLine, { w: wl.name, n: it.n, r: it.r, q: fmt(n), u }));
+    lines.push(fill(T.edLine, { w: wl.name, n: it.n, r: it.r, q: fmt(n), u }) + ' · ' + fill(T.edDims, { w: fmt(d.w, 2), h: fmt(d.h, 2) }) + ' (' + (d.exact ? T.edExactS : T.edEstS) + ')');
   }
+  edMeasUI(exact);
   if (fl && fl.item) {   // floor area: the visible floor's extent, an estimate to confirm on site
     const f = fl.item, a = fl.w * fl.d;
     area += a; if (f.p != null) total += a * f.p; else req = true;
@@ -821,13 +828,57 @@ function edUI() {
   }
   $('#edTotal').textContent = lines.length ? (total ? fmt(total) + ' ₪' : T.onRequest) : '–';
   $('#edMeta').textContent = lines.length ? (pieces ? fill(T.edMeta, { q: fmt(pieces), u: slatsOnly ? T.unitsSlat : T.units, a: fmt(area, 1) }) : fmt(area, 1) + ' ' + T.edFloorUnit) + (req && total ? ' ' + T.edReq : '') : '';
-  const msg = [T.edMsg, ...lines, total ? fill(T.edMsgTotal, { t: fmt(total) + ' ₪' }) : ''].filter(Boolean).join('\n');
+  const msg = [T.edMsg, ...lines, lines.length ? fill(T.edMsgWaste, { p: wasteOf() }) + (exact ? '' : ' · ' + T.edMsgEst) : '', total ? fill(T.edMsgTotal, { t: fmt(total) + ' ₪' }) : ''].filter(Boolean).join('\n');
+  if (lines.length) $('#edMeta').textContent += ' · ' + (exact ? T.edExactS : T.edEstS);
   $('#edWa').href = 'https://wa.me/' + E.wa + '?text=' + encodeURIComponent(msg);
   ED.msg = msg;
   // presentation tools: before / after line, light mood, share the picture
-  $('#edTools').innerHTML = `<button type="button" class="chip plain" data-ed-compare aria-pressed="${ED.split < 1.5}">${T.edCompare}</button>` +
+  $('#edTools').innerHTML = `<button type="button" class="chip plain" data-ed-meas aria-pressed="${!!ED.meas}" aria-controls="edMeas">${T.edMeas}</button>` +
+    `<button type="button" class="chip plain" data-ed-compare aria-pressed="${ED.split < 1.5}">${T.edCompare}</button>` +
     [T.edDay, T.edEve, T.edBright].map((n, i) => `<button type="button" class="chip plain" data-ed-mood="${i}" aria-pressed="${ED.mood === i}">${n}</button>`).join('') +
     `<button type="button" class="chip plain" data-ed-share>${T.edShare}</button>`;
+}
+// measures: room height (all walls, also the drawing scale), real width of the selected wall, cutting margin
+const measEls = () => ({ el: $('#edMeas'), h: $('#edMeasH'), w: $('#edMeasW'), wl: $('#edMeasWL'), wt: $('#edMeasWT'), waste: $('#edWaste'), note: $('#edMeasNote') });
+function edMeasUI(exact) {
+  const { el: measEl, h: measH, w: measW, wl: measWL, wt: measWT, waste: measWaste, note: measNote } = measEls();
+  if (!measEl) return;
+  const r = ED.room; measEl.hidden = !ED.meas || !r;
+  if (measEl.hidden) return;
+  if (document.activeElement !== measH) measH.value = r.mh ? r.mh : '';
+  measH.placeholder = fmt(r.walls[0].h, 2);
+  const ws = wallSel(), one = ws.length === 1 ? r.walls[ws[0]] : null;
+  measWL.hidden = !one;
+  if (one) {
+    measWT.textContent = fill(T.edMeasW, { w: one.name });
+    if (document.activeElement !== measW) measW.value = one.mw ? one.mw : '';
+    measW.placeholder = fmt(one.w, 2);
+  }
+  measWaste.value = String(wasteOf());
+  measNote.textContent = (exact ? T.edMeasOk : T.edMeasTip) + (r.walls.some((w) => w.mw) || one ? '' : ' ' + T.edMeasPick);
+}
+const num = (v) => { const x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : NaN; };
+{
+  const { el: measEl, h: measH, w: measW, waste: measWaste } = measEls();
+  if (measEl) {
+  measH.addEventListener('change', () => {
+    const r = ED.room, v = num(measH.value);
+    if (!r) return;
+    if (measH.value.trim() === '') { r.mh = null; edUI(); return; }
+    if (!(v >= 1.8 && v <= 8)) { toast(T.edMeasBad); measH.value = r.mh || ''; return; }
+    r.mh = Math.round(v * 100) / 100;
+    for (const wl of r.walls) { const a = wl.w / wl.h; wl.h = r.mh; wl.w = a * r.mh; }   // the drawing follows the real height
+    edUniforms(); edUI(); toast(T.edSaved);
+  });
+  measW.addEventListener('change', () => {
+    const r = ED.room, ws = wallSel(); if (!r || ws.length !== 1) return;
+    const wl = r.walls[ws[0]], v = num(measW.value);
+    if (measW.value.trim() === '') { wl.mw = null; edUI(); return; }
+    if (!(v >= 0.3 && v <= 40)) { toast(T.edMeasBad); measW.value = wl.mw || ''; return; }
+    wl.mw = Math.round(v * 100) / 100; edUI(); toast(T.edSaved);
+  });
+  measWaste.addEventListener('change', () => { if (ED.room) { ED.room.waste = +measWaste.value; edUI(); } });
+  }
 }
 let toastT = 0;
 function toast(s) { const el = $('#edToast'); el.textContent = s; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 1800); }
@@ -939,6 +990,7 @@ document.addEventListener('click', (e) => {
   if (fb) { edApplyFloor(FBYID[fb.dataset.floor] || null); return; }
   if (e.target.closest('[data-ed-none]')) { if (ED.sel.has(FL)) edApplyFloor(null); else edApply(null); return; }
   if (e.target.closest('[data-ed-more]')) openSheet();
+  if (e.target.closest('[data-ed-meas]')) { ED.meas = !ED.meas; tap(0.3); edUI(); return; }
   if (e.target.closest('[data-ed-compare]')) { ED.split = ED.split < 1.5 ? 2 : 0.5; tap(0.3); edUI(); return; }
   const md = e.target.closest('[data-ed-mood]'); if (md) { ED.mood = +md.dataset.edMood; tap(0.3); edUI(); return; }
   if (e.target.closest('[data-ed-share]')) edShare();
@@ -1036,12 +1088,13 @@ $('#edFile').addEventListener('change', async (e) => {
   try {
     const img = new Image(); img.src = URL.createObjectURL(file); await img.decode();
     if (!detector) detector = await import(E.detect);
-    const device = 'wasm';   // CPU everywhere: 31 MB once, same result on every phone (WebGPU builds were heavier or less stable)
+    const device = 'wasm';   // CPU everywhere: about 60 MB once (segmentation b2, depth, SAM), same result on every phone (WebGPU builds were heavier or less stable)
     const prog = (k, p) => { if (k === 'download') busy(fill(T.edLoadAI, { p: Math.round(p * 100) }), 0.05 + p * 0.6); };
-    await detector.loadModels(prog, { device });
+    const dopt = E.detectOpt || {};   // data/experience.json > detect (segmentation model, test-time flip, cut what stands in front of the wall)
+    await detector.loadModels(prog, Object.assign({ device }, dopt));
     busy(T.edAnalyze, 0.7);
     const steps = { seg: 0.75, depth: 0.82, walls: 0.92, mask: 0.96 };
-    const r = await detector.analyze(img, (k) => busy(T.edAnalyze, steps[k] || 0.8));
+    const r = await detector.analyze(img, (k) => busy(T.edAnalyze, steps[k] || 0.8), dopt);
     if (!r.walls.length) { busy(T.edNoWall, 1); setTimeout(() => busy(null), 3600); return; }
     ED.rooms.mine = photoRoom(img, r);
     busy(null); edSetRoom(ED.rooms.mine); tap(0.5);
@@ -1092,6 +1145,7 @@ $('#edFixBtn').addEventListener('click', fixStart);
 $('#edDone').addEventListener('click', fixEnd);
 for (const b of document.querySelectorAll('[data-h]')) b.addEventListener('click', () => {
   for (const wl of ED.room.walls) { const a = wl.w / wl.h; wl.h = clamp(Math.round((wl.h + 0.05 * +b.dataset.h) * 100) / 100, 2.2, 4.5); wl.w = a * wl.h; }
+  if (ED.room.mh) ED.room.mh = ED.room.walls[0].h;   // a typed height follows the - / + buttons
   edUniforms(); edUI();
 });
 
