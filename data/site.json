@@ -30,5 +30,8 @@
   "vatRate": 18,
   "quoteValidityDays": 30,
   "businessId": "342677309",
-  "defaultSupplier": "S1"
+  "defaultSupplier": "S1",
+  "_supabase": "Base de la boutique (projet Supabase jarvis-assistant, schema boutique). Cle publiable : publique par conception, les droits sont dans les fonctions de la base.",
+  "supabaseUrl": "https://bexiyvmdbxcwxasgslxp.supabase.co",
+  "supabaseKey": "sb_publishable_Ju0xC27cQ1JrN4IpWFfWxQ_Ntrd4P1U"
 }

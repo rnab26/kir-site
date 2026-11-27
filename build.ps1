@@ -448,6 +448,9 @@ $ShopCfg = [ordered]@{
   biz = [string]$Site.businessId; def = $(if ($Site.defaultSupplier) { [string]$Site.defaultSupplier } else { 'S1' })
   brands = $Site.brandByLang; addrs = $Site.addressByLang; phone = [string]$Site.phoneDisplay; pre = $ShopPre
 }
+# shop database (shopdb.js): public URL + publishable key; rights are enforced by the database functions
+$DbCfg = [ordered]@{ url = [string]$Site.supabaseUrl; key = [string]$Site.supabaseKey }
+function DbScript() { if ($Site.supabaseUrl) { '<script src="' + (AssetUrl ('js/shopdb.js?v=' + $Ver)) + '" defer></script>' } else { '' } }
 function DocScripts() {
   $docs = [ordered]@{}
   foreach ($lg in $Langs) { $docs[$lg] = P (P $ProTx $lg) 'doc' }
@@ -471,7 +474,7 @@ function Page($L, [hashtable]$pg) {
   $cfg = [ordered]@{
     lang = $L.lang; base = $BasePath; prefix = [string]$L.prefix; wa = $Wa; brand = (BrandOf $L); v = $Ver; phone = [string]$Site.phoneDisplay
     data = (AssetUrl ('data/products.json?v=' + $Ver)); live = [string]$Site.sheetCsvUrl
-    langs = @($Langs); t = $t; shop = $ShopCfg
+    langs = @($Langs); t = $t; shop = $ShopCfg; db = $DbCfg
   }
   $sb = New-Object Text.StringBuilder
   [void]$sb.Append('<!doctype html><html lang="' + $L.lang + '" dir="' + $L.dir + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">')
@@ -891,12 +894,12 @@ foreach ($lang in $Langs) {
   $SP = P (P $Shop $lang) 'pages'
   $body = (Band (T $L 'cart') $SP.cartTitle $SP.cartDesc -1 $L) + '<section class="cart-sec"><div class="wrap cart-grid"><div class="cart-items" data-cart><noscript><p>JavaScript</p></noscript></div><aside class="cart-summary" data-cart-summary aria-live="polite"></aside></div></section>'
   Page $L @{ path = 'cart/'; title = ($SP.cartTitle + ' | ' + (BrandOf $L)); desc = $SP.cartDesc; body = $body; cls = 'cart-page'; noindex = $true }
-  $body = (Band (T $L 'checkout') $SP.checkoutTitle $SP.checkoutDesc -1 $L) + (CheckoutForm $L) + (DocScripts)
+  $body = (Band (T $L 'checkout') $SP.checkoutTitle $SP.checkoutDesc -1 $L) + (CheckoutForm $L) + (DocScripts) + (DbScript)
   Page $L @{ path = 'checkout/'; title = ($SP.checkoutTitle + ' | ' + (BrandOf $L)); desc = $SP.checkoutDesc; body = $body; cls = 'checkout-page'; noindex = $true }
   # Shop counter (internal, not linked, not indexed): quote by reference, purchase orders per supplier, history
   $proT = P (P $ProTx $lang) 'pro'
   $body = (Band $proT.kicker $proT.title $proT.desc -1 $L) + '<section class="pro-sec"><div class="wrap" data-pro><noscript><p>JavaScript</p></noscript></div></section>' +
-    '<script>window.KIRproT=' + (To-Json $proT) + ';</script>' + (DocScripts) + '<script src="' + (AssetUrl ('js/pro.js?v=' + $Ver)) + '" defer></script>'
+    '<script>window.KIRproT=' + (To-Json $proT) + ';</script>' + (DocScripts) + (DbScript) + '<script src="' + (AssetUrl ('js/pro.js?v=' + $Ver)) + '" defer></script>'
   Page $L @{ path = 'pro/'; title = ($proT.title + ' | ' + (BrandOf $L)); desc = $proT.desc; body = $body; cls = 'pro-page'; noindex = $true }
   # Price labels for the showroom (Hebrew only, not indexed, not in the sitemap): src/assets/js/labels.js
   if ($lang -eq 'he') {

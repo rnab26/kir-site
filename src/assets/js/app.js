@@ -388,6 +388,8 @@
         var orders = load(OKEY, []); orders.unshift(o); save(OKEY, orders.slice(0, 30));
         try { localStorage.setItem('kir-customer', JSON.stringify({ name: o.c.name, phone: o.c.phone, email: o.c.email, city: o.c.city, address: o.c.address })); } catch (e2) {}
         cart = {}; save(KEY, cart); refresh();
+        // also recorded in the shop's shared history (shopdb.js); never blocks the WhatsApp message
+        if (window.KIRdb) { var rec = JSON.parse(JSON.stringify(o)); rec.source = 'site'; rec.status = 'check'; window.KIRdb.submitRequest(rec); }
         var url = waUrl(quoteMsg(o, D));
         window.open(url, '_blank', 'noopener');
         location.href = pageUrl('order/') + '?id=' + encodeURIComponent(o.id);
