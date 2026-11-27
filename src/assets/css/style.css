@@ -1059,4 +1059,14 @@ body.has-buybar .site-footer { padding-bottom: 96px; }
   .pro-send .btn, .pro-next .btn { flex: 1 1 100%; }
 }.pro-inline select { width: auto; flex: none; }
 .pro-li-lbl { color: var(--muted); font-size: .72rem; }
-.pro-page [data-wa-float] { display: none; }
+.pro-page [data-wa-float] { display: none; }.pro-cloud { font-size: .8rem; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.pro-cloud.on { background: #e3f1e8; color: #1f7a45; }
+.pro-cloud.off { background: var(--bg-2); color: var(--muted); }
+.pro-cloud.bad { background: #fbe4e1; color: #b42318; }
+.pro-badge.new { background: #b42318; }
+.pro-src { font: 600 .72rem/1 var(--sans); padding: 3px 8px; border-radius: 999px; background: var(--bg-2); color: var(--ink-2); margin-inline-start: 6px; vertical-align: middle; }
+.pro-src.new { background: #b42318; color: #fff; }
+.pro-acct { display: grid; gap: 10px; padding: 16px; border-radius: var(--r-lg); background: var(--surface); box-shadow: var(--shadow); }
+.pro-acct p { margin: 0; }
+.pro-login { display: grid; gap: 10px; }
+.pro-login .btn { justify-self: start; }

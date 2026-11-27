@@ -28,6 +28,65 @@
   function saveCfg() { save(LS.cfg, cfg); }
   var orders = load(LS.orders, []);
   function saveOrders() { save(LS.orders, orders.slice(0, 1000)); }
+
+  /* ---------- shared history (shopdb.js, Supabase): on once a staff account is signed in ---------- */
+  var DB = window.KIRdb || null;
+  var cloud = { staff: false, me: null, sups: [], busy: false, err: '', at: '', checked: false };
+  var seen = load('kir-pro-seen-v1', {});
+  function sups() { return cloud.staff ? cloud.sups : cfg.sups; }
+  function normalize(o) {
+    var b = blank(); o = o || {};
+    o.c = Object.assign(b.c, o.c || {}); o.disc = o.disc || { v: 0, pct: false }; o.deliv = +o.deliv || 0; o.po = o.po || {};
+    o.items = (o.items || []).map(function (x) { var it = { id: x.id, q: Math.max(1, +x.q || 1), r: x.r, s: x.s, img: x.img, nm: x.nm || { he: x.n || x.r || x.id } }; if (x.p !== undefined) it.p = x.p; return it; });
+    o.lang = o.lang || 'he'; o.date = o.date || new Date().toISOString(); o.status = o.status || 'quote'; o.saved = true;
+    return o;
+  }
+  function cloudMsg(m, bad) { cloud.err = bad ? m : ''; var el = document.querySelector('[data-cloudst]'); if (el) { el.textContent = m; el.className = 'note' + (bad ? ' err' : ' ok'); } renderTopSafe(); }
+  function renderTopSafe() { if (root.querySelector('[data-top]')) renderTop(); }
+  function pushOrder(o) {
+    if (!cloud.staff) return Promise.resolve(false);
+    var p = JSON.parse(JSON.stringify(o)); delete p.synced;
+    return DB.rpc('boutique_order_save', { p: p }).then(function (r) {
+      for (var i = 0; i < orders.length; i++) if (orders[i].id === o.id) { orders[i].synced = r.updated_at; orders[i].updated = r.updated_at; }
+      saveOrders(); cloud.at = new Date().toISOString(); cloudMsg(t('syncOk')); return true;
+    }, function (e) { cloudMsg(t('syncFail') + ' (' + e.message + ')', true); return false; });
+  }
+  function pull() {
+    if (!cloud.staff || cloud.busy) return Promise.resolve();
+    cloud.busy = true;
+    return DB.rpc('boutique_orders', { p_since: null, p_limit: 1000 }).then(function (list) {
+      var remote = {}; (list || []).forEach(function (r) { remote[r.id] = r; });
+      var byId = {}; orders.forEach(function (o) { byId[o.id] = o; });
+      var push = [];
+      Object.keys(remote).forEach(function (id) {
+        var r = remote[id], l = byId[id];
+        if (!l || l.synced || String(l.updated || '') <= String(r.updated_at)) {
+          var o = normalize(r.data); o.id = id; o.status = r.status; o.source = r.source; o.total = +r.total; o.updated = r.updated_at; o.synced = r.updated_at;
+          byId[id] = o;
+        }
+      });
+      Object.keys(byId).forEach(function (id) {
+        if (remote[id]) return;
+        if (byId[id].synced) delete byId[id];     // deleted on another device
+        else push.push(byId[id]);                  // made here before signing in, or offline
+      });
+      orders = Object.keys(byId).map(function (k) { return byId[k]; }).sort(function (a, b) { return String(b.updated || b.date).localeCompare(String(a.updated || a.date)); });
+      saveOrders();
+      if (draft.saved && byId[draft.id] && byId[draft.id].synced && byId[draft.id].synced !== draft.synced && !document.activeElement.closest('.pro-pane')) { draft = JSON.parse(JSON.stringify(byId[draft.id])); save(LS.draft, draft); }
+      cloud.at = new Date().toISOString(); cloudMsg(t('syncOk'));
+      return Promise.all(push.map(pushOrder));
+    }, function (e) { cloudMsg(t('syncFail') + ' (' + e.message + ')', true); }).then(function () { cloud.busy = false; if (cur === 'hist' || cur === 'cfg') render(cur); else renderTopSafe(); });
+  }
+  function connect() {
+    if (!DB || !DB.session()) { cloud.staff = false; cloud.checked = true; return Promise.resolve(false); }
+    return DB.rpc('boutique_bootstrap', {}).then(function (b) {
+      cloud.checked = true; cloud.staff = !!(b && b.staff); cloud.me = b && b.me; cloud.sups = (b && b.suppliers) || [];
+      if (!cloud.staff) { cloudMsg(t('notStaff'), true); return false; }
+      return pull().then(function () { return true; });
+    }, function (e) { cloud.checked = true; cloud.staff = false; cloudMsg(t('syncFail') + ' (' + e.message + ')', true); return false; });
+  }
+  function newRequests() { return orders.filter(function (o) { return o.source === 'site' && o.status === 'check' && !seen[o.id]; }).length; }
+  function markSeen(id) { seen[id] = 1; save('kir-pro-seen-v1', seen); }
   function blank() {
     return { id: '', date: new Date().toISOString(), lang: K.lang || 'he', items: [], c: { name: '', phone: '', city: '', address: '', delivery: 'pickup', notes: '' },
       disc: { v: 0, pct: false }, deliv: 0, status: 'draft', po: {}, saved: false, from: '' };
@@ -45,7 +104,7 @@
   /* ---------- catalogue ---------- */
   function norm(s) { return String(s || '').toLowerCase().replace(/[\s.\-\/_״׳"']+/g, ''); }
   function supOf(p) { return String((p && p.sup) || cfg.def || 'S1').trim().toUpperCase(); }
-  function supInfo(code) { for (var i = 0; i < cfg.sups.length; i++) if (String(cfg.sups[i].code).toUpperCase() === code) return cfg.sups[i]; return null; }
+  function supInfo(code) { var l = sups(); for (var i = 0; i < l.length; i++) if (String(l[i].code).toUpperCase() === code) return l[i]; return null; }
   function pname(p, lang) { return p ? (p[lang || K.lang] || p.he || p.r) : ''; }
   function full(o) {
     var miss = 0;
@@ -113,10 +172,11 @@
   function renderTop() {
     var T = Q.totals(full(draft));
     $('[data-top]').innerHTML = esc(t('quoteNo')) + ' <bdi>' + esc(draft.id || '—') + '</bdi> · <span class="pro-st st-' + draft.status + '">' + esc(t('st_' + draft.status)) + '</span>' +
-      (draft.saved ? ' · <span class="pro-saved">' + esc(t('savedHist')) + '</span>' : '') + (draft.c.name ? ' · ' + esc(draft.c.name) : '');
+      (draft.saved ? ' · <span class="pro-saved">' + esc(t('savedHist')) + '</span>' : '') + (draft.c.name ? ' · ' + esc(draft.c.name) : '') +
+      (DB ? ' · <span class="pro-cloud ' + (cloud.staff ? (cloud.err ? 'bad' : 'on') : 'off') + '">' + esc(cloud.staff ? (cloud.err ? t('cloudErr') : t('cloudOn')) : t('cloudOff')) + '</span>' : '');
     var bi = $('[data-badge="items"]'); bi.textContent = T.n; bi.hidden = !T.n;
     var groups = split(full(draft)); var bs = $('[data-badge="sup"]'); bs.textContent = groups.length; bs.hidden = !groups.length;
-    var bh = $('[data-badge="hist"]'); bh.textContent = orders.length; bh.hidden = !orders.length;
+    var nr = newRequests(), bh = $('[data-badge="hist"]'); bh.textContent = nr ? '+' + nr : orders.length; bh.hidden = !orders.length; bh.classList.toggle('new', !!nr);
   }
 
   /* ---------- tab 1: items ---------- */
@@ -230,12 +290,14 @@
 
   /* ---------- tab 2: customer + quote ---------- */
   function upsert(announce) {
-    var f = JSON.parse(JSON.stringify(draft)); f.saved = true; f.updated = new Date().toISOString();
+    var f = JSON.parse(JSON.stringify(draft)); f.saved = true; f.updated = new Date().toISOString(); f.synced = false;
     f.total = Q.totals(full(draft)).total;
     var at = -1; for (var i = 0; i < orders.length; i++) if (orders[i].id === draft.id) at = i;
-    if (at >= 0) orders[at] = f; else orders.unshift(f);
+    if (at >= 0) { f.source = orders[at].source || f.source; orders[at] = f; } else orders.unshift(f);
+    f.source = f.source || 'pro';
     saveOrders();
     if (announce) toast(t('savedOk'));
+    clearTimeout(upsert.timer); upsert.timer = setTimeout(function () { pushOrder(f); }, 1200);   // shared history (one write per pause)
   }
   function saveDraft() {
     if (!draft.items.length) { toast(t('emptyItems'), true); return false; }
@@ -348,7 +410,8 @@
     if (!list.length) { box.innerHTML = '<p class="lead">' + esc(t('noMatch')) + '</p>'; return; }
     box.innerHTML = list.map(function (o) {
       var n = o.items.reduce(function (a, x) { return a + x.q; }, 0), pos = Object.keys(o.po || {});
-      return '<article class="pro-h" data-id="' + esc(o.id) + '"><header><strong><bdi>' + esc(o.id) + '</bdi></strong><span>' + new Date(o.updated || o.date).toLocaleString(K.lang === 'he' ? 'he-IL' : K.lang === 'fr' ? 'fr-FR' : 'en-GB') + '</span></header>' +
+      var src = o.source === 'site' ? '<span class="pro-src">' + esc(t('srcSite')) + '</span>' + (o.status === 'check' && !seen[o.id] ? '<span class="pro-src new">' + esc(t('isNew')) + '</span>' : '') : '';
+      return '<article class="pro-h" data-id="' + esc(o.id) + '"><header><strong><bdi>' + esc(o.id) + '</bdi> ' + src + '</strong><span>' + new Date(o.updated || o.date).toLocaleString(K.lang === 'he' ? 'he-IL' : K.lang === 'fr' ? 'fr-FR' : 'en-GB') + '</span></header>' +
         '<p>' + esc(o.c.name || t('noName')) + (o.c.phone ? ' · <bdi>' + esc(o.c.phone) + '</bdi>' : '') + ' · ' + n + ' ' + esc(t('units')) + ' · <b>' + money(o.total || 0) + '</b></p>' +
         (pos.length ? '<p class="note">' + pos.map(function (k) { var s = supInfo(k); return esc((s && s.name) || k) + ' : ' + esc(t('pst_' + o.po[k].st)); }).join(' · ') + '</p>' : '') +
         '<div class="pro-hact"><select data-hset aria-label="' + esc(t('status')) + '">' + ST.map(function (s) { return '<option value="' + s + '"' + (o.status === s ? ' selected' : '') + '>' + esc(t('st_' + s)) + '</option>'; }).join('') + '</select>' +
@@ -356,10 +419,12 @@
     }).join('');
     $$('.pro-h', box).forEach(function (card) {
       var id = card.getAttribute('data-id'), idx = function () { for (var i = 0; i < orders.length; i++) if (orders[i].id === id) return i; return -1; };
-      $('[data-hset]', card).addEventListener('change', function (e) { var o = orders[idx()]; o.status = e.target.value; o.updated = new Date().toISOString(); saveOrders(); if (draft.id === id) { draft.status = o.status; save(LS.draft, draft); } renderTop(); toast(t('savedOk')); });
+      $('[data-hset]', card).addEventListener('change', function (e) { var o = orders[idx()]; o.status = e.target.value; o.updated = new Date().toISOString(); o.synced = false; markSeen(id); saveOrders(); if (draft.id === id) { draft.status = o.status; save(LS.draft, draft); } pushOrder(o); renderTop(); toast(t('savedOk')); });
       $('[data-hopen]', card).addEventListener('click', function () {
         if (draft.items.length && !draft.saved && draft.id !== id && !confirm(t('confirmReplace'))) return;
-        draft = JSON.parse(JSON.stringify(orders[idx()])); save(LS.draft, draft); show('items');
+        markSeen(id);
+        draft = normalize(JSON.parse(JSON.stringify(orders[idx()]))); if (draft.source === 'site' && !draft.from) draft.from = draft.c.name || draft.id;
+        save(LS.draft, draft); show('items');
       });
       $('[data-hdup]', card).addEventListener('click', function () {
         if (draft.items.length && !draft.saved && !confirm(t('confirmReplace'))) return;
@@ -368,8 +433,12 @@
       });
       $('[data-hdel]', card).addEventListener('click', function () {
         if (!confirm(t('confirmDelete').replace('{id}', id))) return;
-        orders.splice(idx(), 1); saveOrders(); if (draft.id === id) { draft.saved = false; save(LS.draft, draft); }
-        renderHist(); renderTop(); toast(t('deleted'));
+        var drop = function () {
+          var i = idx(); if (i >= 0) orders.splice(i, 1); saveOrders(); if (draft.id === id) { draft.saved = false; save(LS.draft, draft); }
+          renderHist(); renderTop(); toast(t('deleted'));
+        };
+        if (cloud.staff) DB.rpc('boutique_order_delete', { p_id: id }).then(drop, function (e) { toast(t('syncFail') + ' (' + e.message + ')', true); });
+        else drop();
       });
     });
   }
@@ -383,9 +452,17 @@
 
   /* ---------- tab 5: settings ---------- */
   function renderCfg() {
-    var pane = $('[data-pane="cfg"]');
-    pane.innerHTML = '<p class="note pro-private">' + esc(t('privateNote')) + '</p>' +
-      '<h3>' + esc(t('suppliers')) + '</h3><p class="note">' + esc(t('supHelp')) + '</p><div data-sups></div>' +
+    var pane = $('[data-pane="cfg"]'), s = DB && DB.session();
+    var acct = !DB ? '' : '<section class="pro-acct"><h3>' + esc(t('acct')) + '</h3>' + (s ?
+      '<p>' + esc(t('loggedAs')) + ' <b><bdi>' + esc(s.email || '') + '</bdi></b>' + (cloud.me && cloud.me.name ? ' (' + esc(cloud.me.name) + ')' : '') + '</p>' +
+      '<p class="note" data-cloudst aria-live="polite">' + esc(cloud.err || (cloud.staff ? t('syncOk') + (cloud.at ? ' · ' + new Date(cloud.at).toLocaleTimeString(K.lang === 'he' ? 'he-IL' : K.lang === 'fr' ? 'fr-FR' : 'en-GB', { hour: '2-digit', minute: '2-digit' }) : '') : (cloud.checked ? t('notStaff') : t('syncing')))) + '</p>' +
+      '<div class="pro-send">' + (cloud.staff ? '<button class="btn" type="button" data-syncnow>' + esc(t('syncNow')) + '</button>' : '') + '<button class="btn" type="button" data-logout>' + esc(t('logout')) + '</button></div>'
+      : '<p class="note">' + esc(t('acctHelp')) + '</p><form class="pro-login" data-login novalidate><div class="pro-grid2">' +
+      '<label class="fld"><span>' + esc(t('email')) + '</span><input type="email" name="email" autocomplete="username" dir="ltr" required></label>' +
+      '<label class="fld"><span>' + esc(t('password')) + '</span><input type="password" name="password" autocomplete="current-password" dir="ltr" required></label></div>' +
+      '<button class="btn btn-dark" type="submit">' + esc(t('login')) + '</button><p class="note" data-loginmsg aria-live="polite"></p></form>') + '</section>';
+    pane.innerHTML = acct + '<p class="note pro-private">' + esc(cloud.staff ? t('privateNoteCloud') : t('privateNote')) + '</p>' +
+      '<h3>' + esc(t('suppliers')) + '</h3><p class="note">' + esc(cloud.staff ? t('supHelpCloud') : t('supHelp')) + '</p><div data-sups></div>' +
       '<button class="btn" type="button" data-supadd>' + esc(t('supAdd')) + '</button>' +
       '<div class="pro-grid2 pro-cfg2"><label class="fld"><span>' + esc(t('supDefault')) + '</span><select data-def></select></label>' +
       '<label class="fld"><span>' + esc(t('poLang')) + '</span><select data-polang>' + ['he', 'fr', 'en'].map(function (l) { return '<option value="' + l + '"' + (cfg.poLang === l ? ' selected' : '') + '>' + esc(t('lang_' + l)) + '</option>'; }).join('') + '</select></label>' +
@@ -397,10 +474,24 @@
       '<button class="btn" type="button" data-cfglink>' + esc(t('cfgLink')) + '</button></div><p class="note" data-cfgmsg aria-live="polite"></p>';
     drawSups();
     var on = function (sel, ev, fn) { $(sel, pane).addEventListener(ev, fn); };
+    var lf = $('[data-login]', pane);
+    if (lf) lf.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var lm = $('[data-loginmsg]', pane), b = lf.querySelector('button');
+      if (!lf.email.value.trim() || !lf.password.value) { lm.textContent = t('loginMissing'); lm.className = 'note err'; return; }
+      b.disabled = true; lm.textContent = t('syncing'); lm.className = 'note';
+      DB.login(lf.email.value.trim(), lf.password.value).then(function () { return connect(); }).then(function (ok) {
+        toast(ok ? t('loginOk') : t('notStaff'), !ok); renderCfg(); renderTop();
+      }, function (err) { b.disabled = false; lm.textContent = t('loginFail') + ' (' + err.message + ')'; lm.className = 'note err'; });
+    });
+    if ($('[data-logout]', pane)) on('[data-logout]', 'click', function () { DB.logout(); cloud.staff = false; cloud.me = null; cloud.err = ''; renderCfg(); renderTop(); toast(t('loggedOut')); });
+    if ($('[data-syncnow]', pane)) on('[data-syncnow]', 'click', function () { connect().then(function () { renderCfg(); }); });
     on('[data-supadd]', 'click', function () {
-      var n = cfg.sups.length + 1, code = 'S' + n; while (supInfo(code)) code = 'S' + (++n);
-      cfg.sups.push({ code: code, name: '', wa: '', contact: '', notes: '' }); saveCfg(); drawSups();
-      var last = $$('[data-sup]', pane).pop(); if (last) $('[data-f="name"]', last).focus();
+      var list = sups(), n = list.length + 1, code = 'S' + n; while (supInfo(code)) code = 'S' + (++n);
+      var row = { code: code, name: '', wa: '', contact: '', notes: '' };
+      var focusLast = function () { var last = $$('[data-sup]', pane).pop(); if (last) $('[data-f="name"]', last).focus(); };
+      if (cloud.staff) DB.rpc('boutique_supplier_save', { p: row }).then(function () { cloud.sups.push(row); drawSups(); focusLast(); }, function (e) { toast(t('syncFail') + ' (' + e.message + ')', true); });
+      else { cfg.sups.push(row); saveCfg(); drawSups(); focusLast(); }
     });
     on('[data-def]', 'change', function (e) { cfg.def = e.target.value; saveCfg(); toast(t('savedOk')); renderTop(); });
     on('[data-polang]', 'change', function (e) { cfg.poLang = e.target.value; saveCfg(); toast(t('savedOk')); });
@@ -434,8 +525,13 @@
     });
   }
   function drawSups() {
-    var pane = $('[data-pane="cfg"]'), box = $('[data-sups]', pane);
-    box.innerHTML = cfg.sups.map(function (s, i) {
+    var pane = $('[data-pane="cfg"]'), box = $('[data-sups]', pane), list = sups();
+    // one place to write a supplier: the shared database when signed in, else this device
+    var commit = function (i, oldCode, done) {
+      if (!cloud.staff) { saveCfg(); toast(t('savedOk')); done(true); return; }
+      DB.rpc('boutique_supplier_save', { p: list[i], p_old_code: oldCode }).then(function () { toast(t('savedOk')); done(true); }, function (e) { toast(t('syncFail') + ' (' + e.message + ')', true); done(false); });
+    };
+    box.innerHTML = list.map(function (s, i) {
       var f = function (k, type, extra) { return '<label class="fld"><span>' + esc(t('sup_' + k)) + '</span><input type="' + type + '" data-f="' + k + '" value="' + esc(s[k] || '') + '"' + (extra || '') + '></label>'; };
       return '<fieldset class="pro-supcard" data-sup="' + i + '"><legend>' + esc(s.code) + (s.name ? ' · ' + esc(s.name) : '') + '</legend><div class="pro-grid2">' +
         f('code', 'text', ' maxlength="6" dir="ltr" autocapitalize="characters"') + f('name', 'text') + f('wa', 'tel', ' dir="ltr" inputmode="tel" placeholder="05x-xxx-xxxx"') + f('contact', 'text') + '</div>' + f('notes', 'text') +
@@ -445,32 +541,40 @@
       var i = +fs.getAttribute('data-sup');
       $$('[data-f]', fs).forEach(function (inp) {
         inp.addEventListener('change', function () {
-          var k = inp.getAttribute('data-f'), v = inp.value.trim();
+          var k = inp.getAttribute('data-f'), v = inp.value.trim(), oldCode = list[i].code, prev = list[i][k];
           if (k === 'code') {
             v = v.toUpperCase().replace(/[^A-Z0-9]/g, '');
-            var dup = cfg.sups.some(function (s, j) { return j !== i && String(s.code).toUpperCase() === v; });
-            if (!v || dup) { toast(t('codeBad'), true); inp.value = cfg.sups[i].code; return; }
-            if (cfg.def === cfg.sups[i].code) cfg.def = v;
+            var dup = list.some(function (s, j) { return j !== i && String(s.code).toUpperCase() === v; });
+            if (!v || dup) { toast(t('codeBad'), true); inp.value = oldCode; return; }
             inp.value = v;
           }
-          cfg.sups[i][k] = v; saveCfg(); toast(t('savedOk'));
-          $('legend', fs).textContent = cfg.sups[i].code + (cfg.sups[i].name ? ' · ' + cfg.sups[i].name : '');
-          drawDef();
+          list[i][k] = v;
+          commit(i, k === 'code' ? oldCode : null, function (ok) {
+            if (!ok) { list[i][k] = prev; inp.value = prev; return; }
+            if (k === 'code' && String(cfg.def).toUpperCase() === String(oldCode).toUpperCase()) { cfg.def = v; saveCfg(); }
+            $('legend', fs).textContent = list[i].code + (list[i].name ? ' · ' + list[i].name : '');
+            drawDef();
+          });
         });
       });
       $('[data-supdel]', fs).addEventListener('click', function () {
-        var s = cfg.sups[i];
+        var s = list[i];
         if (!confirm(t('confirmSupDel').replace('{name}', s.name || s.code))) return;
-        cfg.sups.splice(i, 1); if (!cfg.sups.length) cfg.sups.push({ code: 'S1', name: '', wa: '', contact: '', notes: '' });
-        if (!supInfo(String(cfg.def).toUpperCase())) cfg.def = cfg.sups[0].code;
-        saveCfg(); drawSups(); toast(t('deleted'));
+        var after = function () {
+          list.splice(i, 1);
+          if (!cloud.staff && !list.length) list.push({ code: 'S1', name: '', wa: '', contact: '', notes: '' });
+          if (list.length && !supInfo(String(cfg.def).toUpperCase())) cfg.def = list[0].code;
+          saveCfg(); drawSups(); toast(t('deleted'));
+        };
+        if (cloud.staff) DB.rpc('boutique_supplier_delete', { p_code: s.code }).then(after, function (e) { toast(t('syncFail') + ' (' + e.message + ')', true); });
+        else after();
       });
     });
     drawDef();
   }
   function drawDef() {
     var sel = $('[data-pane="cfg"] [data-def]'); if (!sel) return;
-    sel.innerHTML = cfg.sups.map(function (s) { return '<option value="' + esc(s.code) + '"' + (String(cfg.def).toUpperCase() === String(s.code).toUpperCase() ? ' selected' : '') + '>' + esc(s.code + (s.name ? ' · ' + s.name : '')) + '</option>'; }).join('');
+    sel.innerHTML = sups().map(function (s) { return '<option value="' + esc(s.code) + '"' + (String(cfg.def).toUpperCase() === String(s.code).toUpperCase() ? ' selected' : '') + '>' + esc(s.code + (s.name ? ' · ' + s.name : '')) + '</option>'; }).join('');
   }
 
   /* ---------- links: #q= (a customer request) and #cfg= (settings from another device) ---------- */
@@ -508,6 +612,10 @@
       var tab = null; try { tab = sessionStorage.getItem(LS.tab); } catch (e) { }
       show(TABS.indexOf(tab) >= 0 ? tab : 'items');
       if (draft.from && cur === 'items') toast(t('loadedReq').replace('{name}', draft.from));
+      // shared history: sign-in kept from last time, then a light refresh every minute while the page is visible
+      connect().then(function (ok) { if (ok) { render(cur); var nr = newRequests(); if (nr) toast(t('newReq').replace('{n}', nr)); } });
+      setInterval(function () { if (cloud.staff && !document.hidden) pull(); }, 60000);
+      document.addEventListener('visibilitychange', function () { if (!document.hidden && cloud.staff) pull(); });
     });
     document.addEventListener('kir:live', function () { if (Q && LIST.length) render(cur); });
     window.addEventListener('hashchange', function () { if (location.hash.length > 3) { readHash(); render(cur); } });
