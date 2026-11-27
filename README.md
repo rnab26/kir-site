@@ -139,6 +139,15 @@ dans le navigateur de l'appareil (sauvegarde en fichier, ou « lien de réglages
 = code fournisseur + référence du fournisseur sans espaces (ex. `S1-08220325`), il ne remplace pas la référence du fournisseur.
 Réglages du devis dans `data/site.json` : `vatRate` (TVA, %), `quoteValidityDays`, `businessId` (n° d'entreprise imprimé
 sur le devis s'il est rempli), `defaultSupplier`.
+**Historique partagé (Supabase)** : projet `jarvis-assistant`, schéma `boutique` (tables `staff`, `suppliers`, `orders`),
+lu et écrit uniquement par les fonctions `public.boutique_*` (RLS activée, aucune politique, aucun accès direct aux
+tables). `/pro/` > Réglages > Compte : connexion avec l'e-mail et le mot de passe du cockpit ; seuls les comptes listés
+dans `boutique.staff` y ont accès (ajouter un vendeur = une ligne dans `boutique.staff`). Les demandes de devis du site
+sont aussi enregistrées (`boutique_submit_request`, statut « vérification fournisseurs ») et apparaissent dans
+l'historique avec le badge « Nouveau ». Sans connexion, `/pro/` garde tout sur l'appareil comme avant.
+Noms des fournisseurs : colonne « ספק » du Sheet (nom) → table « ספקים » de l'onglet הגדרות (nom → code S1, S2…) →
+colonne `sup` publiée ; le nom et le WhatsApp de chaque code sont dans `boutique.suppliers` (réglables dans `/pro/`).
+Renommer un fournisseur : le changer dans הגדרות ET dans `/pro/` > Réglages.
 Pour ajouter un paiement par carte plus tard (Grow/Meshulam, PayPlus, Tranzila…), il suffira de remplacer l'étape WhatsApp
 de `/checkout/` par le lien de paiement du prestataire.
 
